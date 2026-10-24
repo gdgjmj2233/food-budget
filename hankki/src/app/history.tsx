@@ -2,21 +2,56 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useToast } from '@/components/toast';
-import { Card, GhostButton, Screen, Sub, Title, styles as ui } from '@/components/ui';
-import { formatDate, formatShort, fromDateKey, won, type Meal } from '@/lib/budget';
+import { GhostButton, Screen, Sub, Title, styles as ui } from '@/components/ui';
+import { addDays, formatShort, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { useBudget } from '@/store/budget-store';
 import { C } from '@/theme';
 
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const timeOf = (ms: number) => {
+  const d = new Date(ms);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+interface Day {
+  date: Date;
+  key: string;
+  meals: Meal[];
+  spent: number;
+  /** 주말 제외 설정으로 예산에서 빠진 날 */
+  off: boolean;
+  isToday: boolean;
+  isFuture: boolean;
+}
+
 export default function HistoryScreen() {
-  const { summary: s, undo, clearPeriod } = useBudget();
+  const { summary: s, settings, undo, clearPeriod } = useBudget();
   const toast = useToast();
 
-  // 날짜별로 묶고 최신 날짜가 위로
-  const groups = new Map<string, Meal[]>();
-  [...s.periodMeals]
-    .sort((a, b) => b.at - a.at)
-    .forEach((m) => groups.set(m.date, [...(groups.get(m.date) ?? []), m]));
+  const today = startOfDay(new Date());
+  const todayKey = toDateKey(today);
+  // 하루 계획 금액 = 처음 설정 기준 한 끼 금액 × 하루 끼니 수
+  const dayTarget = s.base * Math.max(1, settings.mealsPerDay);
+
+  // 기간의 모든 날을 플래너 한 장처럼 펼친다
+  const days: Day[] = [];
+  for (let d = s.start; d < s.end; d = addDays(d, 1)) {
+    const key = toDateKey(d);
+    const meals = s.periodMeals.filter((m) => m.date === key).sort((a, b) => a.at - b.at);
+    days.push({
+      date: d,
+      key,
+      meals,
+      spent: meals.reduce((sum, m) => sum + m.price, 0),
+      off: settings.skipWeekend && (d.getDay() === 0 || d.getDay() === 6),
+      isToday: key === todayKey,
+      isFuture: d > today,
+    });
+  }
+  const maxSpent = Math.max(dayTarget, ...days.map((d) => d.spent), 1);
 
   const onUndo = () => {
     const last = undo();
@@ -30,7 +65,7 @@ export default function HistoryScreen() {
     });
   };
 
-  const endDay = new Date(s.end.getFullYear(), s.end.getMonth(), s.end.getDate() - 1);
+  const endDay = addDays(s.end, -1);
 
   return (
     <Screen>
@@ -39,42 +74,91 @@ export default function HistoryScreen() {
         <GhostButton label="되돌리기" onPress={onUndo} />
       </View>
 
-      <Card style={{ gap: 4 }}>
+      <View style={styles.head}>
         <Sub>
           이번 기간 {formatShort(s.start)} ~ {formatShort(endDay)}
         </Sub>
         <Text style={styles.total}>
           {won(s.spent)}원 · {s.periodMeals.length}끼
         </Text>
-      </Card>
+      </View>
 
-      {groups.size === 0 ? (
-        <Card>
-          <Text style={styles.empty}>
-            아직 기록이 없어요.{'\n'}홈이나 추천 화면에서 식당을 눌러 보세요.
-          </Text>
-        </Card>
-      ) : (
-        [...groups.entries()].map(([date, meals]) => (
-          <View key={date} style={{ gap: 8 }}>
-            <View style={ui.row}>
-              <Text style={styles.dateLabel}>{formatDate(fromDateKey(date))}</Text>
-              <Sub>{won(meals.reduce((sum, m) => sum + m.price, 0))}원</Sub>
+      {/* 한눈에 보는 날짜별 지출 막대 */}
+      <View style={styles.strip}>
+        {days.map((d) => {
+          const over = !d.off && d.spent > dayTarget;
+          return (
+            <View key={d.key} style={styles.stripDay}>
+              <View style={styles.barTrack}>
+                {!d.off && <View style={[styles.targetLine, { bottom: `${(dayTarget / maxSpent) * 100}%` }]} />}
+                <View
+                  style={[
+                    styles.bar,
+                    {
+                      height: `${(d.spent / maxSpent) * 100}%`,
+                      backgroundColor: d.spent === 0 ? C.line : over ? C.over : C.primary,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.stripLabel, d.isToday && styles.todayText, d.off && styles.offText]}>
+                {days.length > 7 ? d.date.getDate() : DAY_NAMES[d.date.getDay()]}
+              </Text>
             </View>
-            <Card style={{ paddingVertical: 4 }}>
-              {meals.map((m, i) => (
-                <View key={m.id} style={[styles.row, i > 0 && styles.divider]}>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={styles.name}>{m.name}</Text>
-                    <Text style={styles.menu}>{m.menu}</Text>
-                  </View>
-                  <Text style={styles.price}>−{won(m.price)}원</Text>
+          );
+        })}
+      </View>
+
+      {/* 플래너: 날짜마다 그날 먹은 것과 지출이 자동으로 채워진다 */}
+      <View>
+        {days.map((d, i) => {
+          const last = i === days.length - 1;
+          const over = !d.off && d.spent > dayTarget;
+          return (
+            <View key={d.key} style={[styles.day, d.isFuture && styles.future]}>
+              <View style={styles.dateCol}>
+                <Text style={[styles.dateNum, d.isToday && styles.todayText, d.off && styles.offText]}>
+                  {d.date.getDate()}
+                </Text>
+                <Text style={[styles.dateDow, d.isToday && styles.todayText, d.off && styles.offText]}>
+                  {d.isToday ? '오늘' : DAY_NAMES[d.date.getDay()]}
+                </Text>
+              </View>
+
+              <View style={styles.rail}>
+                <View
+                  style={[
+                    styles.dot,
+                    d.meals.length > 0 && { backgroundColor: over ? C.over : C.primary, borderColor: 'transparent' },
+                    d.isToday && styles.dotToday,
+                  ]}
+                />
+                {!last && <View style={styles.railLine} />}
+              </View>
+
+              <View style={styles.body}>
+                <View style={styles.dayHead}>
+                  <Text style={[styles.daySpent, over && { color: C.over }, d.spent === 0 && styles.mutedText]}>
+                    {d.spent > 0 ? `${won(d.spent)}원` : d.off ? '쉬는 날' : d.isFuture ? '예정' : '지출 없음'}
+                  </Text>
+                  {!d.off && <Text style={styles.dayTarget}>/ {won(dayTarget)}원</Text>}
                 </View>
-              ))}
-            </Card>
-          </View>
-        ))
-      )}
+
+                {d.meals.map((m) => (
+                  <View key={m.id} style={styles.meal}>
+                    <Text style={styles.mealTime}>{timeOf(m.at)}</Text>
+                    <Text style={styles.mealName} numberOfLines={1}>
+                      {m.name}
+                      <Text style={styles.mealMenu}> · {m.menu}</Text>
+                    </Text>
+                    <Text style={styles.mealPrice}>−{won(m.price)}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          );
+        })}
+      </View>
 
       {s.periodMeals.length > 0 && (
         <View style={{ alignItems: 'center' }}>
@@ -86,12 +170,36 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  head: { gap: 4 },
   total: { fontSize: 28, fontWeight: '900', color: C.ink },
-  empty: { fontSize: 14, color: C.muted, textAlign: 'center', paddingVertical: 20, lineHeight: 21 },
-  dateLabel: { fontSize: 14, fontWeight: '700', color: C.ink },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 8 },
-  divider: { borderTopWidth: 1, borderTopColor: C.divider },
-  name: { fontSize: 15, fontWeight: '500', color: C.ink },
-  menu: { fontSize: 12, color: C.muted },
-  price: { fontSize: 15, fontWeight: '700', color: C.ink },
+
+  strip: { flexDirection: 'row', gap: 4, height: 84, alignItems: 'flex-end' },
+  stripDay: { flex: 1, alignItems: 'center', gap: 6 },
+  barTrack: { width: '100%', maxWidth: 28, height: 60, justifyContent: 'flex-end' },
+  bar: { width: '100%', borderRadius: 6, minHeight: 2 },
+  targetLine: { position: 'absolute', left: -2, right: -2, height: 1, backgroundColor: C.muted, opacity: 0.4 },
+  stripLabel: { fontSize: 11, color: C.muted },
+
+  day: { flexDirection: 'row', minHeight: 64 },
+  future: { opacity: 0.5 },
+  dateCol: { width: 40, alignItems: 'center', paddingTop: 2 },
+  dateNum: { fontSize: 20, fontWeight: '800', color: C.ink, lineHeight: 24 },
+  dateDow: { fontSize: 11, color: C.muted },
+  rail: { width: 24, alignItems: 'center', paddingTop: 8 },
+  dot: { width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: C.line, backgroundColor: C.ground },
+  dotToday: { width: 14, height: 14, borderRadius: 7, borderWidth: 3, borderColor: C.primarySoft },
+  railLine: { flex: 1, width: 2, backgroundColor: C.line, marginTop: 4 },
+  body: { flex: 1, paddingBottom: 20, gap: 6 },
+  dayHead: { flexDirection: 'row', alignItems: 'baseline', gap: 6, paddingTop: 2 },
+  daySpent: { fontSize: 16, fontWeight: '700', color: C.ink },
+  dayTarget: { fontSize: 12, color: C.muted },
+  meal: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  mealTime: { fontSize: 12, color: C.muted, fontVariant: ['tabular-nums'], width: 38 },
+  mealName: { flex: 1, fontSize: 14, fontWeight: '500', color: C.ink },
+  mealMenu: { fontWeight: '400', color: C.muted },
+  mealPrice: { fontSize: 14, fontWeight: '600', color: C.ink, fontVariant: ['tabular-nums'] },
+
+  todayText: { color: C.primary },
+  offText: { color: '#B0B8C1' },
+  mutedText: { color: C.muted, fontWeight: '500' },
 });
