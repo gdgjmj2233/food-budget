@@ -25,7 +25,7 @@ export function PlaceItem({
   const menus = [...place.menus].sort((a, b) => a.price - b.price);
 
   return (
-    <View style={[styles.card, { borderColor: fits ? '#CFE0D4' : '#EBCFCB' }]}>
+    <View style={[styles.card, { borderColor: fits ? '#C9DFFB' : '#FAD4D8' }]}>
       <Pressable
         onPress={() => setOpen(!open)}
         accessibilityRole="button"
@@ -48,7 +48,7 @@ export function PlaceItem({
             {menu.name}
           </Text>
           <Text style={styles.price}>{won(menu.price)}원</Text>
-          <Text style={[styles.tag, { color: fits ? C.green : C.over }]}>
+          <Text style={[styles.tag, { color: fits ? C.primary : C.over }]}>
             {fits ? '예산 안' : `+${won(menu.price - perMeal)}원 초과`}
           </Text>
         </View>
@@ -71,7 +71,7 @@ export function PlaceItem({
                   {m.name}
                 </Text>
                 <Text style={[styles.menuRowPrice, { color: ok ? C.ink : C.over }]}>{won(m.price)}원</Text>
-                <View style={[styles.eatBtn, { backgroundColor: ok ? C.green : C.muted }]}>
+                <View style={[styles.eatBtn, { backgroundColor: ok ? C.primary : C.muted }]}>
                   <Text style={styles.eatText}>먹기</Text>
                 </View>
               </Pressable>

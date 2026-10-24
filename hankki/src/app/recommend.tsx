@@ -39,7 +39,7 @@ export default function RecommendScreen() {
       <Title>예산 맞춤 맛집</Title>
 
       <View style={styles.loc}>
-        <Ionicons name="location-outline" size={20} color={C.green} />
+        <Ionicons name="location-outline" size={20} color={C.primary} />
         <Text style={styles.locText}>인하대 주변 {PLACES.length}곳</Text>
         <Text style={styles.locLimit}>한 끼 {won(s.perMeal)}원 이하</Text>
       </View>
@@ -80,7 +80,7 @@ export default function RecommendScreen() {
           accessibilityState={{ checked: onlyFits }}
           hitSlop={8}
           style={styles.check}>
-          <Ionicons name={onlyFits ? 'checkbox' : 'square-outline'} size={20} color={onlyFits ? C.green : C.muted} />
+          <Ionicons name={onlyFits ? 'checkbox' : 'square-outline'} size={20} color={onlyFits ? C.primary : C.muted} />
           <Sub>
             예산 안만 ({inBudget.length}/{base.length})
           </Sub>
@@ -107,7 +107,7 @@ export default function RecommendScreen() {
         )}
       </View>
 
-      <PrimaryButton label="예산 안에서 자동 선택" icon="dice-outline" color={C.green} onPress={() => pickRandom(base)} />
+      <PrimaryButton label="예산 안에서 자동 선택" icon="dice-outline" color={C.primary} onPress={() => pickRandom(base)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
     </Screen>
   );
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   locText: { flex: 1, fontSize: 14, fontWeight: '500', color: C.ink },
-  locLimit: { fontSize: 13, fontWeight: '700', color: C.green },
+  locLimit: { fontSize: 13, fontWeight: '700', color: C.primary },
   search: {
     backgroundColor: '#fff',
     borderWidth: 1,

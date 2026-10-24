@@ -2,22 +2,22 @@ import type { BudgetStatus } from '@/lib/budget';
 import type { Category } from '@/data/places';
 
 export const C = {
-  ground: '#F5F6F1',
+  ground: '#F2F4F6',
   card: '#FFFFFF',
-  ink: '#1B1F1A',
-  muted: '#5B6359',
-  line: '#DDE0D6',
-  divider: '#ECEEE6',
-  green: '#1F6B43',
-  greenDark: '#1F4D33',
-  greenSoft: '#E2EFE6',
-  warn: '#9A5B12',
-  over: '#A93226',
-  orangeSoft: '#FCE9D9',
+  ink: '#191F28',
+  muted: '#6B7684',
+  line: '#E5E8EB',
+  divider: '#F2F4F6',
+  primary: '#3182F6',
+  primaryDark: '#1B64DA',
+  primarySoft: '#E8F3FF',
+  warn: '#C26A00',
+  over: '#E5303F',
+  orangeSoft: '#FFF0E0',
 } as const;
 
 export const STATUS: Record<BudgetStatus, { label: string; color: string }> = {
-  ok: { label: '여유', color: C.green },
+  ok: { label: '여유', color: C.primary },
   warn: { label: '주의', color: C.warn },
   over: { label: '초과', color: C.over },
 };

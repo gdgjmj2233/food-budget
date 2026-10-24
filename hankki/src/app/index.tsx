@@ -122,5 +122,5 @@ const styles = StyleSheet.create({
     padding: 8,
     overflow: 'hidden',
   },
-  link: { fontSize: 13, fontWeight: '500', color: C.green },
+  link: { fontSize: 13, fontWeight: '500', color: C.primary },
 });

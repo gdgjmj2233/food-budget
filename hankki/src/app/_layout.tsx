@@ -31,9 +31,9 @@ function AppTabs() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: C.green,
+        tabBarActiveTintColor: C.primary,
         tabBarInactiveTintColor: C.muted,
-        tabBarStyle: { backgroundColor: '#fff', borderTopColor: '#E4E6DE' },
+        tabBarStyle: { backgroundColor: '#fff', borderTopColor: C.line },
         tabBarLabelStyle: { fontSize: 11 },
         sceneStyle: { backgroundColor: C.ground },
       }}>
