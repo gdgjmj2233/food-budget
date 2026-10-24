@@ -58,6 +58,7 @@ export function PlaceItem({
       {open && (
         <View style={styles.menus}>
           <Text style={styles.address}>{place.address}</Text>
+          {place.hours && <Text style={styles.hours}>영업 {place.hours}</Text>}
           {menus.map((m) => {
             const ok = m.price <= perMeal;
             return (
@@ -97,6 +98,7 @@ const styles = StyleSheet.create({
   tag: { fontSize: 11, fontWeight: '700' },
   menus: { borderTopWidth: 1, borderTopColor: C.divider, paddingHorizontal: 14, paddingVertical: 6 },
   address: { fontSize: 12, color: C.muted, paddingVertical: 6 },
+  hours: { fontSize: 12, color: C.muted, paddingBottom: 6, marginTop: -4 },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, borderRadius: 10, paddingHorizontal: 4 },
   menuRowName: { flex: 1, fontSize: 14, color: C.ink },
   menuRowPrice: { fontSize: 14, fontWeight: '700' },

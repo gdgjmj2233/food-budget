@@ -19,6 +19,8 @@ export interface Place {
   /** 도보 시간(분, 대략) */
   walk: number;
   address: string;
+  /** 영업시간 (확인된 곳만) */
+  hours?: string;
   menus: Menu[];
 }
 
@@ -36,7 +38,7 @@ const P = (id: string, name: string, cat: Category, area: Area, walk: number, ad
   menus: menus.map(([n, price]) => ({ name: n, price })),
 });
 
-export const PLACES: Place[] = [
+const LIST: Place[] = [
   // ---- 한식 ----
   P('FbX0Yg4abPeR', '영종식당', '한식', '후문', 1, '인하로 63-1', [['고등어조림', 7500], ['갈치조림', 7500], ['꽁치조림', 7500], ['갈치튀김', 7500], ['꽁치튀김', 7500]]),
   P('bVDDis6HsEwg', '신촌설렁탕', '한식', '후문', 1, '인하로67번길 3', [['설렁탕', 9000], ['도가니+설렁탕', 15000], ['도가니탕', 11000], ['옛날육개장', 9000], ['만두국', 9000]]),
@@ -147,6 +149,26 @@ export const PLACES: Place[] = [
   P('wfFkf95GBMjd', '타슈켄트', '아시안', '후문', 5, '인하로47번길 71 1층', [['치킨 케밥', 7000], ['플로프(필라비)', 10000]]),
   P('igvirpUjTV43', '미분당 인하대점', '아시안', '정문·인하대역', 7, '독배로 311 비젼프라자 1층 115호', [['차돌박이 쌀국수', 10000], ['양지 쌀국수', 11500], ['차돌양지 쌀국수', 12500], ['차돌양지힘줄 쌀국수', 13000], ['힘줄 쌀국수', 14000]]),
 ];
+
+// 영업시간: 다이닝코드·식당 안내 기준 (2026년 10월 수집). 출처끼리 다른 곳은 넣지 않음
+const HOURS: Record<string, string> = {
+  bVDDis6HsEwg: '24시간',
+  AMIcwjy3WtJk: '24시간 (일요일 밤 휴무)',
+  qVajqh54mGu5: '월~금 10:30~20:00 (브레이크 15:00~17:00) · 일 휴무',
+  z1FWEiUN9Bk3: '월~토 11:00~20:00 (브레이크 15:00~17:00)',
+  '4isgudcUw3KO': '월~토 11:00~21:00 · 일 휴무',
+  eWK2LgTSfkY5: '매일 11:00~20:00',
+  '36ByMutCyoJF': '매일 09:00~20:30',
+  AOUByWk67Ing: '09:00~24:00 (브레이크 16:00~17:00)',
+  '2yIGoMDuOcjF': '매일 11:00~21:00 (브레이크 15:30~17:00)',
+  '0lh70QF4fXQO': '매일 10:00~22:00 · 공휴일 휴무',
+  VfcUisuACYqc: '매일 10:30~21:00 (라스트오더 20:00)',
+  xb4hlonPQuSA: '평일 11:00~21:00 (브레이크 15:00~17:00) · 주말 ~20:00',
+  FAwitVBBCTJ6: '11:00~21:00 (라스트오더 20:30)',
+  lEqvy8xcePp3: '10:30~21:00 (브레이크 15:00~16:00)',
+};
+
+export const PLACES: Place[] = LIST.map((p) => (HOURS[p.id] ? { ...p, hours: HOURS[p.id] } : p));
 
 /** 이 식당에서 한 끼 권장 금액 안에 먹을 수 있는 메뉴 중 가장 든든한(비싼) 것. 없으면 가장 싼 메뉴. */
 export function bestMenu(place: Place, limit: number): { menu: Menu; fits: boolean } {
