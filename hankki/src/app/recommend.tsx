@@ -11,7 +11,7 @@ import { useBudget } from '@/store/budget-store';
 import { C } from '@/theme';
 
 type SortKey = 'price' | 'walk';
-const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문', '인하대역'];
+const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendScreen() {
   const { summary: s } = useBudget();
