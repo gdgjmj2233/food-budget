@@ -1,0 +1,134 @@
+.card {
+  border: 1px solid;
+  border-radius: 16px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.head {
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.head:active {
+  opacity: 0.85;
+}
+
+.icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name,
+.meta,
+.menuName,
+.menuRowName {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.right {
+  max-width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.menuName {
+  max-width: 100%;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.price {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.menus {
+  border-top: 1px solid var(--divider);
+  padding: 6px 14px;
+}
+
+.address {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 0;
+}
+
+.hours {
+  font-size: 12px;
+  color: var(--muted);
+  padding-bottom: 6px;
+  margin-top: -4px;
+}
+
+.menuRow {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 0 4px;
+  text-align: left;
+}
+
+.menuRow:active {
+  background: var(--divider);
+}
+
+.menuRowName {
+  flex: 1;
+  font-size: 14px;
+}
+
+.menuRowPrice {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.eatBtn {
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}

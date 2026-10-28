@@ -1,0 +1,59 @@
+/* 색상은 src/theme.ts 의 C 와 같은 값 */
+:root {
+  --ground: #f2f4f6;
+  --card: #ffffff;
+  --ink: #191f28;
+  --muted: #6b7684;
+  --line: #e5e8eb;
+  --divider: #f2f4f6;
+  --primary: #3182f6;
+  --primary-dark: #1b64da;
+  --primary-soft: #e8f3ff;
+  --over: #e5303f;
+  --orange-soft: #fff0e0;
+
+  /* 휴대폰 화면 폭 기준으로 가운데 정렬 */
+  --app-width: 560px;
+  --tab-height: 60px;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", Pretendard, "Malgun Gothic", "맑은 고딕", system-ui,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

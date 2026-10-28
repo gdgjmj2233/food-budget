@@ -1,4 +1,4 @@
-# main 브랜치에 올릴 때마다 웹 버전을 빌드해서 GitHub Pages에 배포한다.
+# main 브랜치에 올릴 때마다 웹 버전(hankki-web, Next.js)을 정적 파일로 빌드해서 GitHub Pages에 배포한다.
 name: Deploy web to GitHub Pages
 
 on:
@@ -24,20 +24,20 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: hankki/package-lock.json
+          cache-dependency-path: hankki-web/package-lock.json
       - run: npm ci
-        working-directory: hankki
-      - name: Export web
-        working-directory: hankki
-        run: npx expo export --platform web
+        working-directory: hankki-web
+      - name: Export static site
+        working-directory: hankki-web
+        run: npm run build
         env:
-          EXPO_BASE_URL: /${{ github.event.repository.name }}
-      - name: SPA fallback
-        working-directory: hankki
-        run: cp dist/index.html dist/404.html && touch dist/.nojekyll
+          PAGES_BASE_PATH: /${{ github.event.repository.name }}
+      - name: Disable Jekyll
+        working-directory: hankki-web
+        run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: hankki/dist
+          path: hankki-web/out
 
   deploy:
     needs: build

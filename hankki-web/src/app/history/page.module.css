@@ -1,0 +1,175 @@
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.month {
+  font-size: 30px;
+  font-weight: 900;
+  margin-right: 6px;
+}
+
+.arrow {
+  display: flex;
+  padding: 4px;
+}
+
+.summary {
+  display: flex;
+  gap: 12px;
+  background: var(--card);
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.sumCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sumRight {
+  flex: none;
+  align-items: flex-end;
+}
+
+.sumValue {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.dow {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 8px 0;
+}
+
+.cell {
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 2px 0;
+  border-radius: 10px;
+}
+
+.cellSelected {
+  background: var(--card);
+}
+
+.faded {
+  opacity: 0.35;
+}
+
+.date {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.today {
+  background: var(--primary);
+  color: #fff;
+}
+
+.chip {
+  align-self: stretch;
+  border-radius: 4px;
+  border-left: 3px solid;
+  padding: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.more {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.dayTotal {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.detailHead {
+  padding: 12px 0;
+}
+
+.detailDate,
+.detailSum {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--divider);
+}
+
+.bar {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+}
+
+.time {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.menu {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.price {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+}

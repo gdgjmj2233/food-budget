@@ -1,0 +1,152 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.seg {
+  display: flex;
+  gap: 4px;
+  background: #e7e9e1;
+  padding: 4px;
+  border-radius: 14px;
+}
+
+.segBtn {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.segOn {
+  background: #fff;
+  font-weight: 700;
+}
+
+.amount {
+  background: #fff;
+  border: 1.5px solid var(--primary);
+  border-radius: 14px;
+  padding: 0 16px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.amountInput {
+  flex: 1;
+  min-width: 0;
+  font-size: 26px;
+  font-weight: 900;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.amountUnit {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.setRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 60px;
+}
+
+.divider {
+  border-top: 1px solid var(--divider);
+}
+
+.setLabel {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 20px;
+}
+
+.stepVal {
+  font-size: 17px;
+  font-weight: 700;
+  min-width: 32px;
+  text-align: center;
+}
+
+.tog {
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  background: #d1d6db;
+  padding: 3px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.togOn {
+  background: var(--primary);
+  justify-content: flex-end;
+}
+
+.knob {
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.result {
+  background: var(--primary-soft);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--primary-dark);
+}
+
+.resultSmall {
+  font-size: 13px;
+}
+
+.resultRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.resultLabel {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.resultBig {
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+}
