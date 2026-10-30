@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { PLACES } from '@/data/places';
 import { addDays, calcBudget, formatDate, fromDateKey, toDateKey, won } from '@/lib/budget';
-import { useBudget } from '@/store/budget-store';
+import { comparePlans } from '@/lib/plan-comparison';
+import { useBudget, type MealPlan } from '@/store/budget-store';
 import { useToast } from './toast';
 import ui from './ui.module.css';
 import styles from './budget-tools.module.css';
@@ -78,7 +79,7 @@ function SpendingPatterns() {
 }
 
 function WeeklyPlan() {
-  const { plans, addPlan, removePlan, record, summary, settings, meals } = useBudget();
+  const { plans, addPlan, summary, settings, meals } = useBudget();
   const toast = useToast();
   const today = toDateKey(new Date());
   const [weekStart, setWeekStart] = useState(today);
@@ -88,14 +89,16 @@ function WeeklyPlan() {
   const dates = Array.from({ length: 7 }, (_, i) => toDateKey(addDays(fromDateKey(weekStart), i)));
   const visible = plans.filter(p => dates.includes(p.date));
   const total = visible.reduce((n,p) => n+p.price, 0);
-  const actual = meals.filter(m => dates.includes(m.date)).reduce((n,m) => n+m.price, 0);
-  const reserved = plans.filter(p => p.date >= today && p.date >= settings.startDate && p.date < toDateKey(summary.end)).reduce((n,p) => n+p.price, 0);
+  const week = comparePlans(visible, meals.filter(m => dates.includes(m.date)));
+  const actual = week.actual;
+  const reserved = plans.filter(p => !meals.some(m => m.planId === p.id) && p.date >= today && p.date >= settings.startDate && p.date < toDateKey(summary.end)).reduce((n,p) => n+p.price, 0);
   const available = summary.remain-reserved;
   return <section className={ui.card}>
     <h2 className={ui.sec}>일주일 소비 계획</h2>
     <p className={styles.hint}>날짜별로 먹을 메뉴와 금액을 정해요. 계획은 실제 지출에 포함되지 않아요.</p>
     <label className={styles.field}>7일 계획 시작일<input type="date" required value={weekStart} onChange={e => { if (e.target.value) { setWeekStart(e.target.value); setDate(e.target.value); } }} /></label>
-    <p className={styles.summary}>이 7일의 예정 {won(total)}원 · 실제 {won(actual)}원<br />현재 예산 기간의 남은 계획 {won(reserved)}원<br /><strong>계획 금액을 남겨두면 {won(available)}원 여유</strong></p>
+    <p className={styles.summary}>이 7일의 예정 {won(total)}원 · 실제 {won(actual)}원<br />완료한 계획 대비 {week.completedCount ? difference(week.difference) : '아직 완료한 계획이 없어요'}
+      <br />계획 외 지출 {won(week.unplanned)}원<br />현재 예산 기간의 남은 계획 {won(reserved)}원<br /><strong>계획 금액을 남겨두면 {won(available)}원 여유</strong></p>
     {available < 0 && <p role="status" className={styles.warning}>남은 예산보다 계획이 {won(-available)}원 많아요.</p>}
     <form className={styles.stack} onSubmit={e => {
       e.preventDefault();
@@ -109,18 +112,50 @@ function WeeklyPlan() {
     </form>
     <div className={styles.stack}>{dates.map(d => <div className={styles.day} key={d}>
       <h3>{formatDate(fromDateKey(d))}</h3>
+      <DayComparison plans={visible.filter(p => p.date === d)} date={d} />
       {!visible.some(p => p.date === d) && <p className={styles.hint}>등록한 계획이 없어요</p>}
-      {visible.filter(p => p.date === d).map(p => <div key={p.id} className={styles.plan}>
-        <span>{p.name} · {won(p.price)}원</span>
-        <div className={styles.row}>
-          <button type="button" className={styles.textButton} disabled={p.date !== today || summary.ended} onClick={() => {
-            const delta = record(p.name, '소비 계획에서 기록', p.price);
-            if (delta) { removePlan(p.id); toast('실제 지출로 기록하고 계획에서 옮겼어요'); }
-          }}>오늘 먹음</button>
-          <button type="button" className={styles.textButton} aria-label={`${p.name} 계획 삭제`} onClick={() => removePlan(p.id)}>삭제</button>
-        </div>
-      </div>)}
+      {visible.filter(p => p.date === d).map(p => <PlanItem key={p.id} plan={p} />)}
     </div>)}</div>
-    <small>‘오늘 먹음’은 오늘 계획만 실제 지출로 옮겨요. 실제 금액이 다르면 계획을 삭제하고 직접 기록하세요. 주말 제외 설정과 관계없이 약속을 계획할 수 있어요.</small>
+    <small>오늘 계획의 실제 결제 금액을 입력해 기록하세요. 완료한 계획은 비교를 위해 남겨두며, 기록을 삭제하거나 되돌리면 다시 미완료가 돼요. 이전 버전에서 이미 옮긴 지출은 계획 외 지출로 표시됩니다.</small>
   </section>;
+}
+
+function difference(value: number) {
+  return value > 0 ? `${won(value)}원 초과` : value < 0 ? `${won(-value)}원 절약` : '계획과 같은 금액';
+}
+
+function DayComparison({ plans, date }: { plans: MealPlan[]; date: string }) {
+  const { meals } = useBudget();
+  const result = comparePlans(plans, meals.filter(m => m.date === date));
+  const planned = plans.reduce((sum, p) => sum + p.price, 0);
+  return <p className={styles.hint}>계획 {won(planned)}원 · 실제 {won(result.actual)}원<br />
+    {result.completedCount ? `완료 ${result.completedCount}끼 · ${difference(result.difference)}` : '아직 완료한 계획이 없어요'}
+    {result.unplanned > 0 && ` · 계획 외 ${won(result.unplanned)}원`}
+  </p>;
+}
+
+function PlanItem({ plan }: { plan: MealPlan }) {
+  const { meals, completePlan, removePlan, summary } = useBudget();
+  const toast = useToast();
+  const [amount, setAmount] = useState(String(plan.price));
+  const completed = meals.find(m => m.planId === plan.id);
+  const price = Number(amount);
+  const canComplete = plan.date === toDateKey(new Date()) && !summary.ended;
+  return <div className={styles.plan}>
+    <div><strong>{plan.name}</strong><p>계획 {won(plan.price)}원</p>
+      {completed && <p className={styles.preview}>실제 {won(completed.price)}원 · {difference(completed.price - plan.price)}</p>}
+    </div>
+    {!completed ? <form className={styles.actualForm} onSubmit={e => {
+      e.preventDefault();
+      if (!Number.isSafeInteger(price) || price < 0 || price > 9999999) return;
+      const delta = completePlan(plan.id, price);
+      if (delta) toast(`실제 ${won(price)}원 기록 · ${difference(price - plan.price)}`);
+      else toast('오늘 계획인지, 이미 기록한 계획인지 확인해 주세요');
+    }}>
+      <label className={styles.field}>실제 금액 (원)<input aria-label={`${plan.name} 실제 금액`} type="number" min="0" max="9999999" step="1" required value={amount} disabled={!canComplete} onChange={e => setAmount(e.target.value)} /></label>
+      <button type="submit" className={styles.textButton} disabled={!canComplete || !amount || !Number.isSafeInteger(price) || price < 0}>오늘 먹음</button>
+      <button type="button" className={styles.textButton} aria-label={`${plan.name} 계획 삭제`} onClick={() => removePlan(plan.id)}>삭제</button>
+      {!canComplete && <small>식사 당일에 기록할 수 있어요.</small>}
+    </form> : <span className={styles.done}>기록 완료</span>}
+  </div>;
 }

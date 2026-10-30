@@ -20,3 +20,8 @@
 
 .stack button[type="submit"], .stack button:not([type]) { background:var(--primary); }
 .stack button:disabled { opacity:.5; cursor:default; }
+.actualForm { display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:100%; }
+.actualForm .field { flex:1; min-width:120px; }
+.actualForm small { width:100%; }
+.actualForm button[type="submit"] { background:transparent; }
+.done { padding:5px 10px; border-radius:8px; background:var(--primary-soft); color:var(--primary-dark); font-size:12px; }

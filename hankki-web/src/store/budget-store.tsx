@@ -63,6 +63,7 @@ function reducer(state: State, action: Action): State {
     case 'plan': return { ...state, plans: [...state.plans, action.plan] };
     case 'removePlan': return { ...state, plans: state.plans.filter(p => p.id !== action.id) };
     case 'addMeal':
+      if (action.meal.planId && state.meals.some(m => m.planId === action.meal.planId)) return state;
       return { ...state, meals: [...state.meals, action.meal], lastDelta: action.delta };
     case 'undo':
       return { ...state, meals: state.meals.slice(0, -1), lastDelta: null };
@@ -87,6 +88,7 @@ interface BudgetContextValue {
   saveNote: (id: string, text: string) => void;
   addPlan: (plan: Omit<MealPlan, 'id'>) => void;
   removePlan: (id: string) => void;
+  completePlan: (id: string, price: number) => Delta | null;
   settings: Settings;
   meals: Meal[];
   summary: BudgetSummary;
@@ -135,7 +137,7 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
   const summary = useMemo(() => calcBudget(state.settings, state.meals), [state.settings, state.meals]);
 
   // 끼니 하나를 오늘 날짜로 기록하고, 한 끼 권장 금액 변화를 돌려준다
-  const addMeal = (fields: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'>): Delta | null => {
+  const addMeal = (fields: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price' | 'planId'>): Delta | null => {
     if (summary.ended || !Number.isSafeInteger(fields.price) || fields.price < 0) return null;
     const now = new Date();
     const meal: Meal = { id: newId(), ...fields, date: toDateKey(now), at: now.getTime() };
@@ -150,6 +152,11 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
     saveNote: (id, text) => dispatch({ type: 'note', id, text }),
     addPlan: (plan) => { if (Number.isSafeInteger(plan.price) && plan.price > 0 && plan.name.trim()) dispatch({ type: 'plan', plan: { ...plan, id: newId() } }); },
     removePlan: (id) => dispatch({ type: 'removePlan', id }),
+    completePlan: (id, price) => {
+      const plan = state.plans.find(p => p.id === id);
+      if (!plan || plan.date !== toDateKey(new Date()) || state.meals.some(m => m.planId === id)) return null;
+      return addMeal({ name: plan.name, menu: '소비 계획에서 기록', price, planId: id });
+    },
     settings: state.settings,
     meals: state.meals,
     summary,
