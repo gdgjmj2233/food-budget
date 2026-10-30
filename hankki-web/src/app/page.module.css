@@ -1,3 +1,60 @@
+/* 맨 위: 날짜·제목 + 로그인 / 내 정보 */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.login {
+  flex: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 4px 4px 12px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.meName {
+  max-width: 110px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* 전신 캐릭터 그림에서 얼굴 쪽만 보이게 */
+.avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--primary-soft);
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 12%;
+  transform: scale(1.7);
+  transform-origin: 50% 18%;
+}
+
 .ended {
   display: block;
   background: var(--orange-soft);
@@ -8,7 +65,29 @@
   font-weight: 700;
 }
 
+/* 마스코트(1) : 예산 카드(3) */
+.heroRow {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 8px;
+}
+
+/* 줄 높이는 카드가 정하고, 마스코트는 그 높이에 맞춘다 */
+.mascots {
+  position: relative;
+  min-width: 0;
+}
+
+.mascot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .hero {
+  min-width: 0;
   border-radius: 24px;
   padding: 22px;
   display: flex;
