@@ -21,12 +21,119 @@ export interface Place {
   address: string;
   /** 영업시간 (확인된 곳만) */
   hours?: string;
+  /** 앱에서 가격 비교 기준으로 지정한 대표 메뉴명 */
+  mainMenuName: string;
   menus: Menu[];
 }
 
 export const CATEGORIES: ('전체' | Category)[] = ['전체', '한식', '분식', '중식', '일식', '양식', '아시안'];
 
 export const DATA_SOURCE = '다이닝코드 · 2026년 10월 기준';
+
+/** 판매량 순위가 아닌 앱의 비교 기준. 메뉴 목록 순서나 예산에 따라 바뀌지 않는다. */
+const MAIN_MENUS: Record<string, string> = {
+  'FbX0Yg4abPeR': '고등어조림', // 영종식당
+  'bVDDis6HsEwg': '설렁탕', // 신촌설렁탕
+  'M5ztxQmEDy19': '육회비빔밥', // 교반 인하대점
+  'qVajqh54mGu5': '돼지김치찌개', // 온뚝
+  '1ZlkIU09n8L6': '고추장찌개', // 바리바리
+  'OeLKVhSUQv4A': '생고기김치찌개', // 찌개사랑 인하대점
+  'aOJZ7tPXFmER': '지짐보쌈정식', // 궁중보쌈
+  'AMIcwjy3WtJk': '수육국밥', // 더진국 수육국밥 인하대점
+  'qzHa1wr6p5ex': '수육국밥', // 조선탕반 인하대직영점
+  'CyNdFqIksFBm': '순대국', // 가마솥순대국 인하대점
+  '4isgudcUw3KO': '바지락칼국수', // 인하칼국수
+  'rwIDO77i3KUR': '순살닭도리탕', // 마약집
+  '8vJ0FMyWh7Ai': '오징어순두부', // 킹콩순두부
+  'eWK2LgTSfkY5': '정일품 집밥뷔페', // 인하 정일품
+  'rCYaKh7lZHC6': '새알팥죽', // 팥지콩지
+  'SKnVwy0bnx7F': '부대찌개', // 준호네부대찌개
+  '36ByMutCyoJF': '제육볶음', // 맛사랑
+  'Gsow1Kl2z7gC': '김치찌개', // 청년밥상빨라우 인하대점
+  'gkLTcGQpaPri': '1인 삼겹 김치찜', // 수봉집
+  'Unb6iw5JbIk2': '사골순대국', // 박지혜 모던순대국 인하직영점
+  'noe8adyw147V': '손수제비', // 내동칼국수
+  'dOCMqwIsODgZ': '콩불', // 콩불
+  '4NlHO1jrg5UV': '얼큰돈까스나베', // 너울마당
+  'AOUByWk67Ing': '뼈해장국', // 청진동해장국 인하대점
+  '2yIGoMDuOcjF': '바지락칼국수', // 명동칼국수 인하대역점
+  '2npnpZLG6lKb': '한식뷔페(무한리필)', // 현대한식뷔페
+  'Bwrivf8cMdvQ': '뼈해장국', // 성화해장국 인하점
+  '1WOJcfH19KtT': '뼈해장국', // 고마워감자탕
+  'z1FWEiUN9Bk3': '가정식백반', // 소소한밥상
+  'ekvBgPQUvtps': '숯불닭갈비(1인분)', // 팔각도 인하대역점
+  'PGv2eVDW7RVO': '뼈해장국', // 명화옥감자탕
+  'BbGwN0AI22Cd': '부대전골', // 이태리부대찌개 인하대역점
+  '7zOeu03SOLXS': '병천육순대국밥', // 국밥참맛있는집 인천인하대역점
+  'siksin1722582': '국내산 생닭갈비', // 국대철판닭갈비 인하아리스타점
+  'Zt3wGaSjsuP3': '아보 명란마요 김밥', // 삼청당 인하대점
+  'ZavXJ5Nb3Nfw': '나이스라이스', // 지지고
+  'a1lyiGnY4QIz': '떡볶이', // 신전떡볶이
+  'aQOCNAZNBe3a': '봉구스밥버거', // 봉구스밥버거 인하대점
+  'Zbn5p0TIEBcL': '1인 세트', // 감탄떡볶이
+  'kqOEEk6mZkPF': '옛날즉떡', // 이모떡즉석떡볶이
+  '3KOnKQctWh9Q': '카레알밥', // 알촌
+  '7geeHPuUClSu': '스팸마요', // 밥은화 인하대점
+  'o5GY6P2Tkk12': '브라더김밥', // 김밥브라더스
+  '8ScF2mdFcWTB': '빅치킨마요', // 한솥도시락 인하대역점
+  'bRqo3ArrS6B9': '김치칼국수', // 명동손만두
+  'lWZ0uQpTuXyo': '잔치국수', // 이조은김밥
+  'M6BrfwQ01uZX': '국물떡볶이', // 계속 쪼르면
+  'URkVGS4CWz6j': '떡볶이', // 머루와다래
+  'QQSUHL6iSeLn': '고기볶음면', // 중경마라탕 인하대점
+  'h0smcoio28Dn': '마라탕', // 마라시대마라탕
+  'bJpn15dacGiN': '자장면', // 이것이 짜장전설 인하대점
+  'sJt0XsDek1Qa': '보배 짜장면', // 보배반점 인하대점
+  'S6AVefvHSCWc': '물냉면', // 인하반점
+  'YOvPxVhpJqwF': '마라탕(小)', // 춘리마라탕
+  'VxmcU084mY8K': '짜장면', // 인하각
+  'DcTGsl7iKO1f': '짜장면', // 차오팡
+  'lPvOU4fu8HK2': '짜장', // 보화장
+  'iv7QZVzq1Rv8': '볶음밥', // 마부마라탕 인하대점
+  '0lh70QF4fXQO': '1인카츠세트(마제+등심)', // 구름카츠 인하대점
+  'XydlWCFreotJ': '히레가스', // 탄포포
+  'wkfrgXyUUeKh': '돈카츠', // 이치라멘&돈가츠
+  '6X15W6fPiAGq': '돈까스 정식', // 허수아비돈까스
+  'RdBLvTuWFmgX': '소고기덮밥', // 신촌샤브샤브
+  'beanjRv4Y70W': '청양마요유부 4p', // 정직유부 인하대점
+  'VfcUisuACYqc': '쇼유라멘', // 면식당 인하대점
+  'mmcEruP8kjMm': '냉모밀', // 하하돈면
+  'w9TvtBg9Au7u': '쇼가야끼정식', // 오하요
+  '0KoFpKY7V4Hg': '얼큰가쓰오우동', // 역전우동0410 인하대점
+  'iyKYw8yWSfLf': '가쯔동', // 가메이
+  '64UPWnTWIYAv': '오리지널 완당면', // 성수완당 인하대점
+  '4aVI8bMcSpnf': '등심 돈게스(두 장)', // 돈게스
+  '6TB5N8PwaEQi': '치킨마요덮밥', // 핵밥 인하대점
+  'D8iHqdoxs1AD': '쇼유라멘', // 멘야토리 라멘
+  'nSbBZN2fhNOC': '돈가스', // 돈마니
+  '3qYsFa2SvjD8': '토리 쇼유 라멘', // 멘지 인하대점
+  'JP8nIGVegDmZ': '등심카츠', // 카츠쿠모 인하대본점
+  'o5vBqtDP4UrT': '돈까스', // 왕돈까스
+  'RzSQh7YI2BsZ': '가츠동', // 시루 돈부리
+  'vwNV8EkiyS0o': '돈코츠라멘', // 산쪼메
+  'ggasAoirprbm': '등심돈까스', // 지금돈까스
+  'U0A5tA3GLnHP': '두부버섯덮밥', // 덮수룩
+  'xb4hlonPQuSA': '데미그라스 돈까스', // 긴자료코 인하대점
+  'FAwitVBBCTJ6': '스파이시까르보나라', // 미식당
+  'lEqvy8xcePp3': '토마토 파스타', // 롤링파스타 인하대점
+  '3ho9Qigo05kA': '수비드 닭다리살 커리 덮밥', // 샐러리아 인하대점
+  'IM4YshxTT9kw': '베이컨 버섯 알리오 파스타', // 쇼앤플레이트
+  'JAhbAXroWGrz': '싸이버거 세트', // 맘스터치 인하대점
+  'NmSrqUpeg04Q': '더블햄더블치즈', // 오이아 샌드위치 인하대
+  'b10AuC8Q6yad': '브런치A', // 코피아
+  'ZPds496dhA3s': '버거리버거', // 버거리 인하대점
+  'kU2C2IDFXADG': '포테이토피자', // 피자스쿨 인하대역점
+  'NNuSI64i3dZy': '왕돈까스', // 금화왕돈까스 인하대점
+  'uP8vFULosBLZ': '파스타', // 투파인드피터 인천인하대점
+  'siksin1435485': '와퍼 세트', // 버거킹 인하대역점
+  '20RNFF2WIqcA': '마크니 커리', // 커리야
+  'J8oZVUBfk57z': '소고기쌀국수', // 사이공본가 인하대점
+  'p4hiQdAcv315': '양지 차돌 쌀국수', // 하노이 별 인하대점
+  'E4AgzrR2vJib': '우삼겹 쌀국수', // 디탕 인하대점
+  'mZ9Ch459AJjb': '반미 오리지널', // 운반미
+  'wfFkf95GBMjd': '치킨 케밥', // 타슈켄트
+  'igvirpUjTV43': '차돌박이 쌀국수', // 미분당 인하대점
+};
 
 const P = (id: string, name: string, cat: Category, area: Area, walk: number, address: string, menus: [string, number][]): Place => ({
   id,
@@ -35,6 +142,7 @@ const P = (id: string, name: string, cat: Category, area: Area, walk: number, ad
   area,
   walk,
   address: address ? `인천 미추홀구 ${address}` : '인천 미추홀구 (인하대 후문 인근)',
+  mainMenuName: MAIN_MENUS[id],
   menus: menus.map(([n, price]) => ({ name: n, price })),
 });
 
@@ -173,12 +281,15 @@ const HOURS: Record<string, string> = {
 
 export const PLACES: Place[] = LIST.map((p) => (HOURS[p.id] ? { ...p, hours: HOURS[p.id] } : p));
 
-/** 이 식당에서 한 끼 권장 금액 안에 먹을 수 있는 메뉴 중 가장 든든한(비싼) 것. 없으면 가장 싼 메뉴. */
-export function bestMenu(place: Place, limit: number): { menu: Menu; fits: boolean } {
-  const fits = place.menus.filter((m) => m.price <= limit).sort((a, b) => b.price - a.price);
-  if (fits.length) return { menu: fits[0], fits: true };
-  const cheapest = [...place.menus].sort((a, b) => a.price - b.price)[0];
-  return { menu: cheapest, fits: false };
+/** 대표 메뉴는 앱에서 지정한 고정 비교 기준이며, 예산과 무관하다. */
+export function mainMenu(place: Place): Menu {
+  return place.menus.find(m => m.name === place.mainMenuName) ?? place.menus[0];
 }
 
-export const cheapestPrice = (place: Place) => Math.min(...place.menus.map((m) => m.price));
+export const mainMenuPrice = (place: Place) => mainMenu(place).price;
+
+/** 대표 메뉴의 예산 충족 여부. 저렴한 다른 메뉴로 대체하지 않는다. */
+export function bestMenu(place: Place, limit: number): { menu: Menu; fits: boolean } {
+  const menu = mainMenu(place);
+  return { menu, fits: menu.price <= limit };
+}

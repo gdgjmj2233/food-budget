@@ -173,3 +173,19 @@
   display: flex;
   justify-content: center;
 }
+
+.homeLink {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 5px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #dce3d8;
+  border-radius: 10px;
+  background: #fff;
+  color: #456347;
+  font-size: 14px;
+  font-weight: 700;
+}
+.homeLink:hover { background: #eef2e9; }

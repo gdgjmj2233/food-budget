@@ -17,7 +17,7 @@ import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
 import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
+import { bestMenu, CATEGORIES, mainMenuPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
 import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
@@ -47,7 +47,7 @@ export default function RecommendPage() {
   );
   const inBudget = base.filter((p) => bestMenu(p, s.perMeal).fits);
   const list = (onlyFits ? inBudget : base).sort((a, b) =>
-    sort === 'price' ? cheapestPrice(a) - cheapestPrice(b) || a.walk - b.walk : a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b),
+    sort === 'price' ? mainMenuPrice(a) - mainMenuPrice(b) || a.walk - b.walk : a.walk - b.walk || mainMenuPrice(a) - mainMenuPrice(b),
   );
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   const selected = list.find((p) => p.id === selectedId);
@@ -99,14 +99,14 @@ export default function RecommendPage() {
           className={styles.check}>
           <Check size={20} color={onlyFits ? C.primary : C.muted} aria-hidden />
           <Sub>
-            예산 안만 ({inBudget.length}/{base.length})
+            대표 메뉴 예산 안만 ({inBudget.length}/{base.length})
           </Sub>
         </button>
         <div className={styles.tools}>
           {!showMap && (
             <button type="button" onClick={() => setSort(sort === 'price' ? 'walk' : 'price')} className={styles.check}>
               <IoSwapVertical size={16} color={C.ink} aria-hidden />
-              <span className={styles.sortText}>{sort === 'price' ? '가격 낮은 순' : '가까운 순'}</span>
+              <span className={styles.sortText}>{sort === 'price' ? '대표 메뉴 가격순' : '가까운 순'}</span>
             </button>
           )}
           <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
@@ -118,7 +118,7 @@ export default function RecommendPage() {
 
       <Sub>
         {showMap
-          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격이에요. 빨간 핀은 예산 초과. 핀을 누르면 식당 정보가 나와요.'
+          ? '핀의 숫자는 식당별 대표 메뉴 가격이에요. 빨간 핀은 예산 초과. 핀을 누르면 식당 정보가 나와요.'
           : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
       </Sub>
 

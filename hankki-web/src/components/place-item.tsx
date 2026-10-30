@@ -25,7 +25,7 @@ export function PlaceItem({
   const [open, setOpen] = useState(false);
   const { menu, fits } = bestMenu(place, perMeal);
   const cat = CAT_COLORS[place.cat];
-  const menus = [...place.menus].sort((a, b) => a.price - b.price);
+  const menus = [menu, ...place.menus.filter(m => m.name !== menu.name)];
   const Chevron = open ? IoChevronUp : IoChevronDown;
 
   return (
@@ -46,7 +46,7 @@ export function PlaceItem({
           </span>
         </span>
         <span className={styles.right}>
-          <span className={styles.menuName}>{menu.name}</span>
+          <span className={styles.menuName}>대표 · {menu.name}</span>
           <span className={styles.price}>{won(menu.price)}원</span>
           <span className={styles.tag} style={{ color: fits ? C.primary : C.over }}>
             {fits ? '예산 안' : `+${won(menu.price - perMeal)}원 초과`}
@@ -69,7 +69,7 @@ export function PlaceItem({
                 onClick={() => onPick(m)}
                 aria-label={`${m.name} ${won(m.price)}원 먹은 걸로 기록`}
                 className={styles.menuRow}>
-                <span className={styles.menuRowName}>{m.name}<BudgetPreview price={m.price} /></span>
+                <span className={styles.menuRowName}>{m.name === menu.name ? `대표 · ${m.name}` : m.name}<BudgetPreview price={m.price} /></span>
                 <span className={styles.menuRowPrice} style={{ color: ok ? C.ink : C.over }}>
                   {won(m.price)}원
                 </span>

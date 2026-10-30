@@ -1,5 +1,5 @@
 import { useToast } from '@/components/toast';
-import { PLACES, type Menu, type Place } from '@/data/places';
+import { PLACES, mainMenu, type Menu, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
@@ -45,9 +45,9 @@ export function useEat() {
     if (delta) toast(`이번 끼니를 건너뛰었어요 · ${change(delta)}`);
   };
 
-  /** 지금 한 끼 권장 금액 이하 메뉴 중에서 무작위로 고른다. 없으면 가장 싼 메뉴. */
+  /** 대표 메뉴가 한 끼 권장 금액 이하인 식당을 고른다. 없으면 대표 메뉴 가격이 가장 낮은 곳. */
   const pickRandom = (places: Place[] = PLACES) => {
-    const pairs = places.flatMap((p) => p.menus.map((m) => ({ p, m })));
+    const pairs = places.map((p) => ({ p, m: mainMenu(p) }));
     if (!pairs.length) return;
     const pool = pairs.filter((x) => x.m.price <= summary.perMeal);
     const choices = pool.length ? pool : [pairs.reduce((a, b) => (b.m.price < a.m.price ? b : a))];

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import React, { useState } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 
@@ -84,6 +85,7 @@ export default function HistoryPage() {
 
   return (
     <Screen>
+      <Link href="/" className={styles.homeLink}><IoChevronBack size={18} aria-hidden /> 홈으로</Link>
       <div className={ui.row}>
         <div className={styles.monthNav}>
           <h1 className={styles.month}>

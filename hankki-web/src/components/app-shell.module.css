@@ -1,4 +1,4 @@
 .main { max-width:var(--app-width); min-height:100dvh; margin:0 auto; padding-top:env(safe-area-inset-top); padding-bottom:calc(88px + env(safe-area-inset-bottom)); }
-.tabs { position:fixed; left:50%; bottom:calc(10px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:calc(100% - 28px); max-width:calc(var(--app-width) - 28px); height:65px; padding:5px; display:flex; background:#ffffffed; border:1px solid #e5ebe8; border-radius:35px; box-shadow:0 5px 28px #1438291a; backdrop-filter:blur(16px); z-index:10; }
-.tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:10px; font-weight:600; color:#7c8381; border-radius:28px; }
-.tabOn { color:#114c41; background:#dff6ed; }
+.tabs { position:fixed; left:50%; bottom:calc(10px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:calc(100% - 28px); max-width:calc(var(--app-width) - 28px); height:65px; padding:5px; display:flex; background:#ffffffed; border:1px solid #e5ebe8; border-radius:20px; box-shadow:0 5px 28px #1438291a; backdrop-filter:blur(16px); z-index:10; }
+.tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:10px; font-weight:600; color:#7c8381; border-radius:15px; }
+.tabOn { color:#4c6848; background:#eef1e7; }

@@ -6,7 +6,7 @@ import { IoClose } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
 import { PlaceItem } from '@/components/place-item';
-import { bestMenu, cheapestPrice, PLACES, type Menu, type Place } from '@/data/places';
+import { bestMenu, mainMenuPrice, PLACES, type Menu, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
@@ -57,8 +57,8 @@ function Recommend({
 }) {
   const fits = PLACES.filter((p) => bestMenu(p, perMeal).fits);
   const list = fits.length
-    ? fits.sort((a, b) => a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b)).slice(0, MAX_PLACES)
-    : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b)).slice(0, 3);
+    ? fits.sort((a, b) => a.walk - b.walk || mainMenuPrice(a) - mainMenuPrice(b)).slice(0, MAX_PLACES)
+    : [...PLACES].sort((a, b) => mainMenuPrice(a) - mainMenuPrice(b)).slice(0, 3);
 
   return (
     <div className={styles.body}>
@@ -67,8 +67,8 @@ function Recommend({
           <h2 className={styles.title}>오늘 뭐 먹을까요?</h2>
           <p className={styles.sub}>
             {fits.length
-              ? `한 끼 ${won(perMeal)}원 안에서 먹을 수 있는 가까운 곳`
-              : `한 끼 ${won(perMeal)}원 안인 곳이 없어서 가장 싼 곳을 골랐어요`}
+              ? `대표 메뉴가 ${won(perMeal)}원 안인 가까운 곳`
+              : `대표 메뉴가 ${won(perMeal)}원 안인 곳이 없어 대표 메뉴 가격이 낮은 곳을 골랐어요`}
           </p>
         </div>
         <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
