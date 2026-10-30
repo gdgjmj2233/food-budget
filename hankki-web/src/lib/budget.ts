@@ -36,6 +36,8 @@ export interface BudgetSummary {
   totalDays: number;
   daysLeft: number;
   mealsLeft: number;
+  /** 오늘 아직 기록하지 않은 계획 끼니 수 */
+  mealsLeftToday: number;
   eatenToday: number;
   spent: number;
   remain: number;
@@ -115,8 +117,8 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
 
   const eatenToday = periodMeals.filter((m) => m.date === todayKey).length;
   const todayCounts = !ended && today >= start && !(settings.skipWeekend && isWeekend(today));
-  const mealsLeft =
-    daysLeft <= 0 ? 0 : todayCounts ? (daysLeft - 1) * mpd + Math.max(0, mpd - eatenToday) : daysLeft * mpd;
+  const mealsLeftToday = todayCounts ? Math.max(0, mpd - eatenToday) : 0;
+  const mealsLeft = daysLeft <= 0 ? 0 : todayCounts ? (daysLeft - 1) * mpd + mealsLeftToday : daysLeft * mpd;
 
   // 남은 계획 끼니가 없는데 기간은 남은 경우(예: 주말 제외 + 마지막 주말, 오늘 끼니를 다 먹음)는
   // 남은 예산 전체를 쓸 수 있는 금액으로 본다.
@@ -127,7 +129,7 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const status: BudgetStatus = remain < 0 ? 'over' : perMeal < base * 0.85 ? 'warn' : 'ok';
 
   return {
-    start, end, ended, totalDays, daysLeft, mealsLeft, eatenToday,
+    start, end, ended, totalDays, daysLeft, mealsLeft, mealsLeftToday, eatenToday,
     spent, remain, perMeal, perDay, base, status, periodMeals,
   };
 }

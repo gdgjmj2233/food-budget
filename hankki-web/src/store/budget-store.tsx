@@ -76,6 +76,8 @@ interface BudgetContextValue {
   lastDelta: Delta | null;
   /** 식당 메뉴를 먹은 것으로 기록하고, 예산 변화를 돌려준다 */
   eat: (place: Place, menu: Menu) => Delta | null;
+  /** 목록에 없는 끼니(직접 입력, 스킵)를 기록하고, 예산 변화를 돌려준다 */
+  record: (name: string, menu: string, price: number) => Delta | null;
   undo: () => Meal | null;
   clearPeriod: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
@@ -113,28 +115,24 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
 
   const summary = useMemo(() => calcBudget(state.settings, state.meals), [state.settings, state.meals]);
 
+  // 끼니 하나를 오늘 날짜로 기록하고, 한 끼 권장 금액 변화를 돌려준다
+  const addMeal = (fields: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'>): Delta | null => {
+    if (summary.ended) return null;
+    const now = new Date();
+    const meal: Meal = { id: newId(), ...fields, date: toDateKey(now), at: now.getTime() };
+    const after = calcBudget(state.settings, [...state.meals, meal], now);
+    const delta: Delta = { name: meal.name, price: meal.price, before: summary.perMeal, after: after.perMeal };
+    dispatch({ type: 'addMeal', meal, delta });
+    return delta;
+  };
+
   const value: BudgetContextValue = {
     settings: state.settings,
     meals: state.meals,
     summary,
     lastDelta: state.lastDelta,
-    eat: (place, menu) => {
-      if (summary.ended) return null;
-      const now = new Date();
-      const meal: Meal = {
-        id: newId(),
-        placeId: place.id,
-        name: place.name,
-        menu: menu.name,
-        price: menu.price,
-        date: toDateKey(now),
-        at: now.getTime(),
-      };
-      const after = calcBudget(state.settings, [...state.meals, meal], now);
-      const delta: Delta = { name: place.name, price: menu.price, before: summary.perMeal, after: after.perMeal };
-      dispatch({ type: 'addMeal', meal, delta });
-      return delta;
-    },
+    eat: (place, menu) => addMeal({ placeId: place.id, name: place.name, menu: menu.name, price: menu.price }),
+    record: (name, menu, price) => addMeal({ name, menu, price }),
     undo: () => {
       const last = state.meals[state.meals.length - 1] ?? null;
       if (last) dispatch({ type: 'undo' });

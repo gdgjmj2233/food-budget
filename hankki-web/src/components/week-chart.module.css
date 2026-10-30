@@ -1,0 +1,125 @@
+.range {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.total {
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.keyLine {
+  width: 14px;
+  border-top: 1px dashed var(--muted);
+}
+
+/* 막대 영역 + 왼쪽 눈금 */
+.chart {
+  display: flex;
+  height: 140px;
+  margin-top: 28px;
+}
+
+.yAxis {
+  position: relative;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.tick {
+  position: absolute;
+  left: 0;
+  transform: translateY(50%);
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.plot {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.grid,
+.ref {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.grid {
+  border-top: 1px solid var(--line);
+}
+
+.ref {
+  border-top: 1px dashed var(--muted);
+  z-index: 1;
+}
+
+.col {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+.bar {
+  position: relative;
+  width: min(24px, 60%);
+  border-radius: 4px 4px 0 0;
+  background: var(--primary);
+  opacity: 0.55;
+  transition: opacity 120ms;
+}
+
+.barOn {
+  opacity: 1;
+}
+
+.value {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  padding: 0 2px;
+  background: var(--card);
+  z-index: 2;
+}
+
+/* 요일 */
+.xAxis {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 8px;
+  padding-left: 32px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.today {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.future {
+  opacity: 0.45;
+}

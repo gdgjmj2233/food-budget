@@ -49,6 +49,17 @@
   opacity: 0.85;
 }
 
+.primary:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.secondary {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
 .ghost {
   min-height: 44px;
   padding: 0 14px;
