@@ -16,7 +16,7 @@ import styles from './page.module.css';
 
 export default function HomePage() {
   const { summary: s, settings, meals, lastDelta } = useBudget();
-  const { eatCustom, skip } = useEat();
+  const { pick, eatCustom, skip } = useEat();
   const [eating, setEating] = useState(false);
   const status = STATUS[s.status];
   const usedPct = settings.amount > 0 ? Math.min(100, Math.max(0, (s.spent / settings.amount) * 100)) : 0;
@@ -84,6 +84,10 @@ export default function HomePage() {
         <MealDialog
           perMeal={s.perMeal}
           onClose={() => setEating(false)}
+          onPick={(place, menu) => {
+            pick(place, menu);
+            setEating(false);
+          }}
           onSubmit={(menu, price) => {
             eatCustom(menu, price);
             setEating(false);
