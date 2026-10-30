@@ -5,6 +5,8 @@ import Link from 'next/link';
 import React, { useState } from 'react';
 import { IoChevronForward, IoPlaySkipForwardOutline, IoRestaurantOutline } from 'react-icons/io5';
 
+import { BudgetTools } from '@/components/budget-tools';
+import { QuickMeals } from '@/components/quick-meals';
 import { BudgetDetail } from '@/components/budget-detail';
 import { MealDialog } from '@/components/meal-dialog';
 import { ProfileDialog } from '@/components/profile-dialog';
@@ -23,7 +25,7 @@ import { STATUS } from '@/theme';
 import styles from './page.module.css';
 
 export default function HomePage() {
-  const { summary: s, settings, meals, removeMeal } = useBudget();
+  const { summary: s, settings, meals, removeMeal, record } = useBudget();
   const profile = useProfile();
   const { pick, eatCustom, skip } = useEat();
   const toast = useToast();
@@ -112,6 +114,12 @@ export default function HomePage() {
         <SecondaryButton label="스킵" icon={IoPlaySkipForwardOutline} onPress={skip} />
       </div>
 
+      <QuickMeals meals={meals} perMeal={s.perMeal} onPick={f => {
+        if (f.place && f.placeMenu) { pick(f.place, f.placeMenu); return; }
+        const delta = record(f.name, f.menu, f.price);
+        toast(delta ? f.name + ' ' + won(f.price) + '원 기록했어요' : '예산 기간이 끝났어요. 새 기간을 시작하세요.');
+      }} />
+      <BudgetTools />
       <WeekChart meals={meals} perDay={s.perDay} />
 
       <RecentMeals meals={meals} onRemove={onRemove} />
