@@ -2,28 +2,61 @@ import type { Place } from '@/data/places';
 
 // 카카오 개발자 사이트의 JavaScript 키. 브라우저에 그대로 보이는 키라서 숨기지 않아도 되고,
 // 카카오 개발자 사이트 [플랫폼 키 > JavaScript SDK 도메인]에 등록한 주소에서만 동작한다.
-// (로컬: http://localhost:3000, 배포: https://gdgjmj2233.github.io)
+// (로컬: http://localhost:3000, http://localhost:3001, 배포: https://gdgjmj2233.github.io)
+// 등록 안 된 주소에서 열면 sdk.js 요청이 거절되어 "지도를 불러오지 못했어요"가 뜬다.
 const KAKAO_JS_KEY = '867849122c282a5b4b6930ff2fb4d9e0';
+const SDK_ID = 'kakao-map-sdk';
+const LOAD_TIMEOUT_MS = 10_000;
 
 /** 인하대 용현캠퍼스 */
 export const INHA = { lat: 37.45, lng: 126.6531 };
 
 let loading: Promise<void> | null = null;
 
-/** 카카오맵 SDK를 한 번만 불러온다. 실패하면 다음 호출 때 다시 시도한다. */
+/**
+ * 카카오맵 SDK를 한 번만 불러온다.
+ * 실패하거나 10초 안에 준비되지 않으면 오류로 끝내고(흰 화면으로 멈추지 않게),
+ * 실패한 script 태그를 지워서 다음 호출 때 처음부터 다시 시도한다.
+ */
 export function loadKakaoMap(): Promise<void> {
-  if (!loading) {
-    loading = new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services&autoload=false`;
-      script.onload = () => kakao.maps.load(resolve);
-      script.onerror = () => reject(new Error('카카오맵을 불러오지 못했어요'));
-      document.head.appendChild(script);
-    }).catch((e) => {
-      loading = null;
-      throw e;
-    });
-  }
+  if (typeof window === 'undefined') return Promise.reject(new Error('브라우저에서만 지도를 불러올 수 있어요'));
+  const sdkReady = () => typeof kakao !== 'undefined' && typeof kakao.maps?.LatLng === 'function';
+  if (sdkReady()) return Promise.resolve();
+  if (loading) return loading;
+
+  loading = new Promise<void>((resolve, reject) => {
+    let done = false;
+    const finish = (err?: Error) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      if (err) {
+        document.getElementById(SDK_ID)?.remove();
+        reject(err);
+      } else {
+        resolve();
+      }
+    };
+    const timer = setTimeout(() => finish(new Error('카카오맵 응답이 없어요 (시간 초과)')), LOAD_TIMEOUT_MS);
+    const init = () => kakao.maps.load(() => finish());
+
+    // sdk.js는 받았지만 아직 load()를 부르지 않은 경우
+    if (typeof kakao !== 'undefined' && kakao.maps) {
+      init();
+      return;
+    }
+
+    document.getElementById(SDK_ID)?.remove(); // 예전에 실패한 태그가 남아 있으면 정리
+    const script = document.createElement('script');
+    script.id = SDK_ID;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services&autoload=false`;
+    script.onload = init;
+    script.onerror = () => finish(new Error('카카오맵을 불러오지 못했어요 (도메인 등록·차단 확인)'));
+    document.head.appendChild(script);
+  }).catch((e) => {
+    loading = null;
+    throw e;
+  });
   return loading;
 }
 
