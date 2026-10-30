@@ -26,7 +26,10 @@ export interface Meal {
   at: number;
 }
 
-export type BudgetStatus = 'ok' | 'warn' | 'over';
+export type BudgetStatus = 'ok' | 'warn' | 'low' | 'over';
+
+/** 남은 예산이 전체의 이 비율보다 적으면 '임박' */
+export const LOW_RATIO = 0.3;
 
 export interface BudgetSummary {
   start: Date;
@@ -126,7 +129,15 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const perMeal = mealsLeft > 0 ? Math.max(0, floor100(remain / mealsLeft)) : leftover;
   const perDay = daysLeft > 0 ? Math.max(0, floor100(remain / daysLeft)) : leftover;
   const base = floor100(settings.amount / (totalDays * mpd));
-  const status: BudgetStatus = remain < 0 ? 'over' : perMeal < base * 0.85 ? 'warn' : 'ok';
+  // 초과 > 임박(남은 예산 30% 미만) > 주의(한 끼 권장이 처음보다 15% 넘게 줄어듦) > 여유
+  const status: BudgetStatus =
+    remain < 0
+      ? 'over'
+      : remain < settings.amount * LOW_RATIO
+        ? 'low'
+        : perMeal < base * 0.85
+          ? 'warn'
+          : 'ok';
 
   return {
     start, end, ended, totalDays, daysLeft, mealsLeft, mealsLeftToday, eatenToday,
