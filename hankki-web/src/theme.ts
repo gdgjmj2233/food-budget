@@ -19,7 +19,6 @@ export const C = {
 
 export const STATUS: Record<BudgetStatus, { label: string; color: string }> = {
   ok: { label: '여유', color: C.primary },
-  warn: { label: '주의', color: C.warn },
   low: { label: '임박', color: C.orange },
   over: { label: '초과', color: C.over },
 };
