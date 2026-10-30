@@ -15,6 +15,7 @@ import {
 
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
+import { Roulette } from '@/components/roulette';
 import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
@@ -29,7 +30,7 @@ const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
   const { summary: s } = useBudget();
-  const { pick, pickRandom } = useEat();
+  const { pick } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
   const [sort, setSort] = useState<SortKey>('price');
@@ -37,6 +38,7 @@ export default function RecommendPage() {
   const [query, setQuery] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [roulette, setRoulette] = useState(false);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -141,8 +143,21 @@ export default function RecommendPage() {
         </div>
       )}
 
-      <PrimaryButton label="예산 안에서 자동 선택" icon={IoDiceOutline} color={C.primary} onPress={() => pickRandom(base)} />
+      <PrimaryButton label="못 고르겠으면 룰렛 돌리기" icon={IoDiceOutline} color={C.primary} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
+
+      {/* 지금 고른 카테고리·위치·검색 조건 안에서 돌린다 */}
+      {roulette && (
+        <Roulette
+          places={base}
+          perMeal={s.perMeal}
+          onClose={() => setRoulette(false)}
+          onEat={(p, m) => {
+            pick(p, m);
+            setRoulette(false);
+          }}
+        />
+      )}
     </Screen>
   );
 }

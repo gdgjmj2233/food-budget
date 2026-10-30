@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { IoClose } from 'react-icons/io5';
+import { IoClose, IoDiceOutline } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
 import { PlaceItem } from '@/components/place-item';
+import { RoulettePanel } from '@/components/roulette';
 import { bestMenu, cheapestPrice, PLACES, type Menu, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { C } from '@/theme';
@@ -30,14 +31,22 @@ export function MealDialog({
   onPick: (place: Place, menu: Menu) => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
-  const [step, setStep] = useState<'recommend' | 'input'>('recommend');
+  const [step, setStep] = useState<'recommend' | 'input' | 'roulette'>('recommend');
 
   return (
     <Modal onClose={onClose}>
-      {step === 'recommend' ? (
-        <Recommend perMeal={perMeal} onClose={onClose} onPick={onPick} onInput={() => setStep('input')} />
-      ) : (
-        <Input perMeal={perMeal} onBack={() => setStep('recommend')} onSubmit={onSubmit} />
+      {step === 'recommend' && (
+        <Recommend
+          perMeal={perMeal}
+          onClose={onClose}
+          onPick={onPick}
+          onInput={() => setStep('input')}
+          onRoulette={() => setStep('roulette')}
+        />
+      )}
+      {step === 'input' && <Input perMeal={perMeal} onBack={() => setStep('recommend')} onSubmit={onSubmit} />}
+      {step === 'roulette' && (
+        <RoulettePanel places={PLACES} perMeal={perMeal} onEat={onPick} onClose={onClose} onBack={() => setStep('recommend')} />
       )}
     </Modal>
   );
@@ -49,11 +58,13 @@ function Recommend({
   onClose,
   onPick,
   onInput,
+  onRoulette,
 }: {
   perMeal: number;
   onClose: () => void;
   onPick: (place: Place, menu: Menu) => void;
   onInput: () => void;
+  onRoulette: () => void;
 }) {
   const fits = PLACES.filter((p) => bestMenu(p, perMeal).fits);
   const list = fits.length
@@ -83,6 +94,12 @@ function Recommend({
       </div>
 
       <div className={styles.foot}>
+        {fits.length > 0 && (
+          <button type="button" className={ui.primary} style={{ backgroundColor: C.primary }} onClick={onRoulette}>
+            <IoDiceOutline size={20} aria-hidden />
+            못 고르겠으면 룰렛 돌리기
+          </button>
+        )}
         <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={onInput}>
           직접 입력
         </button>
