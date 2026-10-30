@@ -21,6 +21,8 @@ const MAX_CHIPS = 3;
 
 const CAT_OF = new Map(PLACES.map((p) => [p.id, p.cat]));
 const chipColor = (m: Meal) => {
+  // 스킵(0원)은 회색
+  if (m.price === 0) return { bg: C.divider, fg: C.muted };
   const cat = m.placeId ? CAT_OF.get(m.placeId) : undefined;
   return cat ? CAT_COLORS[cat] : { bg: C.primarySoft, fg: C.primaryDark };
 };
@@ -102,7 +104,7 @@ export default function HistoryPage() {
         <div className={styles.sumCol}>
           <Sub>이번 달 식비</Sub>
           <span className={styles.sumValue}>
-            {won(sumOf(monthMeals))}원 · {monthMeals.length}끼
+            {won(sumOf(monthMeals))}원 · {monthMeals.filter((m) => m.price > 0).length}끼
           </span>
         </div>
         <div className={`${styles.sumCol} ${styles.sumRight}`}>
@@ -174,7 +176,10 @@ export default function HistoryPage() {
                   <span className={styles.name}>{m.name}</span>
                   <span className={styles.menu}>{m.menu}</span>
                 </div>
-                <span className={styles.price}>−{won(m.price)}원</span>
+                <span className={styles.price}>
+                  {m.price > 0 && '−'}
+                  {won(m.price)}원
+                </span>
               </div>
             );
           })

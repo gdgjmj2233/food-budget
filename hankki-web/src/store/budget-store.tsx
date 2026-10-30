@@ -25,6 +25,7 @@ interface State {
 type Action =
   | { type: 'addMeal'; meal: Meal; delta: Delta }
   | { type: 'undo' }
+  | { type: 'removeMeal'; id: string }
   | { type: 'clearPeriod' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
   | { type: 'newPeriod' };
@@ -56,6 +57,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, meals: [...state.meals, action.meal], lastDelta: action.delta };
     case 'undo':
       return { ...state, meals: state.meals.slice(0, -1), lastDelta: null };
+    case 'removeMeal':
+      return { ...state, meals: state.meals.filter((m) => m.id !== action.id), lastDelta: null };
     case 'clearPeriod': {
       const ids = new Set(calcBudget(state.settings, state.meals).periodMeals.map((m) => m.id));
       return { ...state, meals: state.meals.filter((m) => !ids.has(m.id)), lastDelta: null };
@@ -76,7 +79,11 @@ interface BudgetContextValue {
   lastDelta: Delta | null;
   /** 식당 메뉴를 먹은 것으로 기록하고, 예산 변화를 돌려준다 */
   eat: (place: Place, menu: Menu) => Delta | null;
+  /** 목록에 없는 끼니(직접 입력, 스킵)를 기록하고, 예산 변화를 돌려준다 */
+  record: (name: string, menu: string, price: number) => Delta | null;
   undo: () => Meal | null;
+  /** 기록 하나를 지운다 */
+  removeMeal: (id: string) => void;
   clearPeriod: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
   startNewPeriod: () => void;
@@ -113,33 +120,30 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
 
   const summary = useMemo(() => calcBudget(state.settings, state.meals), [state.settings, state.meals]);
 
+  // 끼니 하나를 오늘 날짜로 기록하고, 한 끼 권장 금액 변화를 돌려준다
+  const addMeal = (fields: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'>): Delta | null => {
+    if (summary.ended) return null;
+    const now = new Date();
+    const meal: Meal = { id: newId(), ...fields, date: toDateKey(now), at: now.getTime() };
+    const after = calcBudget(state.settings, [...state.meals, meal], now);
+    const delta: Delta = { name: meal.name, price: meal.price, before: summary.perMeal, after: after.perMeal };
+    dispatch({ type: 'addMeal', meal, delta });
+    return delta;
+  };
+
   const value: BudgetContextValue = {
     settings: state.settings,
     meals: state.meals,
     summary,
     lastDelta: state.lastDelta,
-    eat: (place, menu) => {
-      if (summary.ended) return null;
-      const now = new Date();
-      const meal: Meal = {
-        id: newId(),
-        placeId: place.id,
-        name: place.name,
-        menu: menu.name,
-        price: menu.price,
-        date: toDateKey(now),
-        at: now.getTime(),
-      };
-      const after = calcBudget(state.settings, [...state.meals, meal], now);
-      const delta: Delta = { name: place.name, price: menu.price, before: summary.perMeal, after: after.perMeal };
-      dispatch({ type: 'addMeal', meal, delta });
-      return delta;
-    },
+    eat: (place, menu) => addMeal({ placeId: place.id, name: place.name, menu: menu.name, price: menu.price }),
+    record: (name, menu, price) => addMeal({ name, menu, price }),
     undo: () => {
       const last = state.meals[state.meals.length - 1] ?? null;
       if (last) dispatch({ type: 'undo' });
       return last;
     },
+    removeMeal: (id) => dispatch({ type: 'removeMeal', id }),
     clearPeriod: () => dispatch({ type: 'clearPeriod' }),
     updateSettings: (patch) => dispatch({ type: 'updateSettings', patch }),
     startNewPeriod: () => dispatch({ type: 'newPeriod' }),

@@ -48,6 +48,15 @@ export function PrimaryButton({
   );
 }
 
+export function SecondaryButton({ label, onPress, icon: Icon }: { label: string; onPress: () => void; icon?: IconType }) {
+  return (
+    <button type="button" onClick={onPress} className={`${styles.primary} ${styles.secondary}`}>
+      {Icon && <Icon size={20} aria-hidden />}
+      {label}
+    </button>
+  );
+}
+
 export function GhostButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <button type="button" onClick={onPress} className={styles.ghost}>

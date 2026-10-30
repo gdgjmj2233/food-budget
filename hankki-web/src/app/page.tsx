@@ -1,37 +1,66 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
-import { IoDiceOutline } from 'react-icons/io5';
+import React, { useState } from 'react';
+import { IoChevronForward, IoPlaySkipForwardOutline, IoRestaurantOutline } from 'react-icons/io5';
 
-import { PlaceItem } from '@/components/place-item';
-import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
+import { BudgetDetail } from '@/components/budget-detail';
+import { MealDialog } from '@/components/meal-dialog';
+import { ProfileDialog } from '@/components/profile-dialog';
+import { RecentMeals } from '@/components/recent-meals';
+import { useToast } from '@/components/toast';
+import { PrimaryButton, Screen, SecondaryButton, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, cheapestPrice, PLACES } from '@/data/places';
+import { WeekChart } from '@/components/week-chart';
+import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { formatDate, won } from '@/lib/budget';
+import { formatDate, won, type Meal } from '@/lib/budget';
+import { confirm } from '@/lib/confirm';
 import { useBudget } from '@/store/budget-store';
+import { useProfile } from '@/store/profile-store';
 import { STATUS } from '@/theme';
 import styles from './page.module.css';
 
 export default function HomePage() {
-  const { summary: s, settings, lastDelta } = useBudget();
-  const { pick, pickRandom } = useEat();
+  const { summary: s, settings, meals, removeMeal } = useBudget();
+  const profile = useProfile();
+  const { pick, eatCustom, skip } = useEat();
+  const toast = useToast();
+  const [eating, setEating] = useState(false);
+  const [detail, setDetail] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const myCharacter = profile && characterOf(profile.character);
   const status = STATUS[s.status];
+  const leftPct = settings.amount > 0 ? Math.min(100, Math.max(0, (s.remain / settings.amount) * 100)) : 0;
 
-  // 예산 안 메뉴가 있는 가까운 식당 중에서, 오늘 날짜로 매일 다르게 3곳을 고른다
-  const fits = PLACES.filter((p) => bestMenu(p, s.perMeal).fits && p.walk <= 5);
-  const pool = fits.length ? fits : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b)).slice(0, 3);
-  const seed = new Date().getDate();
-  const top = pool.length <= 3 ? pool : [0, 1, 2].map((i) => pool[(seed * 7 + i * Math.ceil(pool.length / 3)) % pool.length]);
-  const usedPct = settings.amount > 0 ? Math.min(100, Math.max(0, (s.spent / settings.amount) * 100)) : 0;
+  const onRemove = (m: Meal) => {
+    confirm('기록 지우기', `${m.name} ${won(m.price)}원 기록을 지울까요?`, () => {
+      removeMeal(m.id);
+      toast(`${m.name} 기록을 지웠어요`);
+    });
+  };
 
   return (
     <Screen>
-      <div>
-        <Sub>{formatDate(new Date())}</Sub>
-        <Title>인하대 근처</Title>
-      </div>
+      <header className={styles.top}>
+        <div>
+          <Sub>{formatDate(new Date())}</Sub>
+          <Title>인하대 근처</Title>
+        </div>
+        {profile && myCharacter ? (
+          <button type="button" className={styles.me} onClick={() => setProfileOpen(true)} aria-label="내 정보">
+            <span className={styles.meName}>{profile.nickname}님</span>
+            <span className={styles.avatar}>
+              <Image src={myCharacter.img} alt="" unoptimized className={styles.avatarImg} />
+            </span>
+          </button>
+        ) : (
+          <button type="button" className={styles.login} onClick={() => setProfileOpen(true)}>
+            로그인
+          </button>
+        )}
+      </header>
 
       {s.ended && (
         <Link href="/budget" className={styles.ended}>
@@ -39,58 +68,71 @@ export default function HomePage() {
         </Link>
       )}
 
-      <section className={styles.hero} style={{ backgroundColor: status.color }}>
-        <div className={ui.row}>
-          <span className={styles.heroLabel}>다음 한 끼 권장 금액</span>
-          <span className={styles.pill} style={{ color: status.color }}>
-            {status.label}
-          </span>
+      {/* 마스코트 : 예산 카드 = 1 : 3. 로그인하면 고른 캐릭터, 아니면 기본 캐릭터(용).
+          정적 내보내기(GitHub Pages)에서도 되도록 unoptimized */}
+      <div className={styles.heroRow}>
+        <div className={styles.mascots} aria-hidden>
+          <Image src={(myCharacter ?? CHARACTERS[0]).img} alt="" unoptimized className={styles.mascot} />
         </div>
-        <div className={styles.bigRow}>
-          <span className={styles.bigNum}>{won(s.perMeal)}</span>
-          <span className={styles.bigUnit}>원</span>
-        </div>
-        <div className={styles.miniRow}>
-          <div className={styles.mini}>
-            <span className={styles.miniLabel}>하루 권장</span>
-            <span className={styles.miniVal}>{won(s.perDay)}원</span>
-          </div>
-          <div className={styles.mini}>
-            <span className={styles.miniLabel}>남은 끼니 · 일수</span>
-            <span className={styles.miniVal}>
-              {s.mealsLeft}끼 · {s.daysLeft}일
+
+        <section className={styles.hero} style={{ backgroundColor: status.color }}>
+          <div className={ui.row}>
+            <span className={styles.heroLabel}>남은 예산</span>
+            <span className={styles.pill} style={{ color: status.color }}>
+              {status.label}
             </span>
           </div>
-        </div>
-        <div className={styles.bar}>
-          <div className={styles.barFill} style={{ width: `${usedPct}%` }} />
-        </div>
-        <div className={ui.row}>
-          <span className={styles.heroSmall}>{won(s.spent)}원 사용</span>
-          <span className={styles.heroSmall}>남은 예산 {won(s.remain)}원</span>
-        </div>
-        {lastDelta && (
-          <p className={styles.delta}>
-            {`${lastDelta.name} ${won(lastDelta.price)}원 차감 → 한 끼 권장 ${won(lastDelta.before)}원에서 ${won(
-              lastDelta.after,
-            )}원으로 ${lastDelta.after >= lastDelta.before ? '늘었어요' : '줄었어요'}`}
-          </p>
-        )}
-      </section>
-
-      <div className={ui.row}>
-        <h2 className={ui.sec}>오늘 예산에 맞는 추천</h2>
-        <Link href="/recommend" className={styles.link}>
-          전체 보기
-        </Link>
-      </div>
-      <div className={styles.list}>
-        {top.map((p) => (
-          <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />
-        ))}
+          <div>
+            <div className={styles.bigRow}>
+              <span className={styles.bigNum}>{won(s.remain)}</span>
+              <span className={styles.bigUnit}>원</span>
+            </div>
+            <p className={styles.heroSub}>
+              {s.remain >= 0
+                ? `전체 ${won(settings.amount)}원 중 ${Math.round(leftPct)}% 남았어요`
+                : `전체 ${won(settings.amount)}원보다 ${won(-s.remain)}원 더 썼어요`}
+            </p>
+          </div>
+          <div className={styles.bar}>
+            {/* 흰색 = 쓴 금액, 옅은 부분 = 남은 금액 */}
+            <div className={styles.barFill} style={{ width: `${100 - leftPct}%` }} />
+          </div>
+          <div className={ui.row}>
+            <span className={styles.heroSmall}>{won(s.spent)}원 사용</span>
+            <button type="button" className={styles.more} onClick={() => setDetail(true)}>
+              더보기
+              <IoChevronForward size={14} aria-hidden />
+            </button>
+          </div>
+        </section>
       </div>
 
-      <PrimaryButton label="오늘 뭐 먹지? 자동 선택" icon={IoDiceOutline} onPress={() => pickRandom()} />
+      <div className={styles.actions}>
+        <PrimaryButton label="밥먹기" icon={IoRestaurantOutline} onPress={() => setEating(true)} />
+        <SecondaryButton label="스킵" icon={IoPlaySkipForwardOutline} onPress={skip} />
+      </div>
+
+      <WeekChart meals={meals} perDay={s.perDay} />
+
+      <RecentMeals meals={meals} onRemove={onRemove} />
+
+      {eating && (
+        <MealDialog
+          perMeal={s.perMeal}
+          onClose={() => setEating(false)}
+          onPick={(place, menu) => {
+            pick(place, menu);
+            setEating(false);
+          }}
+          onSubmit={(menu, price) => {
+            eatCustom(menu, price);
+            setEating(false);
+          }}
+        />
+      )}
+
+      {detail && <BudgetDetail onClose={() => setDetail(false)} />}
+      {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
     </Screen>
   );
 }

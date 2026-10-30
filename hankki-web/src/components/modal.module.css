@@ -1,0 +1,16 @@
+.dialog {
+  margin: auto;
+  width: calc(min(100vw, var(--app-width)) - 24px);
+  max-width: 420px;
+  max-height: 85dvh;
+  overflow: hidden;
+  border: none;
+  border-radius: 20px;
+  padding: 0;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
