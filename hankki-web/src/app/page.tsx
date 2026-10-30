@@ -2,13 +2,9 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { IoDiceOutline } from 'react-icons/io5';
 
-import { PlaceItem } from '@/components/place-item';
-import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
+import { Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, cheapestPrice, PLACES } from '@/data/places';
-import { useEat } from '@/hooks/use-eat';
 import { formatDate, won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { STATUS } from '@/theme';
@@ -16,14 +12,7 @@ import styles from './page.module.css';
 
 export default function HomePage() {
   const { summary: s, settings, lastDelta } = useBudget();
-  const { pick, pickRandom } = useEat();
   const status = STATUS[s.status];
-
-  // 예산 안 메뉴가 있는 가까운 식당 중에서, 오늘 날짜로 매일 다르게 3곳을 고른다
-  const fits = PLACES.filter((p) => bestMenu(p, s.perMeal).fits && p.walk <= 5);
-  const pool = fits.length ? fits : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b)).slice(0, 3);
-  const seed = new Date().getDate();
-  const top = pool.length <= 3 ? pool : [0, 1, 2].map((i) => pool[(seed * 7 + i * Math.ceil(pool.length / 3)) % pool.length]);
   const usedPct = settings.amount > 0 ? Math.min(100, Math.max(0, (s.spent / settings.amount) * 100)) : 0;
 
   return (
@@ -77,20 +66,6 @@ export default function HomePage() {
           </p>
         )}
       </section>
-
-      <div className={ui.row}>
-        <h2 className={ui.sec}>오늘 예산에 맞는 추천</h2>
-        <Link href="/recommend" className={styles.link}>
-          전체 보기
-        </Link>
-      </div>
-      <div className={styles.list}>
-        {top.map((p) => (
-          <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />
-        ))}
-      </div>
-
-      <PrimaryButton label="오늘 뭐 먹지? 자동 선택" icon={IoDiceOutline} onPress={() => pickRandom()} />
     </Screen>
   );
 }

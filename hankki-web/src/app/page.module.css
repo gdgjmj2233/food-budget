@@ -96,16 +96,3 @@
   border-radius: 10px;
   padding: 8px;
 }
-
-.link {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--primary);
-  padding: 6px 0;
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
