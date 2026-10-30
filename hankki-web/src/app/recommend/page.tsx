@@ -5,13 +5,16 @@ import {
   IoCheckbox,
   IoCloseCircle,
   IoDiceOutline,
+  IoListOutline,
   IoLocationOutline,
+  IoMapOutline,
   IoSearch,
   IoSquareOutline,
   IoSwapVertical,
 } from 'react-icons/io5';
 
 import { PlaceItem } from '@/components/place-item';
+import { PlaceMap } from '@/components/place-map';
 import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
@@ -32,6 +35,8 @@ export default function RecommendPage() {
   const [sort, setSort] = useState<SortKey>('price');
   const [onlyFits, setOnlyFits] = useState(true);
   const [query, setQuery] = useState('');
+  const [showMap, setShowMap] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -45,6 +50,7 @@ export default function RecommendPage() {
     sort === 'price' ? cheapestPrice(a) - cheapestPrice(b) || a.walk - b.walk : a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b),
   );
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
+  const selected = list.find((p) => p.id === selectedId);
 
   return (
     <Screen>
@@ -96,23 +102,44 @@ export default function RecommendPage() {
             예산 안만 ({inBudget.length}/{base.length})
           </Sub>
         </button>
-        <button type="button" onClick={() => setSort(sort === 'price' ? 'walk' : 'price')} className={styles.check}>
-          <IoSwapVertical size={16} color={C.ink} aria-hidden />
-          <span className={styles.sortText}>{sort === 'price' ? '가격 낮은 순' : '가까운 순'}</span>
-        </button>
+        <div className={styles.tools}>
+          {!showMap && (
+            <button type="button" onClick={() => setSort(sort === 'price' ? 'walk' : 'price')} className={styles.check}>
+              <IoSwapVertical size={16} color={C.ink} aria-hidden />
+              <span className={styles.sortText}>{sort === 'price' ? '가격 낮은 순' : '가까운 순'}</span>
+            </button>
+          )}
+          <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
+            {showMap ? <IoListOutline size={16} aria-hidden /> : <IoMapOutline size={16} aria-hidden />}
+            {showMap ? '목록' : '지도'}
+          </button>
+        </div>
       </div>
 
-      <Sub>식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 &quot;먹기&quot;를 누르면 예산에서 빠집니다.</Sub>
+      <Sub>
+        {showMap
+          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격이에요. 빨간 핀은 예산 초과. 핀을 누르면 식당 정보가 나와요.'
+          : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
+      </Sub>
 
-      <div className={styles.list}>
-        {list.length ? (
-          list.map((p) => <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />)
-        ) : (
-          <p className={styles.empty}>
-            {onlyFits ? '조건에 맞으면서 예산 안인 곳이 없어요.\n"예산 안만" 체크를 풀어 보세요.' : '조건에 맞는 곳이 없어요.'}
-          </p>
-        )}
-      </div>
+      {showMap && (
+        <>
+          <PlaceMap places={list} perMeal={s.perMeal} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+          {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} onPick={(m) => pick(selected, m)} />}
+        </>
+      )}
+
+      {!showMap && (
+        <div className={styles.list}>
+          {list.length ? (
+            list.map((p) => <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />)
+          ) : (
+            <p className={styles.empty}>
+              {onlyFits ? '조건에 맞으면서 예산 안인 곳이 없어요.\n"예산 안만" 체크를 풀어 보세요.' : '조건에 맞는 곳이 없어요.'}
+            </p>
+          )}
+        </div>
+      )}
 
       <PrimaryButton label="예산 안에서 자동 선택" icon={IoDiceOutline} color={C.primary} onPress={() => pickRandom(base)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
