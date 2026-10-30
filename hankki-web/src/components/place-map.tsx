@@ -26,7 +26,7 @@ export function PlaceMap({
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [positions, setPositions] = useState<Record<string, Pos>>({});
   const [located, setLocated] = useState(false);
 
@@ -47,7 +47,7 @@ export function PlaceMap({
         return locatePlaces(PLACES, (id, pos) => alive && setPositions((prev) => ({ ...prev, [id]: pos })));
       })
       .then(() => alive && setLocated(true))
-      .catch(() => alive && setError(true));
+      .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : '카카오맵을 불러오지 못했어요'));
     return () => {
       alive = false;
     };
@@ -102,7 +102,7 @@ export function PlaceMap({
   return (
     <div className={styles.wrap}>
       <div ref={boxRef} className={styles.map} />
-      {error && <p className={styles.notice}>지도를 불러오지 못했어요. 잠시 후 다시 열어 보세요.</p>}
+      {error && <p className={styles.notice}>{error}. 잠시 후 다시 열어 보세요.</p>}
       {!error && !located && map && <p className={styles.status}>식당 위치를 찾는 중…</p>}
       {missing > 0 && <p className={styles.status}>위치를 못 찾은 {missing}곳은 지도에 없어요</p>}
     </div>
