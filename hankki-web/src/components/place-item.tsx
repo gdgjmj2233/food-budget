@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 
 import { bestMenu, type Menu, type Place } from '@/data/places';
-import { PlaceNote, BudgetPreview } from './budget-tools';
 import { won } from '@/lib/budget';
 import { C, CAT_COLORS } from '@/theme';
 import styles from './place-item.module.css';
@@ -57,7 +56,6 @@ export function PlaceItem({
 
       {open && (
         <div className={styles.menus}>
-          <PlaceNote id={place.id} name={place.name} />
           <p className={styles.address}>{place.address}</p>
           {place.hours && <p className={styles.hours}>영업 {place.hours}</p>}
           {menus.map((m) => {
@@ -69,7 +67,7 @@ export function PlaceItem({
                 onClick={() => onPick(m)}
                 aria-label={`${m.name} ${won(m.price)}원 먹은 걸로 기록`}
                 className={styles.menuRow}>
-                <span className={styles.menuRowName}>{m.name}<BudgetPreview price={m.price} /></span>
+                <span className={styles.menuRowName}>{m.name}</span>
                 <span className={styles.menuRowPrice} style={{ color: ok ? C.ink : C.over }}>
                   {won(m.price)}원
                 </span>
