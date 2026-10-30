@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { IoClose } from 'react-icons/io5';
 
+import { Modal } from '@/components/modal';
 import { PlaceItem } from '@/components/place-item';
 import { bestMenu, cheapestPrice, PLACES, type Menu, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
@@ -29,26 +30,16 @@ export function MealDialog({
   onPick: (place: Place, menu: Menu) => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
   const [step, setStep] = useState<'recommend' | 'input'>('recommend');
 
-  useEffect(() => {
-    ref.current?.showModal();
-  }, []);
-
   return (
-    <dialog
-      ref={ref}
-      className={styles.dialog}
-      onClose={onClose}
-      // 바깥 어두운 부분을 누르면 닫는다
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <Modal onClose={onClose}>
       {step === 'recommend' ? (
         <Recommend perMeal={perMeal} onClose={onClose} onPick={onPick} onInput={() => setStep('input')} />
       ) : (
         <Input perMeal={perMeal} onBack={() => setStep('recommend')} onSubmit={onSubmit} />
       )}
-    </dialog>
+    </Modal>
   );
 }
 

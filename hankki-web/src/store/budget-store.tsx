@@ -25,6 +25,7 @@ interface State {
 type Action =
   | { type: 'addMeal'; meal: Meal; delta: Delta }
   | { type: 'undo' }
+  | { type: 'removeMeal'; id: string }
   | { type: 'clearPeriod' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
   | { type: 'newPeriod' };
@@ -56,6 +57,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, meals: [...state.meals, action.meal], lastDelta: action.delta };
     case 'undo':
       return { ...state, meals: state.meals.slice(0, -1), lastDelta: null };
+    case 'removeMeal':
+      return { ...state, meals: state.meals.filter((m) => m.id !== action.id), lastDelta: null };
     case 'clearPeriod': {
       const ids = new Set(calcBudget(state.settings, state.meals).periodMeals.map((m) => m.id));
       return { ...state, meals: state.meals.filter((m) => !ids.has(m.id)), lastDelta: null };
@@ -79,6 +82,8 @@ interface BudgetContextValue {
   /** 목록에 없는 끼니(직접 입력, 스킵)를 기록하고, 예산 변화를 돌려준다 */
   record: (name: string, menu: string, price: number) => Delta | null;
   undo: () => Meal | null;
+  /** 기록 하나를 지운다 */
+  removeMeal: (id: string) => void;
   clearPeriod: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
   startNewPeriod: () => void;
@@ -138,6 +143,7 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
       if (last) dispatch({ type: 'undo' });
       return last;
     },
+    removeMeal: (id) => dispatch({ type: 'removeMeal', id }),
     clearPeriod: () => dispatch({ type: 'clearPeriod' }),
     updateSettings: (patch) => dispatch({ type: 'updateSettings', patch }),
     startNewPeriod: () => dispatch({ type: 'newPeriod' }),
