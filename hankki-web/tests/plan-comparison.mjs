@@ -1,6 +1,6 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const ts = require('typescript');
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
 const mod = { exports: {} };
 new Function('module', 'exports', ts.transpileModule(fs.readFileSync('src/lib/plan-comparison.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017 },
