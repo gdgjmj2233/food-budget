@@ -93,6 +93,31 @@
   min-height: 32px;
 }
 
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.viewBtn[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
 .sortText {
   font-size: 13px;
   font-weight: 500;
