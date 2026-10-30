@@ -1,0 +1,226 @@
+/* 창(Modal) 안의 내용. 키가 작은 화면에서는 스크롤된다 */
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: 18px 16px 18px;
+}
+
+.head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.iconBtn {
+  flex: none;
+  display: flex;
+  padding: 6px;
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.iconSpacer {
+  flex: none;
+  width: 34px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 21px;
+  padding: 24px 0 12px;
+  white-space: pre-line;
+}
+
+.wheelWrap {
+  position: relative;
+  flex: none;
+  width: min(280px, 72vw);
+  aspect-ratio: 1;
+  margin-top: 8px;
+}
+
+.wheel {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.7, 0.12, 1);
+  will-change: transform;
+}
+
+/* 위쪽 가운데 화살표 */
+.pointer {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 13px solid transparent;
+  border-right: 13px solid transparent;
+  border-top: 24px solid var(--over);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+  z-index: 1;
+}
+
+.label {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.price {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 가운데 GO 버튼 */
+.hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.hub:disabled {
+  cursor: default;
+}
+
+.resultArea {
+  flex: none;
+  min-height: 92px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: pop 260ms ease-out;
+}
+
+.cat {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.resultName {
+  font-size: 20px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.resultMenu {
+  font-size: 15px;
+}
+
+.resultMenu b {
+  color: var(--primary);
+}
+
+.resultMeta {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eat {
+  flex: none;
+  width: 100%;
+  height: 54px;
+  border-radius: 16px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.eat:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.eat:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+.ghost {
+  width: 100%;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.reshuffle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 4px 10px;
+}
+
+.reshuffle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result {
+    animation: none;
+  }
+}
