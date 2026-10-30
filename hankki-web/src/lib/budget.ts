@@ -20,6 +20,8 @@ export interface Meal {
   menu: string;
   price: number;
   placeId?: string;
+  /** 연결된 소비 계획. 실제 기록 삭제 시 계획은 다시 미완료가 된다. */
+  planId?: string;
   /** 먹은 날짜 YYYY-MM-DD */
   date: string;
   /** 기록 시각 (ms) */

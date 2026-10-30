@@ -16,13 +16,19 @@ export interface Delta {
   after: number;
 }
 
+export interface MealPlan { id: string; date: string; name: string; price: number; }
 interface State {
+  notes: Record<string, string>;
+  plans: MealPlan[];
   settings: Settings;
   meals: Meal[];
   lastDelta: Delta | null;
 }
 
 type Action =
+  | { type: 'note'; id: string; text: string }
+  | { type: 'plan'; plan: MealPlan }
+  | { type: 'removePlan'; id: string }
   | { type: 'addMeal'; meal: Meal; delta: Delta }
   | { type: 'undo' }
   | { type: 'removeMeal'; id: string }
@@ -40,12 +46,12 @@ const initialSettings = (): Settings => ({
 
 /** 저장된 데이터 불러오기. 없거나 깨졌으면 처음 설정으로 시작한다 */
 function loadState(): State {
-  const fresh: State = { settings: initialSettings(), meals: [], lastDelta: null };
+  const fresh: State = { settings: initialSettings(), meals: [], lastDelta: null, notes: {}, plans: [] };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return fresh;
-    const saved = JSON.parse(raw) as { settings?: Settings; meals?: Meal[] };
-    return { settings: saved.settings ?? fresh.settings, meals: saved.meals ?? [], lastDelta: null };
+    const saved = JSON.parse(raw) as Partial<State>;
+    return { notes: saved.notes ?? {}, plans: saved.plans ?? [], settings: saved.settings ?? fresh.settings, meals: saved.meals ?? [], lastDelta: null };
   } catch {
     return fresh;
   }
@@ -53,7 +59,11 @@ function loadState(): State {
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
+    case 'note': return { ...state, notes: { ...state.notes, [action.id]: action.text } };
+    case 'plan': return { ...state, plans: [...state.plans, action.plan] };
+    case 'removePlan': return { ...state, plans: state.plans.filter(p => p.id !== action.id) };
     case 'addMeal':
+      if (action.meal.planId && state.meals.some(m => m.planId === action.meal.planId)) return state;
       return { ...state, meals: [...state.meals, action.meal], lastDelta: action.delta };
     case 'undo':
       return { ...state, meals: state.meals.slice(0, -1), lastDelta: null };
@@ -73,6 +83,12 @@ function reducer(state: State, action: Action): State {
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
 interface BudgetContextValue {
+  notes: Record<string, string>;
+  plans: MealPlan[];
+  saveNote: (id: string, text: string) => void;
+  addPlan: (plan: Omit<MealPlan, 'id'>) => void;
+  removePlan: (id: string) => void;
+  completePlan: (id: string, price: number) => Delta | null;
   settings: Settings;
   meals: Meal[];
   summary: BudgetSummary;
@@ -112,17 +128,17 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
   // 바뀔 때마다 저장
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, meals: state.meals }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, meals: state.meals, notes: state.notes, plans: state.plans }));
     } catch {
       // 저장 공간이 막힌 브라우저(시크릿 모드 등)에서는 저장 없이 동작
     }
-  }, [state.settings, state.meals]);
+  }, [state.settings, state.meals, state.notes, state.plans]);
 
   const summary = useMemo(() => calcBudget(state.settings, state.meals), [state.settings, state.meals]);
 
   // 끼니 하나를 오늘 날짜로 기록하고, 한 끼 권장 금액 변화를 돌려준다
-  const addMeal = (fields: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'>): Delta | null => {
-    if (summary.ended) return null;
+  const addMeal = (fields: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price' | 'planId'>): Delta | null => {
+    if (summary.ended || !Number.isSafeInteger(fields.price) || fields.price < 0) return null;
     const now = new Date();
     const meal: Meal = { id: newId(), ...fields, date: toDateKey(now), at: now.getTime() };
     const after = calcBudget(state.settings, [...state.meals, meal], now);
@@ -132,6 +148,15 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
   };
 
   const value: BudgetContextValue = {
+    notes: state.notes, plans: state.plans,
+    saveNote: (id, text) => dispatch({ type: 'note', id, text }),
+    addPlan: (plan) => { if (Number.isSafeInteger(plan.price) && plan.price > 0 && plan.name.trim()) dispatch({ type: 'plan', plan: { ...plan, id: newId() } }); },
+    removePlan: (id) => dispatch({ type: 'removePlan', id }),
+    completePlan: (id, price) => {
+      const plan = state.plans.find(p => p.id === id);
+      if (!plan || plan.date !== toDateKey(new Date()) || state.meals.some(m => m.planId === id)) return null;
+      return addMeal({ name: plan.name, menu: '소비 계획에서 기록', price, planId: id });
+    },
     settings: state.settings,
     meals: state.meals,
     summary,
