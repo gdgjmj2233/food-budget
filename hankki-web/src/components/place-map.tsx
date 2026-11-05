@@ -2,31 +2,28 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-import { bestMenu, PLACES, type Place } from '@/data/places';
-import { won } from '@/lib/budget';
+import { PLACES, type Place } from '@/data/places';
 import { INHA, loadKakaoMap, locatePlaces } from '@/lib/kakao-map';
 import { clusterPoints, isSameSpot } from '@/lib/map-cluster';
 import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
 
-/** 화면에서 핀 하나가 차지하는 크기(px, 묶음 핀 "12곳 10,500~" 기준 + 여백). 이 안에 겹치는 핀은 하나로 묶는다 */
-const PIN_BOX = { width: 104, height: 34 };
+/** 화면에서 핀 하나가 차지하는 크기(px, 묶음 핀 "12곳" 기준 + 여백). 이 안에 겹치는 핀은 하나로 묶는다 */
+const PIN_BOX = { width: 56, height: 32 };
 
 /**
- * 카카오맵에 식당을 가격 핀으로 찍는다. 예산 안이면 파란색, 넘으면 빨간 테두리.
- * 화면에서 겹치는 핀은 "N곳 · 최저가~" 묶음 핀으로 합친다.
+ * 카카오맵에 식당 위치를 핀으로 찍는다. 선택한 식당만 이름을 함께 보여 준다.
+ * 화면에서 겹치는 핀은 "N곳" 묶음 핀으로 합친다.
  * 핀을 누르면 onSelect 로 식당을, 같은 건물이라 확대해도 안 풀리는 묶음을 누르면 onSelectGroup 으로 식당들을 알려준다.
  */
 export function PlaceMap({
   places,
-  perMeal,
   selectedId,
   onSelect,
   onSelectGroup,
 }: {
   places: Place[];
-  perMeal: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onSelectGroup: (ids: string[]) => void;
@@ -61,7 +58,7 @@ export function PlaceMap({
     };
   }, []);
 
-  // 가격 핀 그리기 (목록, 예산, 선택이 바뀔 때마다 다시)
+  // 핀 그리기 (목록, 선택이 바뀔 때마다 다시)
   const onSelectRef = useRef(onSelect);
   const onSelectGroupRef = useRef(onSelectGroup);
   useEffect(() => {
@@ -86,12 +83,12 @@ export function PlaceMap({
       if (!pos) return [];
       const ll = new kakao.maps.LatLng(pos.lat, pos.lng);
       const pt = proj.containerPointFromCoords(ll);
-      return [{ place: p, pos, ll, x: pt.getX(), y: pt.getY(), ...bestMenu(p, perMeal) }];
+      return [{ place: p, pos, ll, x: pt.getX(), y: pt.getY() }];
     });
     const byId = new Map(info.map((i) => [i.place.id, i]));
 
-    // 선택한 식당은 묶지 않고 항상 이름과 함께 보여 준다. 싼 곳을 기준점으로 삼도록 가격순으로 묶는다
-    const rest = info.filter((i) => i.place.id !== selectedId).sort((a, b) => a.menu.price - b.menu.price);
+    // 선택한 식당은 묶지 않고 항상 이름과 함께 보여 준다
+    const rest = info.filter((i) => i.place.id !== selectedId);
     const groups = clusterPoints(
       rest.map((i) => ({ id: i.place.id, x: i.x, y: i.y })),
       PIN_BOX.width,
@@ -107,20 +104,18 @@ export function PlaceMap({
       let zIndex = 2;
 
       if (g.length === 1) {
-        const { place: p, menu, fits } = g[0];
+        const { place: p } = g[0];
         const on = p.id === selectedId;
-        pin.className = `${styles.pin} ${fits ? '' : styles.pinOver} ${on ? styles.pinOn : ''}`;
-        pin.textContent = on ? `${p.name} · ${won(menu.price)}원` : won(menu.price);
-        pin.setAttribute('aria-label', `${p.name}, ${menu.name} ${won(menu.price)}원`);
+        pin.className = on ? `${styles.pin} ${styles.pinOn}` : styles.dot;
+        pin.textContent = on ? p.name : '';
+        pin.setAttribute('aria-label', p.name);
         pin.onclick = () => onSelectRef.current(p.id);
-        zIndex = on ? 4 : fits ? 2 : 1;
+        zIndex = on ? 4 : 2;
       } else {
-        const anyFits = g.some((i) => i.fits);
-        // 묶음 핀은 기준점(가장 싼 곳) 자리에 그려야 다른 핀과 겹치지 않는다
-        const min = g[0].menu.price;
-        pin.className = `${styles.pin} ${styles.cluster} ${anyFits ? '' : styles.pinOver}`;
-        pin.innerHTML = `<b class="${styles.count}">${g.length}곳</b>${won(min)}~`;
-        pin.setAttribute('aria-label', `식당 ${g.length}곳, 가장 싼 대표 메뉴 ${won(min)}원. 눌러서 보기`);
+        // 묶음 핀은 기준점 자리에 그려야 다른 핀과 겹치지 않는다
+        pin.className = `${styles.pin} ${styles.cluster}`;
+        pin.innerHTML = `<b class="${styles.count}">${g.length}곳</b>`;
+        pin.setAttribute('aria-label', `식당 ${g.length}곳. 눌러서 보기`);
         pin.onclick = () => {
           // 같은 건물이거나 더 확대할 수 없으면 목록으로, 아니면 묶음이 풀리도록 그 부분을 확대
           if (isSameSpot(g.map((i) => i.pos)) || map.getLevel() <= 1) {
@@ -132,13 +127,13 @@ export function PlaceMap({
           map.setBounds(bounds, 60, 40, 40, 40);
           if (map.getLevel() >= level) map.setLevel(level - 1, { anchor: position });
         };
-        zIndex = anyFits ? 3 : 1;
+        zIndex = 3;
       }
 
       return new kakao.maps.CustomOverlay({ map, position, content: pin, yAnchor: 1, zIndex });
     });
     return () => overlays.forEach((o) => o.setMap(null));
-  }, [map, places, positions, perMeal, selectedId, level]);
+  }, [map, places, positions, selectedId, level]);
 
   // 좌표를 다 찾았거나 목록(필터)이 바뀌면 보이는 식당이 다 들어오게 지도를 맞춘다
   const listKey = places.map((p) => p.id).join(',');

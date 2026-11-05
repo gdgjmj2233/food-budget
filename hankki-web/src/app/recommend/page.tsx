@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
   IoCheckbox,
   IoCloseCircle,
-  IoDiceOutline,
   IoListOutline,
   IoLocationOutline,
   IoMapOutline,
@@ -15,7 +14,7 @@ import {
 
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
-import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
+import { Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { bestMenu, CATEGORIES, mainMenuPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
@@ -29,7 +28,7 @@ const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
   const { summary: s } = useBudget();
-  const { pick, pickRandom } = useEat();
+  const { pick } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
   const [sort, setSort] = useState<SortKey>('price');
@@ -128,7 +127,7 @@ export default function RecommendPage() {
 
       <Sub>
         {showMap
-          ? '핀의 숫자는 대표 메뉴 가격, 흰 핀은 예산 초과예요. "N곳" 핀은 가까운 식당을 묶은 것이라 누르면 확대되거나 목록이 나와요.'
+          ? '점은 식당 위치예요. 누르면 식당 이름과 메뉴가 나와요. "N곳" 핀은 가까운 식당을 묶은 것이라 누르면 확대되거나 목록이 나와요.'
           : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
       </Sub>
 
@@ -136,7 +135,6 @@ export default function RecommendPage() {
         <>
           <PlaceMap
             places={list}
-            perMeal={s.perMeal}
             selectedId={selected?.id ?? null}
             onSelect={selectOne}
             onSelectGroup={selectGroup}
@@ -165,7 +163,6 @@ export default function RecommendPage() {
         </div>
       )}
 
-      <PrimaryButton label="예산 안에서 자동 선택" icon={IoDiceOutline} color={C.primary} onPress={() => pickRandom(base)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
     </Screen>
   );
