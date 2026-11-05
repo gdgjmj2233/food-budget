@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   build:
+    # 원본 저장소는 main 만 배포하고, jihoon-map 은 hanjihoon11 포크에서만 미리보기로 배포한다
+    if: github.ref == 'refs/heads/main' || github.repository_owner == 'hanjihoon11'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
