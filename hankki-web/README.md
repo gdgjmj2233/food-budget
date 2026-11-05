@@ -42,10 +42,10 @@ src/
     budget/page.tsx       예산 /budget    : 기간·금액·끼니·주말 제외
   components/
     app-shell.tsx         상태 저장소 + 토스트 + 하단 탭
-    place-item.tsx        식당 카드 (펼치면 메뉴 + 먹기)
+    place-item.tsx        식당 카드 (펼치면 메뉴 + 별점)
     toast.tsx, ui.tsx     공용 UI
   store/budget-store.tsx  설정·기록 상태와 브라우저 저장
-  hooks/use-eat.ts        식당 선택·자동 선택 + 알림
+  hooks/use-eat.ts        직접 입력·스킵 기록 + 알림
   lib/budget.ts           예산 계산 (순수 함수, UI와 분리)
   data/places.ts          식당 예시 데이터
   theme.ts                색상

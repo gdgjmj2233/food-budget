@@ -27,7 +27,7 @@ import styles from './page.module.css';
 export default function HomePage() {
   const { summary: s, settings, meals, missing, removeMeal } = useBudget();
   const profile = useProfile();
-  const { pick, eatCustom, skip, fillMissing } = useEat();
+  const { eatCustom, skip, fillMissing } = useEat();
   const toast = useToast();
   const [eating, setEating] = useState(false);
   const [detail, setDetail] = useState(false);
@@ -164,10 +164,6 @@ export default function HomePage() {
         <MealDialog
           perMeal={s.perMeal}
           onClose={() => setEating(false)}
-          onPick={(place, menu) => {
-            pick(place, menu);
-            setEating(false);
-          }}
           onSubmit={(menu, price) => {
             eatCustom(menu, price);
             setEating(false);

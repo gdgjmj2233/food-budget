@@ -32,7 +32,7 @@ const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
   const { summary: s } = useBudget();
-  const { pick, eatCustom } = useEat();
+  const { eatCustom } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
   const [sort, setSort] = useState<SortKey>('price');
@@ -140,7 +140,7 @@ export default function RecommendPage() {
         </div>
       </div>
 
-      {!showMap && <Sub>식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 &quot;먹기&quot;를 누르면 예산에서 빠집니다.</Sub>}
+      {!showMap && <Sub>식당을 누르면 메뉴가 펼쳐져요.</Sub>}
 
       {showMap && (
         <>
@@ -151,7 +151,7 @@ export default function RecommendPage() {
             onSelect={setSelectedId}
           />
           <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 30m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
-          {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} onPick={(m) => pick(selected, m)} />}
+          {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} />}
           {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
         </>
       )}
@@ -159,7 +159,7 @@ export default function RecommendPage() {
       {!showMap && (
         <div className={styles.list}>
           {list.length ? (
-            list.map((p) => <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />)
+            list.map((p) => <PlaceItem key={p.id} place={p} perMeal={s.perMeal} />)
           ) : (
             <p className={styles.empty}>
               {onlyFits ? '조건에 맞으면서 예산 안인 곳이 없어요.\n"예산 안만" 체크를 풀어 보세요.' : '조건에 맞는 곳이 없어요.'}

@@ -11,20 +11,18 @@ import { C, CAT_COLORS, CAT_EMOJI } from '@/theme';
 import styles from './place-item.module.css';
 
 /**
- * 식당 카드. 대표 메뉴를 바로 "먹기"로 기록할 수 있고,
- * 카드를 누르면 메뉴 전체가 펼쳐져서 다른 메뉴를 고를 수 있다.
+ * 식당 카드. 대표 메뉴와 가격을 보여주고, 카드를 누르면 메뉴 전체와 별점이 펼쳐진다.
+ * 먹은 건 여기서 기록하지 않고 직접 입력한다.
  * menu 를 주면 예산 안 대표 메뉴 대신 그 메뉴를 보여준다.
  */
 export function PlaceItem({
   place,
   perMeal,
   menu: shownMenu,
-  onPick,
 }: {
   place: Place;
   perMeal: number;
   menu?: Menu;
-  onPick: (menu: Menu) => void;
 }) {
   const [open, setOpen] = useState(false);
   const menu = shownMenu ?? bestMenu(place, perMeal).menu;
@@ -63,19 +61,9 @@ export function PlaceItem({
             </span>
           </span>
         </button>
-        <div className={styles.side}>
-          <span className={styles.price} style={{ color: fits ? C.ink : C.over }}>
-            {won(menu.price)}원
-          </span>
-          <button
-            type="button"
-            onClick={() => onPick(menu)}
-            aria-label={`${menu.name} ${won(menu.price)}원 먹은 걸로 기록`}
-            className={styles.eatBtn}
-            style={{ backgroundColor: fits ? C.primary : C.muted }}>
-            먹기
-          </button>
-        </div>
+        <span className={styles.price} style={{ color: fits ? C.ink : C.over }}>
+          {won(menu.price)}원
+        </span>
       </div>
 
       {open && (
@@ -98,27 +86,16 @@ export function PlaceItem({
                 </button>
               );
             })}
-            <span className={styles.rateHint}>4점 이상이면 지도 핀에 ★이 붙어요</span>
+            <span className={styles.rateHint}>4점 이상이면 지도를 멀리서 봐도 보여요</span>
           </div>
-          {menus.map((m) => {
-            const ok = m.price <= perMeal;
-            return (
-              <button
-                type="button"
-                key={m.name}
-                onClick={() => onPick(m)}
-                aria-label={`${m.name} ${won(m.price)}원 먹은 걸로 기록`}
-                className={styles.menuRow}>
-                <span className={styles.menuRowName}>{m.name}</span>
-                <span className={styles.menuRowPrice} style={{ color: ok ? C.ink : C.over }}>
-                  {won(m.price)}원
-                </span>
-                <span className={styles.eatBtn} style={{ backgroundColor: ok ? C.primary : C.muted }}>
-                  먹기
-                </span>
-              </button>
-            );
-          })}
+          {menus.map((m) => (
+            <div key={m.name} className={styles.menuRow}>
+              <span className={styles.menuRowName}>{m.name}</span>
+              <span className={styles.menuRowPrice} style={{ color: m.price <= perMeal ? C.ink : C.over }}>
+                {won(m.price)}원
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>

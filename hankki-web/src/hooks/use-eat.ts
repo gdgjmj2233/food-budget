@@ -1,5 +1,4 @@
 import { useToast } from '@/components/toast';
-import { PLACES, type Menu, type Place } from '@/data/places';
 import { won, type MissingMeal } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
@@ -7,21 +6,12 @@ const ENDED = '예산 기간이 끝났어요. 예산 탭에서 새 기간을 시
 
 const change = (d: Delta) => `한 끼 권장 ${won(d.after)}원으로 ${d.after >= d.before ? '늘었어요' : '줄었어요'}`;
 
-/** 메뉴 선택(기록) + 직접 입력 + 스킵 + 자동 선택. 결과를 토스트로 알려준다. */
+/** 직접 입력 + 스킵 + 어제 끼니 채우기. 결과를 토스트로 알려준다. */
 export function useEat() {
-  const { eat, record, summary } = useBudget();
+  const { record, summary } = useBudget();
   const toast = useToast();
 
-  const pick = (place: Place, menu: Menu) => {
-    const delta = eat(place, menu);
-    if (!delta) {
-      toast(ENDED);
-      return;
-    }
-    toast(`${place.name} ${menu.name} ${won(menu.price)}원 차감 · ${change(delta)}`);
-  };
-
-  /** 목록에 없는 메뉴를 이름·가격 직접 입력으로 기록한다 */
+  /** 먹은 메뉴를 이름·가격 직접 입력으로 기록한다 */
   const eatCustom = (menu: string, price: number) => {
     const delta = record(menu || '식사', '직접 입력', price);
     if (!delta) {
@@ -55,15 +45,5 @@ export function useEat() {
     toast(`어제 ${slot.slot} 기록을 채웠어요 · ${change(delta)}`);
   };
 
-  /** 지금 한 끼 권장 금액 이하 메뉴 중에서 무작위로 고른다. 없으면 가장 싼 메뉴. */
-  const pickRandom = (places: Place[] = PLACES) => {
-    const pairs = places.flatMap((p) => p.menus.map((m) => ({ p, m })));
-    if (!pairs.length) return;
-    const pool = pairs.filter((x) => x.m.price <= summary.perMeal);
-    const choices = pool.length ? pool : [pairs.reduce((a, b) => (b.m.price < a.m.price ? b : a))];
-    const { p, m } = choices[Math.floor(Math.random() * choices.length)];
-    pick(p, m);
-  };
-
-  return { pick, eatCustom, skip, fillMissing, pickRandom };
+  return { eatCustom, skip, fillMissing };
 }
