@@ -129,11 +129,21 @@ export function PlaceMap({
       const byId = new Map(pins.map((p) => [p.id, p]));
       const points = [...pins]
         .sort((a, b) => b.lat - a.lat)
-        .map((p) => {
-          const pt = proj.containerPointFromCoords(new kakao.maps.LatLng(p.lat, p.lng));
-          return { id: p.id, x: pt.getX(), y: pt.getY() };
+        .flatMap((p) => {
+          // SDK 버전에 따라 좌표가 getX()/getY() 메서드 또는 x/y 값으로 온다. 못 읽으면 이 핀은 풀지 않고 그대로 둔다
+          const pt = proj.containerPointFromCoords(new kakao.maps.LatLng(p.lat, p.lng)) as unknown as {
+            x?: number;
+            y?: number;
+            getX?: () => number;
+            getY?: () => number;
+          } | undefined;
+          const x = typeof pt?.getX === 'function' ? pt.getX() : pt?.x;
+          const y = typeof pt?.getY === 'function' ? pt.getY() : pt?.y;
+          return typeof x === 'number' && typeof y === 'number' ? [{ id: p.id, x, y }] : [];
         });
+      const placed = new Set(points.map((pt) => pt.id));
       clusterPoints(points, PIN_BOX.width, PIN_BOX.height).forEach((g) => groups.push(g.map((pt) => byId.get(pt.id)!)));
+      pins.filter((p) => !placed.has(p.id)).forEach((p) => groups.push([p]));
     } else {
       pins.forEach((p) => groups.push([p]));
     }
