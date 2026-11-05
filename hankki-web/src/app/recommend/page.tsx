@@ -12,12 +12,14 @@ import {
   IoSwapVertical,
 } from 'react-icons/io5';
 
+import { ExtraPlaceCard } from '@/components/extra-place-card';
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
 import { Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { bestMenu, CATEGORIES, mainMenuPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
+import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { C } from '@/theme';
@@ -36,7 +38,7 @@ export default function RecommendPage() {
   const [query, setQuery] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [groupIds, setGroupIds] = useState<string[]>([]);
+  const extras = useExtraPlaces();
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -50,16 +52,12 @@ export default function RecommendPage() {
     sort === 'price' ? mainMenuPrice(a) - mainMenuPrice(b) || a.walk - b.walk : a.walk - b.walk || mainMenuPrice(a) - mainMenuPrice(b),
   );
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
+  // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다)
+  const extraList = extras.filter(
+    (e) => (cat === '전체' || e.cat === cat) && area === '전체' && (!q || e.name.includes(q)),
+  );
   const selected = list.find((p) => p.id === selectedId);
-  const group = list.filter((p) => groupIds.includes(p.id));
-  const selectOne = (id: string) => {
-    setSelectedId(id);
-    setGroupIds([]);
-  };
-  const selectGroup = (ids: string[]) => {
-    setGroupIds(ids);
-    setSelectedId(null);
-  };
+  const selectedExtra = extraList.find((e) => e.id === selectedId);
 
   return (
     <Screen>
@@ -127,7 +125,7 @@ export default function RecommendPage() {
 
       <Sub>
         {showMap
-          ? '점은 식당 위치예요. 누르면 식당 이름과 메뉴가 나와요. "N곳" 핀은 가까운 식당을 묶은 것이라 누르면 확대되거나 목록이 나와요.'
+          ? '핀에는 식당 이름이 나와요. 파란 핀은 메뉴를 볼 수 있는 식당, 흰 핀은 카카오 지도에서 찾은 다른 음식점이에요. 핀을 누르면 별점을 남길 수 있어요.'
           : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
       </Sub>
 
@@ -135,19 +133,12 @@ export default function RecommendPage() {
         <>
           <PlaceMap
             places={list}
-            selectedId={selected?.id ?? null}
-            onSelect={selectOne}
-            onSelectGroup={selectGroup}
+            extras={extraList}
+            selectedId={selected?.id ?? selectedExtra?.id ?? null}
+            onSelect={setSelectedId}
           />
           {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} onPick={(m) => pick(selected, m)} />}
-          {group.length > 0 && (
-            <div className={styles.list}>
-              <Sub>같은 건물에 있는 {group.length}곳</Sub>
-              {group.map((p) => (
-                <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />
-              ))}
-            </div>
-          )}
+          {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
         </>
       )}
 

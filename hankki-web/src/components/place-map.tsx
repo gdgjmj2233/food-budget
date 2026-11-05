@@ -3,37 +3,34 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { PLACES, type Place } from '@/data/places';
-import { INHA, loadKakaoMap, locatePlaces } from '@/lib/kakao-map';
-import { clusterPoints, isSameSpot } from '@/lib/map-cluster';
+import { INHA, loadKakaoMap, locatePlaces, type ExtraPlace } from '@/lib/kakao-map';
+import { useRatings } from '@/store/rating-store';
 import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
 
-/** 화면에서 핀 하나가 차지하는 크기(px, 묶음 핀 "12곳" 기준 + 여백). 이 안에 겹치는 핀은 하나로 묶는다 */
-const PIN_BOX = { width: 56, height: 32 };
-
 /**
- * 카카오맵에 식당 위치를 핀으로 찍는다. 선택한 식당만 이름을 함께 보여 준다.
- * 화면에서 겹치는 핀은 "N곳" 묶음 핀으로 합친다.
- * 핀을 누르면 onSelect 로 식당을, 같은 건물이라 확대해도 안 풀리는 묶음을 누르면 onSelectGroup 으로 식당들을 알려준다.
+ * 카카오맵에 식당을 이름 핀으로 찍는다. 내가 별점을 준 식당은 이름 옆에 별점이 붙는다.
+ * 앱 데이터의 식당은 파란 핀, 카카오 검색으로 찾은 주변 음식점(extras)은 흰 핀이다. 핀은 묶지 않고 모두 따로 보여 준다.
+ * 핀을 누르면 onSelect 로 그 식당(또는 주변 음식점)의 id 를 알려준다.
  */
 export function PlaceMap({
   places,
+  extras,
   selectedId,
   onSelect,
-  onSelectGroup,
 }: {
   places: Place[];
+  extras: ExtraPlace[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onSelectGroup: (ids: string[]) => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [positions, setPositions] = useState<Record<string, Pos>>({});
   const [located, setLocated] = useState(false);
-  const [level, setLevel] = useState(4);
+  const ratings = useRatings();
 
   // 지도를 만들고 모든 식당의 좌표를 찾는다 (처음 한 번)
   useEffect(() => {
@@ -58,82 +55,45 @@ export function PlaceMap({
     };
   }, []);
 
-  // 핀 그리기 (목록, 선택이 바뀔 때마다 다시)
+  // 핀 그리기 (목록, 별점, 선택이 바뀔 때마다 다시)
   const onSelectRef = useRef(onSelect);
-  const onSelectGroupRef = useRef(onSelectGroup);
   useEffect(() => {
     onSelectRef.current = onSelect;
-    onSelectGroupRef.current = onSelectGroup;
   });
 
-  // 확대 단계가 바뀌면 핀끼리의 화면 거리가 달라지므로 다시 묶는다 (이동만 하면 거리는 그대로)
   useEffect(() => {
     if (!map) return;
-    const onZoom = () => setLevel(map.getLevel());
-    onZoom();
-    kakao.maps.event.addListener(map, 'zoom_changed', onZoom);
-    return () => kakao.maps.event.removeListener(map, 'zoom_changed', onZoom);
-  }, [map]);
+    const pins = [
+      ...places.flatMap((p) => (positions[p.id] ? [{ id: p.id, name: p.name, ...positions[p.id], extra: false }] : [])),
+      ...extras.map((e) => ({ id: e.id, name: e.name, lat: e.lat, lng: e.lng, extra: true })),
+    ];
 
-  useEffect(() => {
-    if (!map) return;
-    const proj = map.getProjection();
-    const info = places.flatMap((p) => {
-      const pos = positions[p.id];
-      if (!pos) return [];
-      const ll = new kakao.maps.LatLng(pos.lat, pos.lng);
-      const pt = proj.containerPointFromCoords(ll);
-      return [{ place: p, pos, ll, x: pt.getX(), y: pt.getY() }];
-    });
-    const byId = new Map(info.map((i) => [i.place.id, i]));
-
-    // 선택한 식당은 묶지 않고 항상 이름과 함께 보여 준다
-    const rest = info.filter((i) => i.place.id !== selectedId);
-    const groups = clusterPoints(
-      rest.map((i) => ({ id: i.place.id, x: i.x, y: i.y })),
-      PIN_BOX.width,
-      PIN_BOX.height,
-    ).map((g) => g.map((pt) => byId.get(pt.id)!));
-    const sel = selectedId ? byId.get(selectedId) : undefined;
-    if (sel) groups.push([sel]);
-
-    const overlays = groups.map((g) => {
+    const overlays = pins.map((p) => {
+      const on = p.id === selectedId;
+      const stars = ratings[p.id];
       const pin = document.createElement('button');
       pin.type = 'button';
-      const position = g[0].ll;
-      let zIndex = 2;
-
-      if (g.length === 1) {
-        const { place: p } = g[0];
-        const on = p.id === selectedId;
-        pin.className = on ? `${styles.pin} ${styles.pinOn}` : styles.dot;
-        pin.textContent = on ? p.name : '';
-        pin.setAttribute('aria-label', p.name);
-        pin.onclick = () => onSelectRef.current(p.id);
-        zIndex = on ? 4 : 2;
-      } else {
-        // 묶음 핀은 기준점 자리에 그려야 다른 핀과 겹치지 않는다
-        pin.className = `${styles.pin} ${styles.cluster}`;
-        pin.innerHTML = `<b class="${styles.count}">${g.length}곳</b>`;
-        pin.setAttribute('aria-label', `식당 ${g.length}곳. 눌러서 보기`);
-        pin.onclick = () => {
-          // 같은 건물이거나 더 확대할 수 없으면 목록으로, 아니면 묶음이 풀리도록 그 부분을 확대
-          if (isSameSpot(g.map((i) => i.pos)) || map.getLevel() <= 1) {
-            onSelectGroupRef.current(g.map((i) => i.place.id));
-            return;
-          }
-          const bounds = new kakao.maps.LatLngBounds();
-          g.forEach((i) => bounds.extend(i.ll));
-          map.setBounds(bounds, 60, 40, 40, 40);
-          if (map.getLevel() >= level) map.setLevel(level - 1, { anchor: position });
-        };
-        zIndex = 3;
+      pin.className = `${styles.pin} ${p.extra ? styles.pinExtra : ''} ${on ? styles.pinOn : ''}`;
+      pin.append(p.name);
+      if (stars) {
+        const badge = document.createElement('span');
+        badge.className = styles.pinStar;
+        badge.textContent = `★${stars}`;
+        pin.append(badge);
       }
+      pin.setAttribute('aria-label', stars ? `${p.name}, 내 별점 ${stars}점` : p.name);
+      pin.onclick = () => onSelectRef.current(p.id);
 
-      return new kakao.maps.CustomOverlay({ map, position, content: pin, yAnchor: 1, zIndex });
+      return new kakao.maps.CustomOverlay({
+        map,
+        position: new kakao.maps.LatLng(p.lat, p.lng),
+        content: pin,
+        yAnchor: 1,
+        zIndex: on ? 4 : p.extra ? 2 : 3,
+      });
     });
     return () => overlays.forEach((o) => o.setMap(null));
-  }, [map, places, positions, selectedId, level]);
+  }, [map, places, extras, positions, ratings, selectedId]);
 
   // 좌표를 다 찾았거나 목록(필터)이 바뀌면 보이는 식당이 다 들어오게 지도를 맞춘다
   const listKey = places.map((p) => p.id).join(',');

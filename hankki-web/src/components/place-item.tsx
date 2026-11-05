@@ -5,6 +5,7 @@ import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 
 import { bestMenu, type Menu, type Place } from '@/data/places';
 import { PlaceNote, BudgetPreview } from './budget-tools';
+import { StarRating } from './star-rating';
 import { won } from '@/lib/budget';
 import { C, CAT_COLORS } from '@/theme';
 import styles from './place-item.module.css';
@@ -54,6 +55,9 @@ export function PlaceItem({
         </span>
         <Chevron size={18} color={C.muted} aria-hidden />
       </button>
+      <div className={styles.rating}>
+        <StarRating id={place.id} name={place.name} />
+      </div>
 
       {open && (
         <div className={styles.menus}>

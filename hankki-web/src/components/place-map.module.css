@@ -82,26 +82,20 @@
   font-weight: 700;
 }
 
-/* 식당 위치만 알려 주는 작은 점 핀 */
-.dot {
-  display: block;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  background: var(--primary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-  cursor: pointer;
+/* 앱 데이터에 없는 주변 음식점은 흰 핀 */
+.pin.pinExtra:not(.pinOn) {
+  --pin-color: #fff;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--line), 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
-/* 겹치는 핀을 합친 묶음 핀: "6곳" */
-.cluster {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
+/* 이름 옆 내 별점 */
+.pinStar {
+  margin-left: 4px;
+  color: #ffd24d;
 }
 
-.count {
-  font-size: 12px;
+.pinExtra .pinStar {
+  color: #f5a400;
 }
