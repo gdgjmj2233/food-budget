@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   IoCheckbox,
   IoCloseCircle,
@@ -40,6 +40,8 @@ export default function RecommendPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [roulette, setRoulette] = useState(false);
   const [groupIds, setGroupIds] = useState<string[]>([]);
+  const [groupSameSpot, setGroupSameSpot] = useState(false);
+  const groupRef = useRef<HTMLDivElement>(null);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -59,10 +61,19 @@ export default function RecommendPage() {
     setSelectedId(id);
     setGroupIds([]);
   };
-  const selectGroup = (ids: string[]) => {
+  const selectGroup = (ids: string[], sameSpot: boolean) => {
     setGroupIds(ids);
+    setGroupSameSpot(sameSpot);
     setSelectedId(null);
   };
+
+  // 묶음 핀을 누르면 아래 가게 목록이 화면 밖에 있을 수 있어서, 첫 카드가 보일 만큼만 내린다 (지도는 최대한 남긴다)
+  useEffect(() => {
+    const top = groupRef.current?.getBoundingClientRect().top;
+    if (top === undefined) return;
+    const visibleBottom = window.innerHeight - 60 - 150; // 하단 탭 + 첫 카드 높이 정도
+    if (top > visibleBottom) window.scrollBy({ top: top - visibleBottom, behavior: 'smooth' });
+  }, [groupIds]);
 
   return (
     <Screen>
@@ -130,7 +141,7 @@ export default function RecommendPage() {
 
       <Sub>
         {showMap
-          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격, 흰 핀은 예산 초과예요. "N곳" 핀은 가까운 식당을 묶은 것이라 누르면 확대되거나 목록이 나와요.'
+          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격, 흰 핀은 예산 초과예요. "N곳" 핀을 누르면 그 구역이 확대되고 아래에 가게 목록이 나와요.'
           : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
       </Sub>
 
@@ -145,8 +156,8 @@ export default function RecommendPage() {
           />
           {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} onPick={(m) => pick(selected, m)} />}
           {group.length > 0 && (
-            <div className={styles.list}>
-              <Sub>같은 건물에 있는 {group.length}곳</Sub>
+            <div ref={groupRef} className={styles.list}>
+              <Sub>{groupSameSpot ? `같은 건물에 있는 ${group.length}곳` : `누른 핀에 모인 ${group.length}곳`}</Sub>
               {group.map((p) => (
                 <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />
               ))}
