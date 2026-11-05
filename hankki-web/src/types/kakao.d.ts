@@ -45,8 +45,8 @@ declare namespace kakao.maps {
 
   class Point {
     constructor(x: number, y: number);
-    getX(): number;
-    getY(): number;
+    readonly x: number;
+    readonly y: number;
   }
 
   class CustomOverlay {
