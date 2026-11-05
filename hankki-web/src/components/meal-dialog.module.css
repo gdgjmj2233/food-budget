@@ -17,7 +17,7 @@
   color: var(--muted);
 }
 
-/* 추천 단계 */
+/* 선택 단계 */
 .head {
   display: flex;
   align-items: flex-start;
@@ -32,20 +32,6 @@
   padding: 6px;
   border-radius: 50%;
   color: var(--muted);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-/* 카드가 눌려 잘리지 않고 목록이 스크롤되게 */
-.list > * {
-  flex-shrink: 0;
 }
 
 .foot {

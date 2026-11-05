@@ -30,7 +30,7 @@ const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
   const { summary: s } = useBudget();
-  const { pick } = useEat();
+  const { pick, eatCustom } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
   const [sort, setSort] = useState<SortKey>('price');
@@ -146,14 +146,14 @@ export default function RecommendPage() {
       <PrimaryButton label="못 고르겠으면 룰렛 돌리기" icon={IoDiceOutline} color={C.primary} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
-      {/* 지금 고른 카테고리·위치·검색 조건 안에서 돌린다 */}
+      {/* 식당 추천은 지금 고른 카테고리·위치·검색 조건 안에서 받는다 */}
       {roulette && (
         <Roulette
           places={base}
           perMeal={s.perMeal}
           onClose={() => setRoulette(false)}
-          onEat={(p, m) => {
-            pick(p, m);
+          onEat={(name, price) => {
+            eatCustom(name, price);
             setRoulette(false);
           }}
         />
