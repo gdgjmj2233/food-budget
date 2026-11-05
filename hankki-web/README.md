@@ -38,6 +38,7 @@ src/
     layout.tsx            공통 틀 (html, 메타데이터)
     page.tsx              홈 /           : 오늘 남은 금액, 오늘 쓴 금액, 최근 기록
     recommend/page.tsx    추천 /recommend : 카테고리/위치/검색/정렬
+    cafeteria/page.tsx    학식 /cafeteria : 교내 식당 코너별 가격·운영 시간, 오늘 메뉴 링크
     history/page.tsx      기록 /history   : 월간 달력, 되돌리기
     budget/page.tsx       예산 /budget    : 기간·금액·주말 제외
   components/
@@ -48,6 +49,7 @@ src/
   hooks/use-eat.ts        직접 입력 기록 + 알림
   lib/budget.ts           예산 계산 (순수 함수, UI와 분리)
   data/places.ts          식당 예시 데이터
+  data/cafeteria.ts       학식 코너별 가격 (가격이 바뀌면 여기만 고치면 됨)
   theme.ts                색상
 ```
 

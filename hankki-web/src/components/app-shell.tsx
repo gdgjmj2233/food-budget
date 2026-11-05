@@ -11,6 +11,8 @@ import {
   IoHomeOutline,
   IoLocation,
   IoLocationOutline,
+  IoRestaurant,
+  IoRestaurantOutline,
   IoWallet,
   IoWalletOutline,
 } from 'react-icons/io5';
@@ -22,6 +24,7 @@ import styles from './app-shell.module.css';
 const TABS: { href: string; title: string; icon: IconType; iconOn: IconType }[] = [
   { href: '/', title: '홈', icon: IoHomeOutline, iconOn: IoHome },
   { href: '/recommend', title: '추천', icon: IoLocationOutline, iconOn: IoLocation },
+  { href: '/cafeteria', title: '학식', icon: IoRestaurantOutline, iconOn: IoRestaurant },
   { href: '/history', title: '기록', icon: IoCalendarOutline, iconOn: IoCalendar },
   { href: '/budget', title: '예산', icon: IoWalletOutline, iconOn: IoWallet },
 ];
