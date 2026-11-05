@@ -16,6 +16,7 @@ import {
 } from 'react-icons/io5';
 
 import { ToastProvider } from '@/components/toast';
+import { CloudSync } from '@/components/cloud-sync';
 import { BudgetProvider } from '@/store/budget-store';
 import styles from './app-shell.module.css';
 
@@ -50,7 +51,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
       <main className={styles.main}>
-        <BudgetProvider>{children}</BudgetProvider>
+        <BudgetProvider>
+          <CloudSync />
+          {children}
+        </BudgetProvider>
       </main>
       <TabBar />
     </ToastProvider>

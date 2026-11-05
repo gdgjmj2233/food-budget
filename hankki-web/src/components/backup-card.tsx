@@ -58,7 +58,7 @@ export function BackupCard() {
       <div className={styles.body}>
         <h2 className={styles.title}>기록 백업</h2>
         <Sub>
-          기록은 이 브라우저에만 저장돼요. 파일로 저장해 두면 휴대폰을 바꿔도 불러올 수 있어요. 파일에는 내 정보도 들어 있으니 다른 사람에게 보내지 마세요.
+          로그인하지 않으면 기록은 이 브라우저에만 저장돼요. 파일로 저장해 두면 휴대폰을 바꿔도 불러올 수 있어요. 파일에는 내 정보도 들어 있으니 다른 사람에게 보내지 마세요.
         </Sub>
         <p className={styles.last}>{last ? `마지막 백업 ${formatDate(new Date(last))}` : '아직 백업한 적이 없어요'}</p>
         <div className={styles.actions}>
