@@ -84,6 +84,87 @@
   font-weight: 700;
 }
 
+/* 핀 정리 ON/OFF 스위치와 지금 단계 표시 */
+.controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.toggle,
+.tier {
+  pointer-events: auto;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px 0 6px;
+  border-radius: 15px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.knob {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--line);
+  transition: background 0.15s;
+}
+
+.knob::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+
+.toggleOn {
+  color: var(--ink);
+}
+
+.toggleOn .knob {
+  background: var(--primary);
+}
+
+.toggleOn .knob::after {
+  transform: translateX(12px);
+}
+
+.tier {
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: rgba(25, 31, 40, 0.8);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tier em {
+  font-style: normal;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
 /* 예산 넘는 곳은 흰 바탕 + 빨간 글씨로 덜 눈에 띄게 (예산 안 파란 핀이 먼저 보이도록) */
 .pinOver {
   --pin-color: var(--over);
