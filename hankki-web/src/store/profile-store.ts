@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react';
 
 import { CHARACTERS, type CharacterId } from '@/data/characters';
 
-const STORAGE_KEY = 'hankki/profile/v1';
+export const STORAGE_KEY = 'hankki/profile/v1';
 
 export interface Profile {
   nickname: string;
