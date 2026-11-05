@@ -37,6 +37,7 @@ export default function RecommendPage() {
   const [query, setQuery] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [groupIds, setGroupIds] = useState<string[]>([]);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -51,6 +52,15 @@ export default function RecommendPage() {
   );
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   const selected = list.find((p) => p.id === selectedId);
+  const group = list.filter((p) => groupIds.includes(p.id));
+  const selectOne = (id: string) => {
+    setSelectedId(id);
+    setGroupIds([]);
+  };
+  const selectGroup = (ids: string[]) => {
+    setGroupIds(ids);
+    setSelectedId(null);
+  };
 
   return (
     <Screen>
@@ -118,14 +128,28 @@ export default function RecommendPage() {
 
       <Sub>
         {showMap
-          ? '핀의 숫자는 식당별 대표 메뉴 가격이에요. 빨간 핀은 예산 초과. 핀을 누르면 식당 정보가 나와요.'
+          ? '핀의 숫자는 대표 메뉴 가격, 흰 핀은 예산 초과예요. "N곳" 핀은 가까운 식당을 묶은 것이라 누르면 확대되거나 목록이 나와요.'
           : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
       </Sub>
 
       {showMap && (
         <>
-          <PlaceMap places={list} perMeal={s.perMeal} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+          <PlaceMap
+            places={list}
+            perMeal={s.perMeal}
+            selectedId={selected?.id ?? null}
+            onSelect={selectOne}
+            onSelectGroup={selectGroup}
+          />
           {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} onPick={(m) => pick(selected, m)} />}
+          {group.length > 0 && (
+            <div className={styles.list}>
+              <Sub>같은 건물에 있는 {group.length}곳</Sub>
+              {group.map((p) => (
+                <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />
+              ))}
+            </div>
+          )}
         </>
       )}
 
