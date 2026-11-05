@@ -150,7 +150,7 @@ export default function RecommendPage() {
             selectedId={selected?.id ?? selectedExtra?.id ?? null}
             onSelect={setSelectedId}
           />
-          <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 30m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
+          <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
           {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} />}
           {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
         </>
