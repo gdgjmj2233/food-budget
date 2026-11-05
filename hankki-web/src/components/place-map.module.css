@@ -116,6 +116,17 @@
   box-shadow: inset 0 0 0 1.5px var(--line), 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
+/* 멀리서 가까운 식당을 합친 핀: "6곳" */
+.cluster {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+}
+
+.count {
+  font-size: 12px;
+}
+
 /* 이름 옆 내 별점 */
 .pinStar {
   margin-left: 4px;

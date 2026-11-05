@@ -17,6 +17,8 @@ const NAME_LEVEL = 2;
 const MAX_ZOOM_LEVEL = 2;
 /** 이름 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치면 한 묶음으로 보고 풀어 놓는다 */
 const PIN_BOX = { width: 110, height: 30 };
+/** 멀리서 "N곳" 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치는 점은 한 핀으로 합친다 */
+const CLUSTER_BOX = { width: 56, height: 32 };
 /** 풀어 놓은 이름 핀 사이 간격(px) */
 const SPREAD_STEP = 30;
 
@@ -122,37 +124,53 @@ export function PlaceMap({
       overlays.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(pos.lat, pos.lng), content, yAnchor, zIndex }));
     const zOf = (p: Pin) => (p.id === selectedId ? 4 : p.extra ? 2 : 3);
 
-    // 최대 확대: 화면에서 겹치는 이름 핀끼리 묶어서, 북쪽에 있는 식당이 위로 오게 위아래로 풀어 놓는다
-    const groups: Pin[][] = [];
-    if (level <= MAX_ZOOM_LEVEL) {
-      const proj = map.getProjection();
-      const byId = new Map(pins.map((p) => [p.id, p]));
-      const points = [...pins]
-        .sort((a, b) => b.lat - a.lat)
-        .flatMap((p) => {
-          // SDK 버전에 따라 좌표가 getX()/getY() 메서드 또는 x/y 값으로 온다. 못 읽으면 이 핀은 풀지 않고 그대로 둔다
-          const pt = proj.containerPointFromCoords(new kakao.maps.LatLng(p.lat, p.lng)) as unknown as {
-            x?: number;
-            y?: number;
-            getX?: () => number;
-            getY?: () => number;
-          } | undefined;
-          const x = typeof pt?.getX === 'function' ? pt.getX() : pt?.x;
-          const y = typeof pt?.getY === 'function' ? pt.getY() : pt?.y;
-          return typeof x === 'number' && typeof y === 'number' ? [{ id: p.id, x, y }] : [];
-        });
-      const placed = new Set(points.map((pt) => pt.id));
-      clusterPoints(points, PIN_BOX.width, PIN_BOX.height).forEach((g) => groups.push(g.map((pt) => byId.get(pt.id)!)));
-      pins.filter((p) => !placed.has(p.id)).forEach((p) => groups.push([p]));
-    } else {
-      pins.forEach((p) => groups.push([p]));
-    }
+    // 화면 좌표(px). SDK 버전에 따라 getX()/getY() 메서드 또는 x/y 값으로 온다. 못 읽은 핀은 묶지 않고 그대로 둔다
+    const proj = map.getProjection();
+    const byId = new Map(pins.map((p) => [p.id, p]));
+    const screenPoint = (p: Pin) => {
+      const pt = proj.containerPointFromCoords(new kakao.maps.LatLng(p.lat, p.lng)) as unknown as
+        | { x?: number; y?: number; getX?: () => number; getY?: () => number }
+        | undefined;
+      const x = typeof pt?.getX === 'function' ? pt.getX() : pt?.x;
+      const y = typeof pt?.getY === 'function' ? pt.getY() : pt?.y;
+      return typeof x === 'number' && typeof y === 'number' ? { id: p.id, x, y } : null;
+    };
+
+    // 30m 축척부터는 겹친 이름 핀을 풀어 놓고(북쪽이 위로), 그보다 멀리서는 가까운 핀을 "N곳" 한 핀으로 합친다.
+    // 선택한 식당은 합치지 않고 항상 따로 보여 준다
+    const spread = level <= MAX_ZOOM_LEVEL;
+    const points = (spread ? [...pins] : pins.filter((p) => p.id !== selectedId))
+      .sort((a, b) => b.lat - a.lat)
+      .flatMap((p) => screenPoint(p) ?? []);
+    const box = spread ? PIN_BOX : CLUSTER_BOX;
+    const groups: Pin[][] = clusterPoints(points, box.width, box.height).map((g) => g.map((pt) => byId.get(pt.id)!));
+    const placed = new Set(points.map((pt) => pt.id));
+    pins.filter((p) => !placed.has(p.id)).forEach((p) => groups.push([p]));
 
     groups.forEach((g) => {
       if (g.length === 1) {
         const [p] = g;
         const showName = named || p.id === selectedId;
         add(showName ? namedOf(p) : dotOf(p), p, showName ? 1 : 0.5, zOf(p));
+        return;
+      }
+      if (!spread) {
+        // 합친 핀을 누르면 그 식당들이 풀리도록 그 부분을 확대한다 (핀은 첫 식당 자리에 그려야 다른 핀과 겹치지 않는다)
+        const pin = document.createElement('button');
+        pin.type = 'button';
+        pin.className = `${styles.pin} ${styles.cluster}`;
+        const count = document.createElement('b');
+        count.className = styles.count;
+        count.textContent = `${g.length}곳`;
+        pin.append(count);
+        pin.setAttribute('aria-label', `식당 ${g.length}곳. 눌러서 확대`);
+        pin.onclick = () => {
+          const bounds = new kakao.maps.LatLngBounds();
+          g.forEach((p) => bounds.extend(new kakao.maps.LatLng(p.lat, p.lng)));
+          map.setBounds(bounds, 60, 40, 40, 40);
+          if (map.getLevel() >= level) map.setLevel(level - 1, { anchor: new kakao.maps.LatLng(g[0].lat, g[0].lng) });
+        };
+        add(pin, g[0], 1, 3);
         return;
       }
       // 풀어 놓은 이름 핀은 묶음의 가운데에 쌓고, 각 식당의 실제 위치는 점으로 따로 찍는다
