@@ -36,7 +36,7 @@ export const CAT_EMOJI: Record<Category | '전체', string> = {
   전체: '🍽️',
   한식: '🍚',
   분식: '🍢',
-  중식: '🥟',
+  중식: '🥡',
   일식: '🍣',
   양식: '🍝',
   아시안: '🍜',
