@@ -86,7 +86,7 @@ export function PlaceItem({
                 </button>
               );
             })}
-            <span className={styles.rateHint}>4점 이상이면 지도를 멀리서 봐도 보여요</span>
+            <span className={styles.rateHint}>4점 이상이면 지도 핀에 ★이 붙어요</span>
           </div>
           {menus.map((m) => (
             <div key={m.name} className={styles.menuRow}>
