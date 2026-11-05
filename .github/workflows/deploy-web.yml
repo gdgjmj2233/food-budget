@@ -1,9 +1,9 @@
-# main 브랜치에 올릴 때마다 웹 버전(hankki-web, Next.js)을 정적 파일로 빌드해서 GitHub Pages에 배포한다.
+# main, jihoon-map 브랜치에 올릴 때마다 웹 버전(hankki-web, Next.js)을 정적 파일로 빌드해서 GitHub Pages에 배포한다.
 name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, jihoon-map]
   workflow_dispatch:
 
 permissions:
