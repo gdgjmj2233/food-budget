@@ -169,6 +169,12 @@
   font-weight: 700;
 }
 
+.edit {
+  display: flex;
+  padding: 6px;
+  color: var(--muted);
+}
+
 .center {
   display: flex;
   justify-content: center;

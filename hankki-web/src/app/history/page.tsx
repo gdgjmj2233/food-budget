@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
+import { IoChevronBack, IoChevronForward, IoPencilOutline } from 'react-icons/io5';
 
+import { MealEdit } from '@/components/meal-edit';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub } from '@/components/ui';
 import ui from '@/components/ui.module.css';
@@ -37,13 +38,14 @@ function monthGrid(year: number, month: number): Date[][] {
 }
 
 export default function HistoryPage() {
-  const { summary: s, meals, undo, clearPeriod } = useBudget();
+  const { summary: s, meals, undo, clearPeriod, removeMeal, updateMeal } = useBudget();
   const toast = useToast();
 
   const today = startOfDay(new Date());
   const todayKey = toDateKey(today);
   const [cursor, setCursor] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [selected, setSelected] = useState(todayKey);
+  const [editing, setEditing] = useState<Meal | null>(null);
 
   // 날짜별로 먹은 기록 묶기 (시간순)
   const byDay = new Map<string, Meal[]>();
@@ -71,6 +73,14 @@ export default function HistoryPage() {
     confirm('기록 초기화', '이번 기간의 먹은 기록을 모두 지울까요?', () => {
       clearPeriod();
       toast('이번 기간 기록을 지웠어요');
+    });
+  };
+
+  const onRemove = (m: Meal) => {
+    confirm('기록 지우기', `${m.name} ${won(m.price)}원 기록을 지울까요?`, () => {
+      removeMeal(m.id);
+      setEditing(null);
+      toast(`${m.name} 기록을 지웠어요`);
     });
   };
 
@@ -172,6 +182,9 @@ export default function HistoryPage() {
                   {m.price > 0 && '−'}
                   {won(m.price)}원
                 </span>
+                <button type="button" className={styles.edit} onClick={() => setEditing(m)} aria-label={`${m.name} 기록 고치기`}>
+                  <IoPencilOutline size={16} aria-hidden />
+                </button>
               </div>
             );
           })
@@ -185,6 +198,19 @@ export default function HistoryPage() {
       )}
 
       <WeekChart meals={meals} perDay={s.perDay} />
+
+      {editing && (
+        <MealEdit
+          meal={editing}
+          onClose={() => setEditing(null)}
+          onRemove={() => onRemove(editing)}
+          onSave={(patch) => {
+            updateMeal(editing.id, patch);
+            setEditing(null);
+            toast('기록을 고쳤어요');
+          }}
+        />
+      )}
     </Screen>
   );
 }
