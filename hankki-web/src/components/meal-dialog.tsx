@@ -22,7 +22,7 @@ import ui from './ui.module.css';
 /** 추천 창에 보여줄 식당 수 */
 const MAX_PLACES = 5;
 
-type Step = 'list' | 'map' | 'roulette' | 'input';
+type Tab = 'list' | 'map' | 'roulette';
 
 function WheelIcon({ size }: { size: number }) {
   return (
@@ -34,7 +34,7 @@ function WheelIcon({ size }: { size: number }) {
 }
 
 /**
- * 밥먹기 창. 추천·지도·룰렛으로 식당을 고르고, 목록에 없으면 메뉴·가격을 직접 입력한다.
+ * 밥먹기 창. 추천·지도·룰렛 탭으로 고르고, 목록에 없으면 메뉴·가격을 직접 입력한다.
  * 열 때마다 새로 그려서 입력값이 비어 있다.
  */
 export function MealDialog({
@@ -48,31 +48,51 @@ export function MealDialog({
   onPick: (place: Place, menu: Menu) => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
-  const [step, setStep] = useState<Step>('list');
+  const [tab, setTab] = useState<Tab>('list');
+  const [inputting, setInputting] = useState(false);
+  const [entries, setEntries] = useState<string[]>([]);
 
   return (
     <Modal sheet onClose={onClose}>
-      {(step === 'list' || step === 'map') && <Choose step={step} perMeal={perMeal} onStep={setStep} onClose={onClose} onPick={onPick} />}
-      {step === 'input' && <MealInput title="직접 입력" perMeal={perMeal} onBack={() => setStep('list')} onSubmit={onSubmit} />}
-      {step === 'roulette' && (
-        <RoulettePanel places={PLACES} perMeal={perMeal} onEat={onSubmit} onClose={onClose} onBack={() => setStep('list')} />
+      {inputting ? (
+        <MealInput title="직접 입력" perMeal={perMeal} onBack={() => setInputting(false)} onSubmit={onSubmit} />
+      ) : (
+        <Choose
+          tab={tab}
+          perMeal={perMeal}
+          entries={entries}
+          onTab={setTab}
+          onInput={() => setInputting(true)}
+          onEntries={setEntries}
+          onClose={onClose}
+          onPick={onPick}
+          onSubmit={onSubmit}
+        />
       )}
     </Modal>
   );
 }
 
 function Choose({
-  step,
+  tab,
   perMeal,
-  onStep,
+  entries,
+  onTab,
+  onInput,
+  onEntries,
   onClose,
   onPick,
+  onSubmit,
 }: {
-  step: 'list' | 'map';
+  tab: Tab;
   perMeal: number;
-  onStep: (step: Step) => void;
+  entries: string[];
+  onTab: (tab: Tab) => void;
+  onInput: () => void;
+  onEntries: (entries: string[]) => void;
   onClose: () => void;
   onPick: (place: Place, menu: Menu) => void;
+  onSubmit: (menu: string, price: number) => void;
 }) {
   const hasFits = PLACES.some((p) => bestMenu(p, perMeal).fits);
   const tabs = [
@@ -87,7 +107,11 @@ function Choose({
         <div>
           <h2 className={styles.title}>오늘 뭐 먹을까요?</h2>
           <p className={styles.sub}>
-            {hasFits ? (
+            {tab === 'roulette' ? (
+              <>
+                다음 한 끼 권장 <b>{won(perMeal)}원</b>
+              </>
+            ) : hasFits ? (
               <>
                 한 끼 <b>{won(perMeal)}원</b> 안에서 골랐어요
               </>
@@ -107,24 +131,22 @@ function Choose({
             type="button"
             key={t.id}
             role="tab"
-            aria-selected={t.id === step}
-            className={`${styles.tab} ${t.id === step ? styles.tabOn : ''}`}
-            onClick={() => onStep(t.id)}>
+            aria-selected={t.id === tab}
+            className={`${styles.tab} ${t.id === tab ? styles.tabOn : ''}`}
+            onClick={() => onTab(t.id)}>
             {t.icon}
             {t.label}
           </button>
         ))}
       </div>
 
-      {step === 'list' ? <Recommend perMeal={perMeal} onPick={onPick} /> : <MapTab perMeal={perMeal} onPick={onPick} />}
+      {tab === 'list' && <Recommend perMeal={perMeal} onPick={onPick} />}
+      {tab === 'map' && <MapTab perMeal={perMeal} onPick={onPick} />}
+      {tab === 'roulette' && <RoulettePanel perMeal={perMeal} entries={entries} onEntries={onEntries} onEat={onSubmit} />}
 
       <div className={styles.foot}>
-        <button type="button" className={styles.stuck} onClick={() => onStep('roulette')}>
-          <WheelIcon size={18} />
-          못 고르겠어요
-        </button>
-        <button type="button" className={`${ui.primary} ${ui.secondary} ${styles.footBtn}`} onClick={() => onStep('input')}>
-          직접 입력
+        <button type="button" className={`${ui.primary} ${ui.secondary} ${styles.footBtn}`} onClick={onInput}>
+          입력
         </button>
       </div>
     </div>
