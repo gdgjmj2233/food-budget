@@ -4,7 +4,6 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useSyncExternalStore } from 'react';
 
-import type { Menu, Place } from '@/data/places';
 import {
   calcBudget,
   DEFAULT_AMOUNT,
@@ -104,9 +103,7 @@ interface BudgetContextValue {
   lastDelta: Delta | null;
   /** 어제 기록이 빠진 끼니. 없거나 "기억 안 나"를 눌렀으면 null */
   missing: MissingMeal | null;
-  /** 식당 메뉴를 먹은 것으로 기록하고, 예산 변화를 돌려준다 */
-  eat: (place: Place, menu: Menu) => Delta | null;
-  /** 목록에 없는 끼니(직접 입력, 스킵)를 기록하고, 예산 변화를 돌려준다 */
+  /** 끼니(직접 입력, 스킵)를 기록하고, 예산 변화를 돌려준다 */
   record: (name: string, menu: string, price: number, extra?: { placeId?: string; at?: number }) => Delta | null;
   /** 이 금액을 먹고 나면 바뀌는 한 끼 권장 금액 */
   perMealAfter: (price: number) => number;
@@ -174,7 +171,6 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
     summary,
     lastDelta: state.lastDelta,
     missing,
-    eat: (place, menu) => addMeal({ placeId: place.id, name: place.name, menu: menu.name, price: menu.price }),
     record: (name, menu, price, extra) => addMeal({ name, menu, price, ...extra }),
     perMealAfter: (price) => {
       const now = new Date();
