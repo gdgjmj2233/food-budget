@@ -16,7 +16,7 @@ import {
   type Settings,
 } from '@/lib/budget';
 
-const STORAGE_KEY = 'hankki/v1';
+export const STORAGE_KEY = 'hankki/v1';
 
 export interface Delta {
   name: string;
@@ -24,6 +24,9 @@ export interface Delta {
   before: number;
   after: number;
 }
+
+/** 기록에서 고칠 수 있는 내용 */
+export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'>;
 
 interface State {
   settings: Settings;
@@ -37,6 +40,7 @@ type Action =
   | { type: 'addMeal'; meal: Meal; delta: Delta }
   | { type: 'undo' }
   | { type: 'removeMeal'; id: string }
+  | { type: 'updateMeal'; id: string; patch: MealPatch }
   | { type: 'clearPeriod' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
   | { type: 'newPeriod' }
@@ -76,6 +80,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, meals: state.meals.slice(0, -1), lastDelta: null };
     case 'removeMeal':
       return { ...state, meals: state.meals.filter((m) => m.id !== action.id), lastDelta: null };
+    case 'updateMeal':
+      return { ...state, meals: state.meals.map((m) => (m.id === action.id ? { ...m, ...action.patch } : m)), lastDelta: null };
     case 'clearPeriod': {
       const ids = new Set(calcBudget(state.settings, state.meals).periodMeals.map((m) => m.id));
       return { ...state, meals: state.meals.filter((m) => !ids.has(m.id)), lastDelta: null };
@@ -108,6 +114,8 @@ interface BudgetContextValue {
   undo: () => Meal | null;
   /** 기록 하나를 지운다 */
   removeMeal: (id: string) => void;
+  /** 기록 하나의 이름·메뉴·가격을 고친다 */
+  updateMeal: (id: string, patch: MealPatch) => void;
   clearPeriod: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
   startNewPeriod: () => void;
@@ -180,6 +188,7 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
       return last;
     },
     removeMeal: (id) => dispatch({ type: 'removeMeal', id }),
+    updateMeal: (id, patch) => dispatch({ type: 'updateMeal', id, patch }),
     clearPeriod: () => dispatch({ type: 'clearPeriod' }),
     updateSettings: (patch) => dispatch({ type: 'updateSettings', patch }),
     startNewPeriod: () => dispatch({ type: 'newPeriod' }),
