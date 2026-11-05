@@ -27,11 +27,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 11px;
-  color: var(--muted);
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #8790a0;
 }
 
 .tabOn {
   color: var(--primary);
+  font-weight: 700;
 }

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 
+import { BackupCard } from '@/components/backup-card';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub, Title } from '@/components/ui';
 import { DEFAULT_AMOUNT, formatShort, won, type Period } from '@/lib/budget';
@@ -141,6 +142,8 @@ export default function BudgetPage() {
       <div className={styles.center}>
         <GhostButton label="오늘부터 새 기간 시작" onPress={onNewPeriod} />
       </div>
+
+      <BackupCard />
     </Screen>
   );
 }

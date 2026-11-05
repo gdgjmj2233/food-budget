@@ -16,7 +16,7 @@ import {
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
 import { Roulette } from '@/components/roulette';
-import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
+import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
@@ -192,7 +192,7 @@ export default function RecommendPage() {
         </div>
       )}
 
-      <PrimaryButton label="못 고르겠으면 룰렛 돌리기" icon={IoDiceOutline} color={C.primary} onPress={() => setRoulette(true)} />
+      <AccentButton label="못 고르겠으면 룰렛" icon={IoDiceOutline} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
       {/* 식당 추천은 지금 고른 카테고리·위치·검색 조건 안에서 받는다 */}

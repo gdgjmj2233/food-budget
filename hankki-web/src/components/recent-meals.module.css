@@ -1,3 +1,9 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .more {
   font-size: 13px;
   font-weight: 500;
@@ -6,7 +12,9 @@
 }
 
 .empty {
-  padding: 16px 0 6px;
+  padding: 20px 0;
+  border-radius: 18px;
+  background: var(--card);
   font-size: 13px;
   text-align: center;
   color: var(--muted);
@@ -14,14 +22,16 @@
 
 .list {
   list-style: none;
-  margin-top: 6px;
+  padding: 4px 16px;
+  border-radius: 18px;
+  background: var(--card);
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 56px;
+  gap: 12px;
+  min-height: 60px;
   border-top: 1px solid var(--divider);
 }
 
@@ -29,15 +39,22 @@
   border-top: none;
 }
 
-.when {
+.cat,
+.blank {
   flex: none;
-  width: 38px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   display: flex;
-  flex-direction: column;
-  font-size: 11px;
-  line-height: 15px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.blank {
+  border: 2px dashed #c5cedb;
+  color: #8790a0;
 }
 
 .body {
@@ -45,22 +62,27 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
 }
 
 .name,
-.menu {
+.blankName,
+.when {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.name {
+.name,
+.blankName {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-.menu {
+.blankName {
+  color: var(--muted);
+}
+
+.when {
   font-size: 12px;
   color: var(--muted);
 }
@@ -71,16 +93,24 @@
   white-space: nowrap;
 }
 
+.fill {
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
 .remove {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  margin-right: -8px;
+  width: 32px;
+  height: 32px;
+  margin: 0 -8px 0 -6px;
   border-radius: 50%;
-  color: var(--muted);
+  color: #8790a0;
 }
 
 .remove:hover {

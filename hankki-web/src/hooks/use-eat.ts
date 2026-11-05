@@ -1,6 +1,6 @@
 import { useToast } from '@/components/toast';
 import { PLACES, type Menu, type Place } from '@/data/places';
-import { won } from '@/lib/budget';
+import { won, type MissingMeal } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
 const ENDED = '예산 기간이 끝났어요. 예산 탭에서 새 기간을 시작하세요.';
@@ -45,6 +45,16 @@ export function useEat() {
     if (delta) toast(`이번 끼니를 건너뛰었어요 · ${change(delta)}`);
   };
 
+  /** 어제 비어 있던 끼니를 채운다. price 0 은 안 먹은 끼니 */
+  const fillMissing = (slot: MissingMeal, name: string, menu: string, price: number, placeId?: string) => {
+    const delta = record(name, menu, price, { placeId, at: slot.at });
+    if (!delta) {
+      toast(ENDED);
+      return;
+    }
+    toast(`어제 ${slot.slot} 기록을 채웠어요 · ${change(delta)}`);
+  };
+
   /** 지금 한 끼 권장 금액 이하 메뉴 중에서 무작위로 고른다. 없으면 가장 싼 메뉴. */
   const pickRandom = (places: Place[] = PLACES) => {
     const pairs = places.flatMap((p) => p.menus.map((m) => ({ p, m })));
@@ -55,5 +65,5 @@ export function useEat() {
     pick(p, m);
   };
 
-  return { pick, eatCustom, skip, pickRandom };
+  return { pick, eatCustom, skip, fillMissing, pickRandom };
 }

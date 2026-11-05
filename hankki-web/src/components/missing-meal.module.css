@@ -1,0 +1,101 @@
+.card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 2px solid var(--accent);
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: 0 4px 16px rgba(11, 61, 145, 0.1);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mascot {
+  flex: none;
+  width: 54px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notice {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a5a00;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 27px;
+}
+
+.frequent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.frequentLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: #f7f9fc;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chipOn {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.choice {
+  height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.save {
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
