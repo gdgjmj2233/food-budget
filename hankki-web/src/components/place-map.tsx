@@ -16,7 +16,8 @@ const PIN_BOX = { width: 104, height: 34 };
 /**
  * 카카오맵에 식당을 가격 핀으로 찍는다. 예산 안이면 파란색, 넘으면 빨간 테두리.
  * 화면에서 겹치는 핀은 "N곳 · 최저가~" 묶음 핀으로 합친다.
- * 핀을 누르면 onSelect 로 식당을, 같은 건물이라 확대해도 안 풀리는 묶음을 누르면 onSelectGroup 으로 식당들을 알려준다.
+ * 핀을 누르면 onSelect 로 식당을, 묶음 핀을 누르면 onSelectGroup 으로 묶음 안 식당들을 알려주고 그 구역을 확대한다.
+ * (같은 건물이라 확대해도 안 풀리는 묶음은 확대하지 않고 sameSpot 으로 알려준다)
  */
 export function PlaceMap({
   places,
@@ -29,7 +30,7 @@ export function PlaceMap({
   perMeal: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onSelectGroup: (ids: string[]) => void;
+  onSelectGroup: (ids: string[], sameSpot: boolean) => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
@@ -122,11 +123,13 @@ export function PlaceMap({
         pin.innerHTML = `<b class="${styles.count}">${g.length}곳</b>${won(min)}~`;
         pin.setAttribute('aria-label', `식당 ${g.length}곳, 가장 싼 메뉴 ${won(min)}원. 눌러서 보기`);
         pin.onclick = () => {
-          // 같은 건물이거나 더 확대할 수 없으면 목록으로, 아니면 묶음이 풀리도록 그 부분을 확대
-          if (isSameSpot(g.map((i) => i.pos)) || map.getLevel() <= 1) {
-            onSelectGroupRef.current(g.map((i) => i.place.id));
-            return;
-          }
+          // 묶음 안 식당 목록은 항상 알려주고, 같은 건물이 아니면 묶음이 풀리도록 그 부분을 확대
+          const sameSpot = isSameSpot(g.map((i) => i.pos)) || map.getLevel() <= 1;
+          onSelectGroupRef.current(
+            g.map((i) => i.place.id),
+            sameSpot,
+          );
+          if (sameSpot) return;
           const bounds = new kakao.maps.LatLngBounds();
           g.forEach((i) => bounds.extend(i.ll));
           map.setBounds(bounds, 60, 40, 40, 40);
