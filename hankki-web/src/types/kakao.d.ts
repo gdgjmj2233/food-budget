@@ -20,6 +20,13 @@ declare namespace kakao.maps {
     setBounds(bounds: LatLngBounds, paddingTop?: number, paddingRight?: number, paddingBottom?: number, paddingLeft?: number): void;
     panTo(latlng: LatLng): void;
     relayout(): void;
+    getLevel(): number;
+    setLevel(level: number, options?: { anchor?: LatLng; animate?: boolean }): void;
+    getProjection(): MapProjection;
+  }
+
+  interface MapProjection {
+    containerPointFromCoords(latlng: LatLng): Point;
   }
 
   class Marker {
@@ -38,6 +45,8 @@ declare namespace kakao.maps {
 
   class Point {
     constructor(x: number, y: number);
+    getX(): number;
+    getY(): number;
   }
 
   class CustomOverlay {
@@ -47,6 +56,8 @@ declare namespace kakao.maps {
 
   namespace event {
     function addListener(target: Marker, type: 'click', handler: () => void): void;
+    function addListener(target: Map, type: 'zoom_changed', handler: () => void): void;
+    function removeListener(target: Map, type: 'zoom_changed', handler: () => void): void;
   }
 
   namespace services {
