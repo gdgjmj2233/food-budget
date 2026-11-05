@@ -6,31 +6,22 @@ import { bestMenu, PLACES, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { INHA, loadKakaoMap, locatePlaces } from '@/lib/kakao-map';
 import { clusterPoints, isSameSpot } from '@/lib/map-cluster';
+import { countVisits, FREQUENT_VISITS, HIGH_RATING, placeTiers, TIER_LABEL, tierForLevel, type Tier } from '@/lib/map-tiers';
 import { useBudget } from '@/store/budget-store';
-import { useRatings } from '@/store/rating-store';
+import { setDeclutter, useDeclutter, useRatings } from '@/store/rating-store';
 import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
 
 /** 화면에서 핀 하나가 차지하는 크기(px, 묶음 핀 "12곳 10,500~" 기준 + 여백). 이 안에 겹치는 핀은 하나로 묶는다 */
 const PIN_BOX = { width: 104, height: 34 };
-/** 핀에 ★을 붙이는 내 별점 */
-const HIGH_RATING = 4;
-/** 핀에 ♥를 붙이는 방문 횟수 */
-const FREQUENT_VISITS = 2;
-
-/** 기록에서 식당별 방문 횟수를 센다 */
-function countVisits(meals: { placeId?: string }[]): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const m of meals) if (m.placeId) out[m.placeId] = (out[m.placeId] ?? 0) + 1;
-  return out;
-}
 
 /**
  * 카카오맵에 식당을 가격 핀으로 찍는다. 예산 안이면 파란색, 넘으면 빨간 테두리.
  * 화면에서 겹치는 핀은 "N곳 · 최저가~" 묶음 핀으로 합친다.
  * 핀을 누르면 onSelect 로 식당을, 묶음 핀을 누르면 onSelectGroup 으로 묶음 안 식당들을 알려주고 그 구역을 확대한다.
  * (같은 건물이라 확대해도 안 풀리는 묶음은 확대하지 않고 sameSpot 으로 알려준다)
+ * "핀 정리"가 켜져 있으면 축소할수록 주요 가게만 남긴 뒤 묶는다 (단계는 lib/map-tiers 참고).
  */
 export function PlaceMap({
   places,
@@ -54,7 +45,10 @@ export function PlaceMap({
 
   const { meals } = useBudget();
   const ratings = useRatings();
+  const declutter = useDeclutter();
   const visits = useMemo(() => countVisits(meals), [meals]);
+  const tiers = useMemo(() => placeTiers(places, perMeal, ratings, visits), [places, perMeal, ratings, visits]);
+  const tier: Tier = declutter ? tierForLevel(level) : 4;
 
   // 지도를 만들고 모든 식당의 좌표를 찾는다 (처음 한 번)
   useEffect(() => {
@@ -101,7 +95,7 @@ export function PlaceMap({
     const proj = map.getProjection();
     const info = places.flatMap((p) => {
       const pos = positions[p.id];
-      if (!pos) return [];
+      if (!pos || (p.id !== selectedId && tiers[p.id] > tier)) return [];
       const ll = new kakao.maps.LatLng(pos.lat, pos.lng);
       const pt = proj.containerPointFromCoords(ll);
       return [{ place: p, pos, ll, x: pt.x, y: pt.y, ...bestMenu(p, perMeal) }];
@@ -109,10 +103,10 @@ export function PlaceMap({
     const byId = new Map(info.map((i) => [i.place.id, i]));
 
     // 선택한 식당은 묶지 않고 항상 이름과 함께 보여 준다.
-    // 싼 곳을 기준점으로 삼도록 정렬해서 묶는다
+    // 주요 가게(낮은 단계)를 먼저, 같은 단계면 싼 곳을 기준점으로 삼도록 정렬해서 묶는다
     const rest = info
       .filter((i) => i.place.id !== selectedId)
-      .sort((a, b) => a.menu.price - b.menu.price);
+      .sort((a, b) => tiers[a.place.id] - tiers[b.place.id] || a.menu.price - b.menu.price);
     const groups = clusterPoints(
       rest.map((i) => ({ id: i.place.id, x: i.x, y: i.y })),
       PIN_BOX.width,
@@ -167,7 +161,7 @@ export function PlaceMap({
       return new kakao.maps.CustomOverlay({ map, position, content: pin, yAnchor: 1, zIndex });
     });
     return () => overlays.forEach((o) => o.setMap(null));
-  }, [map, places, positions, perMeal, selectedId, level, ratings, visits]);
+  }, [map, places, positions, perMeal, selectedId, level, tiers, tier, ratings, visits]);
 
   // 좌표를 다 찾았거나 목록(필터)이 바뀌면 보이는 식당이 다 들어오게 지도를 맞춘다
   const listKey = places.map((p) => p.id).join(',');
@@ -183,10 +177,34 @@ export function PlaceMap({
   }, [map, located, listKey]);
 
   const missing = located ? places.filter((p) => !positions[p.id]).length : 0;
+  const shown = places.filter((p) => positions[p.id] && tiers[p.id] <= tier).length;
+  const hidden = places.filter((p) => positions[p.id]).length - shown;
 
   return (
     <div className={styles.wrap}>
       <div ref={boxRef} className={styles.map} />
+      {map && !error && (
+        <div className={styles.controls}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={declutter}
+            onClick={() => setDeclutter(!declutter)}
+            className={`${styles.toggle} ${declutter ? styles.toggleOn : ''}`}>
+            <span className={styles.knob} aria-hidden />
+            핀 정리 {declutter ? 'ON' : 'OFF'}
+          </button>
+          {declutter && (
+            <span className={styles.tier} aria-live="polite">
+              {tier}단계 · {TIER_LABEL[tier]}
+              {hidden > 0 && <em> (+{hidden}곳은 확대하면 보여요)</em>}
+            </span>
+          )}
+        </div>
+      )}
+      {declutter && located && tier === 1 && shown === 0 && (
+        <p className={styles.status}>별점 4점 이상 준 가게가 없어요. 식당 카드에서 별점을 매기거나 확대해 보세요</p>
+      )}
       {error && <p className={styles.notice}>{error}. 잠시 후 다시 열어 보세요.</p>}
       {!error && !located && map && <p className={styles.status}>식당 위치를 찾는 중…</p>}
       {missing > 0 && <p className={styles.status}>위치를 못 찾은 {missing}곳은 지도에 없어요</p>}
