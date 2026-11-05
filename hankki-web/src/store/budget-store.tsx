@@ -5,7 +5,16 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useSyncExternalStore } from 'react';
 
 import type { Menu, Place } from '@/data/places';
-import { calcBudget, DEFAULT_AMOUNT, toDateKey, type BudgetSummary, type Meal, type Settings } from '@/lib/budget';
+import {
+  calcBudget,
+  DEFAULT_AMOUNT,
+  findMissingMeal,
+  toDateKey,
+  type BudgetSummary,
+  type Meal,
+  type MissingMeal,
+  type Settings,
+} from '@/lib/budget';
 
 const STORAGE_KEY = 'hankki/v1';
 
@@ -20,6 +29,8 @@ interface State {
   settings: Settings;
   meals: Meal[];
   lastDelta: Delta | null;
+  /** "기억 안 나"를 누른 날짜. 그 날의 빠진 끼니는 다시 묻지 않는다 */
+  dismissedDate: string | null;
 }
 
 type Action =
@@ -28,7 +39,8 @@ type Action =
   | { type: 'removeMeal'; id: string }
   | { type: 'clearPeriod' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
-  | { type: 'newPeriod' };
+  | { type: 'newPeriod' }
+  | { type: 'dismissMissing'; date: string };
 
 const initialSettings = (): Settings => ({
   period: 'week',
@@ -40,12 +52,17 @@ const initialSettings = (): Settings => ({
 
 /** 저장된 데이터 불러오기. 없거나 깨졌으면 처음 설정으로 시작한다 */
 function loadState(): State {
-  const fresh: State = { settings: initialSettings(), meals: [], lastDelta: null };
+  const fresh: State = { settings: initialSettings(), meals: [], lastDelta: null, dismissedDate: null };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return fresh;
-    const saved = JSON.parse(raw) as { settings?: Settings; meals?: Meal[] };
-    return { settings: saved.settings ?? fresh.settings, meals: saved.meals ?? [], lastDelta: null };
+    const saved = JSON.parse(raw) as { settings?: Settings; meals?: Meal[]; dismissedDate?: string };
+    return {
+      settings: saved.settings ?? fresh.settings,
+      meals: saved.meals ?? [],
+      lastDelta: null,
+      dismissedDate: saved.dismissedDate ?? null,
+    };
   } catch {
     return fresh;
   }
@@ -67,6 +84,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, settings: { ...state.settings, ...action.patch }, lastDelta: null };
     case 'newPeriod':
       return { ...state, settings: { ...state.settings, startDate: toDateKey(new Date()) }, lastDelta: null };
+    case 'dismissMissing':
+      return { ...state, dismissedDate: action.date };
   }
 }
 
@@ -77,10 +96,15 @@ interface BudgetContextValue {
   meals: Meal[];
   summary: BudgetSummary;
   lastDelta: Delta | null;
+  /** 어제 기록이 빠진 끼니. 없거나 "기억 안 나"를 눌렀으면 null */
+  missing: MissingMeal | null;
   /** 식당 메뉴를 먹은 것으로 기록하고, 예산 변화를 돌려준다 */
   eat: (place: Place, menu: Menu) => Delta | null;
   /** 목록에 없는 끼니(직접 입력, 스킵)를 기록하고, 예산 변화를 돌려준다 */
-  record: (name: string, menu: string, price: number) => Delta | null;
+  record: (name: string, menu: string, price: number, extra?: { placeId?: string; at?: number }) => Delta | null;
+  /** 이 금액을 먹고 나면 바뀌는 한 끼 권장 금액 */
+  perMealAfter: (price: number) => number;
+  dismissMissing: (date: string) => void;
   undo: () => Meal | null;
   /** 기록 하나를 지운다 */
   removeMeal: (id: string) => void;
@@ -112,19 +136,24 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
   // 바뀔 때마다 저장
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, meals: state.meals }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, meals: state.meals, dismissedDate: state.dismissedDate }));
     } catch {
       // 저장 공간이 막힌 브라우저(시크릿 모드 등)에서는 저장 없이 동작
     }
-  }, [state.settings, state.meals]);
+  }, [state.settings, state.meals, state.dismissedDate]);
 
   const summary = useMemo(() => calcBudget(state.settings, state.meals), [state.settings, state.meals]);
+  const missing = useMemo(() => {
+    const found = summary.ended ? null : findMissingMeal(state.settings, state.meals);
+    return found?.date === state.dismissedDate ? null : found;
+  }, [summary.ended, state.settings, state.meals, state.dismissedDate]);
 
-  // 끼니 하나를 오늘 날짜로 기록하고, 한 끼 권장 금액 변화를 돌려준다
-  const addMeal = (fields: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'>): Delta | null => {
+  // 끼니 하나를 기록하고(at 이 없으면 지금), 한 끼 권장 금액 변화를 돌려준다
+  const addMeal = ({ at, ...fields }: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'> & { at?: number }): Delta | null => {
     if (summary.ended) return null;
     const now = new Date();
-    const meal: Meal = { id: newId(), ...fields, date: toDateKey(now), at: now.getTime() };
+    const when = at === undefined ? now : new Date(at);
+    const meal: Meal = { id: newId(), ...fields, date: toDateKey(when), at: when.getTime() };
     const after = calcBudget(state.settings, [...state.meals, meal], now);
     const delta: Delta = { name: meal.name, price: meal.price, before: summary.perMeal, after: after.perMeal };
     dispatch({ type: 'addMeal', meal, delta });
@@ -136,8 +165,15 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
     meals: state.meals,
     summary,
     lastDelta: state.lastDelta,
+    missing,
     eat: (place, menu) => addMeal({ placeId: place.id, name: place.name, menu: menu.name, price: menu.price }),
-    record: (name, menu, price) => addMeal({ name, menu, price }),
+    record: (name, menu, price, extra) => addMeal({ name, menu, price, ...extra }),
+    perMealAfter: (price) => {
+      const now = new Date();
+      const meal: Meal = { id: '', name: '', menu: '', price, date: toDateKey(now), at: now.getTime() };
+      return calcBudget(state.settings, [...state.meals, meal], now).perMeal;
+    },
+    dismissMissing: (date) => dispatch({ type: 'dismissMissing', date }),
     undo: () => {
       const last = state.meals[state.meals.length - 1] ?? null;
       if (last) dispatch({ type: 'undo' });

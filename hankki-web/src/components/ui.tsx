@@ -33,7 +33,7 @@ export function PrimaryButton({
   label,
   onPress,
   icon: Icon,
-  color = 'var(--ink)',
+  color = 'var(--primary)',
 }: {
   label: string;
   onPress: () => void;
@@ -43,6 +43,16 @@ export function PrimaryButton({
   return (
     <button type="button" onClick={onPress} className={styles.primary} style={{ backgroundColor: color }}>
       {Icon && <Icon size={20} aria-hidden />}
+      {label}
+    </button>
+  );
+}
+
+/** 화면에서 가장 중요한 버튼 하나에 쓰는 노란 버튼 */
+export function AccentButton({ label, onPress, icon: Icon }: { label: string; onPress: () => void; icon?: IconType }) {
+  return (
+    <button type="button" onClick={onPress} className={styles.accent}>
+      {Icon && <Icon size={24} aria-hidden />}
       {label}
     </button>
   );
