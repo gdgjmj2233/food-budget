@@ -3,7 +3,7 @@
 import { toDateKey, type Meal, type Settings } from '@/lib/budget';
 import { STORAGE_KEY as BUDGET_KEY } from '@/store/budget-store';
 import { STORAGE_KEY as PROFILE_KEY } from '@/store/profile-store';
-import { DECLUTTER_KEY, RATINGS_KEY } from '@/store/rating-store';
+import { RATINGS_KEY } from '@/store/rating-store';
 
 const APP = 'hankki';
 const VERSION = 1;
@@ -24,7 +24,6 @@ export interface Backup {
   budget: BudgetData;
   profile: unknown;
   ratings: Record<string, number>;
-  declutter: string | null;
 }
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -83,7 +82,6 @@ export function saveBackup(settings: Settings, meals: Meal[]) {
     budget: { ...readJson<BudgetData>(BUDGET_KEY), settings, meals },
     profile: readJson(PROFILE_KEY),
     ratings: readJson<Record<string, number>>(RATINGS_KEY) ?? {},
-    declutter: localStorage.getItem(DECLUTTER_KEY),
   };
   download(`한끼예산-백업-${toDateKey(new Date())}.json`, 'application/json', JSON.stringify(backup, null, 2));
   localStorage.setItem(LAST_BACKUP_KEY, String(backup.savedAt));
@@ -128,7 +126,6 @@ export function restoreBackup(b: Backup): number {
   localStorage.setItem(BUDGET_KEY, JSON.stringify({ ...b.budget, meals }));
   if (b.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(b.profile));
   localStorage.setItem(RATINGS_KEY, JSON.stringify({ ...b.ratings, ...readJson<Record<string, number>>(RATINGS_KEY) }));
-  if (b.declutter) localStorage.setItem(DECLUTTER_KEY, b.declutter);
   return added;
 }
 
