@@ -82,6 +82,15 @@
   font-weight: 700;
 }
 
+/* 최대 확대에서 풀어 놓은 이름 핀: 실제 위치는 점이 알려 주므로 꼬리표(화살표)를 뗀다 */
+.pin.pinSpread {
+  margin-bottom: 0;
+}
+
+.pin.pinSpread::after {
+  display: none;
+}
+
 /* 멀리서 보면 식당 위치만 알려 주는 작은 점 (30m 축척까지 확대하면 이름 핀) */
 .dot {
   display: block;

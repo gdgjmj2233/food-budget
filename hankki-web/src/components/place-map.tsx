@@ -4,17 +4,26 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { PLACES, type Place } from '@/data/places';
 import { INHA, loadKakaoMap, locatePlaces, type ExtraPlace } from '@/lib/kakao-map';
+import { clusterPoints } from '@/lib/map-cluster';
 import { useRatings } from '@/store/rating-store';
 import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
+type Pin = Pos & { id: string; name: string; extra: boolean };
 
 /** 이 확대 단계(카카오 지도 2단계 = 축척 30m)까지 확대하면 점 대신 이름 핀을 보여 준다 */
 const NAME_LEVEL = 2;
+/** 가장 크게 확대한 단계(1단계). 이때는 겹친 이름 핀을 위아래로 풀어 놓고 실제 위치를 점으로 따로 찍는다 */
+const MAX_ZOOM_LEVEL = 1;
+/** 이름 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치면 한 묶음으로 보고 풀어 놓는다 */
+const PIN_BOX = { width: 110, height: 30 };
+/** 풀어 놓은 이름 핀 사이 간격(px) */
+const SPREAD_STEP = 30;
 
 /**
  * 카카오맵에 식당을 찍는다. 멀리서는 작은 점, 30m 축척까지 확대하면 이름 핀이고, 내가 별점을 준 식당은 이름 옆에 별점이 붙는다.
  * 앱 데이터의 식당은 파란색, 카카오 검색으로 찾은 주변 음식점(extras)은 흰색이다. 핀은 묶지 않고 모두 따로 보여 준다.
+ * 최대로 확대하면 겹친 이름 핀을 위아래로 풀어 놓고, 실제 위치는 점으로 따로 보여 준다.
  * 선택한 식당은 멀리서도 이름 핀이다. 핀을 누르면 onSelect 로 그 식당(또는 주변 음식점)의 id 를 알려준다.
  */
 export function PlaceMap({
@@ -59,7 +68,7 @@ export function PlaceMap({
     };
   }, []);
 
-  // 핀 그리기 (목록, 별점, 선택이 바뀔 때마다 다시)
+  // 핀 그리기 (목록, 별점, 선택, 확대 단계가 바뀔 때마다 다시)
   const onSelectRef = useRef(onSelect);
   useEffect(() => {
     onSelectRef.current = onSelect;
@@ -77,40 +86,76 @@ export function PlaceMap({
   useEffect(() => {
     if (!map) return;
     const named = level <= NAME_LEVEL;
-    const pins = [
+    const pins: Pin[] = [
       ...places.flatMap((p) => (positions[p.id] ? [{ id: p.id, name: p.name, ...positions[p.id], extra: false }] : [])),
       ...extras.map((e) => ({ id: e.id, name: e.name, lat: e.lat, lng: e.lng, extra: true })),
     ];
 
-    const overlays = pins.map((p) => {
-      const on = p.id === selectedId;
+    const dotOf = (p: Pin) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = `${styles.dot} ${p.extra ? styles.dotExtra : ''}`;
+      dot.setAttribute('aria-label', p.name);
+      dot.onclick = () => onSelectRef.current(p.id);
+      return dot;
+    };
+
+    const namedOf = (p: Pin) => {
       const stars = ratings[p.id];
-      const showName = named || on;
       const pin = document.createElement('button');
       pin.type = 'button';
-      if (showName) {
-        pin.className = `${styles.pin} ${p.extra ? styles.pinExtra : ''} ${on ? styles.pinOn : ''}`;
-        pin.append(p.name);
-        if (stars) {
-          const badge = document.createElement('span');
-          badge.className = styles.pinStar;
-          badge.textContent = `★${stars}`;
-          pin.append(badge);
-        }
-      } else {
-        pin.className = `${styles.dot} ${p.extra ? styles.dotExtra : ''}`;
+      pin.className = `${styles.pin} ${p.extra ? styles.pinExtra : ''} ${p.id === selectedId ? styles.pinOn : ''}`;
+      pin.append(p.name);
+      if (stars) {
+        const badge = document.createElement('span');
+        badge.className = styles.pinStar;
+        badge.textContent = `★${stars}`;
+        pin.append(badge);
       }
       pin.setAttribute('aria-label', stars ? `${p.name}, 내 별점 ${stars}점` : p.name);
       pin.onclick = () => onSelectRef.current(p.id);
+      return pin;
+    };
 
-      return new kakao.maps.CustomOverlay({
-        map,
-        position: new kakao.maps.LatLng(p.lat, p.lng),
-        content: pin,
-        yAnchor: showName ? 1 : 0.5,
-        zIndex: on ? 4 : p.extra ? 2 : 3,
+    const overlays: kakao.maps.CustomOverlay[] = [];
+    const add = (content: HTMLElement, pos: Pos, yAnchor: number, zIndex: number) =>
+      overlays.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(pos.lat, pos.lng), content, yAnchor, zIndex }));
+    const zOf = (p: Pin) => (p.id === selectedId ? 4 : p.extra ? 2 : 3);
+
+    // 최대 확대: 화면에서 겹치는 이름 핀끼리 묶어서, 북쪽에 있는 식당이 위로 오게 위아래로 풀어 놓는다
+    const groups: Pin[][] = [];
+    if (level <= MAX_ZOOM_LEVEL) {
+      const proj = map.getProjection();
+      const byId = new Map(pins.map((p) => [p.id, p]));
+      const points = [...pins]
+        .sort((a, b) => b.lat - a.lat)
+        .map((p) => {
+          const pt = proj.containerPointFromCoords(new kakao.maps.LatLng(p.lat, p.lng));
+          return { id: p.id, x: pt.getX(), y: pt.getY() };
+        });
+      clusterPoints(points, PIN_BOX.width, PIN_BOX.height).forEach((g) => groups.push(g.map((pt) => byId.get(pt.id)!)));
+    } else {
+      pins.forEach((p) => groups.push([p]));
+    }
+
+    groups.forEach((g) => {
+      if (g.length === 1) {
+        const [p] = g;
+        const showName = named || p.id === selectedId;
+        add(showName ? namedOf(p) : dotOf(p), p, showName ? 1 : 0.5, zOf(p));
+        return;
+      }
+      // 풀어 놓은 이름 핀은 묶음의 가운데에 쌓고, 각 식당의 실제 위치는 점으로 따로 찍는다
+      const center = { lat: g.reduce((s, p) => s + p.lat, 0) / g.length, lng: g.reduce((s, p) => s + p.lng, 0) / g.length };
+      g.forEach((p, i) => {
+        add(dotOf(p), p, 0.5, 1);
+        const pin = namedOf(p);
+        pin.classList.add(styles.pinSpread);
+        pin.style.transform = `translateY(${(i - (g.length - 1) / 2) * SPREAD_STEP}px)`;
+        add(pin, center, 0.5, zOf(p));
       });
     });
+
     return () => overlays.forEach((o) => o.setMap(null));
   }, [map, places, extras, positions, ratings, selectedId, level]);
 
