@@ -82,6 +82,23 @@
   font-weight: 700;
 }
 
+/* 멀리서 보면 식당 위치만 알려 주는 작은 점 (30m 축척까지 확대하면 이름 핀) */
+.dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.dot.dotExtra {
+  background: var(--muted);
+}
+
 /* 앱 데이터에 없는 주변 음식점은 흰 핀 */
 .pin.pinExtra:not(.pinOn) {
   --pin-color: #fff;

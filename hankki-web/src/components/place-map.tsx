@@ -9,10 +9,13 @@ import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
 
+/** 이 확대 단계(카카오 지도 2단계 = 축척 30m)까지 확대하면 점 대신 이름 핀을 보여 준다 */
+const NAME_LEVEL = 2;
+
 /**
- * 카카오맵에 식당을 이름 핀으로 찍는다. 내가 별점을 준 식당은 이름 옆에 별점이 붙는다.
- * 앱 데이터의 식당은 파란 핀, 카카오 검색으로 찾은 주변 음식점(extras)은 흰 핀이다. 핀은 묶지 않고 모두 따로 보여 준다.
- * 핀을 누르면 onSelect 로 그 식당(또는 주변 음식점)의 id 를 알려준다.
+ * 카카오맵에 식당을 찍는다. 멀리서는 작은 점, 30m 축척까지 확대하면 이름 핀이고, 내가 별점을 준 식당은 이름 옆에 별점이 붙는다.
+ * 앱 데이터의 식당은 파란색, 카카오 검색으로 찾은 주변 음식점(extras)은 흰색이다. 핀은 묶지 않고 모두 따로 보여 준다.
+ * 선택한 식당은 멀리서도 이름 핀이다. 핀을 누르면 onSelect 로 그 식당(또는 주변 음식점)의 id 를 알려준다.
  */
 export function PlaceMap({
   places,
@@ -30,6 +33,7 @@ export function PlaceMap({
   const [error, setError] = useState<string | null>(null);
   const [positions, setPositions] = useState<Record<string, Pos>>({});
   const [located, setLocated] = useState(false);
+  const [level, setLevel] = useState(4);
   const ratings = useRatings();
 
   // 지도를 만들고 모든 식당의 좌표를 찾는다 (처음 한 번)
@@ -61,8 +65,18 @@ export function PlaceMap({
     onSelectRef.current = onSelect;
   });
 
+  // 확대 단계가 바뀌면 점과 이름 핀을 바꿔 그린다
   useEffect(() => {
     if (!map) return;
+    const onZoom = () => setLevel(map.getLevel());
+    onZoom();
+    kakao.maps.event.addListener(map, 'zoom_changed', onZoom);
+    return () => kakao.maps.event.removeListener(map, 'zoom_changed', onZoom);
+  }, [map]);
+
+  useEffect(() => {
+    if (!map) return;
+    const named = level <= NAME_LEVEL;
     const pins = [
       ...places.flatMap((p) => (positions[p.id] ? [{ id: p.id, name: p.name, ...positions[p.id], extra: false }] : [])),
       ...extras.map((e) => ({ id: e.id, name: e.name, lat: e.lat, lng: e.lng, extra: true })),
@@ -71,15 +85,20 @@ export function PlaceMap({
     const overlays = pins.map((p) => {
       const on = p.id === selectedId;
       const stars = ratings[p.id];
+      const showName = named || on;
       const pin = document.createElement('button');
       pin.type = 'button';
-      pin.className = `${styles.pin} ${p.extra ? styles.pinExtra : ''} ${on ? styles.pinOn : ''}`;
-      pin.append(p.name);
-      if (stars) {
-        const badge = document.createElement('span');
-        badge.className = styles.pinStar;
-        badge.textContent = `★${stars}`;
-        pin.append(badge);
+      if (showName) {
+        pin.className = `${styles.pin} ${p.extra ? styles.pinExtra : ''} ${on ? styles.pinOn : ''}`;
+        pin.append(p.name);
+        if (stars) {
+          const badge = document.createElement('span');
+          badge.className = styles.pinStar;
+          badge.textContent = `★${stars}`;
+          pin.append(badge);
+        }
+      } else {
+        pin.className = `${styles.dot} ${p.extra ? styles.dotExtra : ''}`;
       }
       pin.setAttribute('aria-label', stars ? `${p.name}, 내 별점 ${stars}점` : p.name);
       pin.onclick = () => onSelectRef.current(p.id);
@@ -88,12 +107,12 @@ export function PlaceMap({
         map,
         position: new kakao.maps.LatLng(p.lat, p.lng),
         content: pin,
-        yAnchor: 1,
+        yAnchor: showName ? 1 : 0.5,
         zIndex: on ? 4 : p.extra ? 2 : 3,
       });
     });
     return () => overlays.forEach((o) => o.setMap(null));
-  }, [map, places, extras, positions, ratings, selectedId]);
+  }, [map, places, extras, positions, ratings, selectedId, level]);
 
   // 좌표를 다 찾았거나 목록(필터)이 바뀌면 보이는 식당이 다 들어오게 지도를 맞춘다
   const listKey = places.map((p) => p.id).join(',');
