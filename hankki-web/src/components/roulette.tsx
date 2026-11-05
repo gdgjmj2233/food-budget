@@ -6,7 +6,7 @@ import { IoAdd, IoChevronBack, IoClose, IoCreateOutline, IoRefresh, IoRestaurant
 import { Modal } from '@/components/modal';
 import type { Place } from '@/data/places';
 import { won } from '@/lib/budget';
-import { C, CAT_COLORS, CAT_EMOJI } from '@/theme';
+import { C, CAT_COLORS } from '@/theme';
 import styles from './roulette.module.css';
 
 /** 룰렛 한 칸. 추천받은 칸에는 식당 정보가 붙고, 직접 넣은 칸은 이름만 있다. */
@@ -178,7 +178,7 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
             <div className={styles.result}>
               {result.place && resultCat && (
                 <span className={styles.cat} style={{ backgroundColor: resultCat.bg, color: resultCat.fg }}>
-                  {CAT_EMOJI[result.place.cat]} {result.place.cat}
+                  {result.place.cat}
                 </span>
               )}
               <p className={styles.resultName}>{result.name}</p>
