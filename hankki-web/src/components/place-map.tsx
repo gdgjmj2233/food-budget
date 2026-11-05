@@ -11,10 +11,10 @@ import styles from './place-map.module.css';
 type Pos = { lat: number; lng: number };
 type Pin = Pos & { id: string; name: string; extra: boolean };
 
-/** 이 확대 단계(카카오 지도 2단계 = 축척 30m)까지 확대하면 점 대신 이름 핀을 보여 준다 */
-const NAME_LEVEL = 2;
-/** 이 확대 단계(2단계 = 축척 30m)부터는 겹친 이름 핀을 위아래로 풀어 놓고 실제 위치를 점으로 따로 찍는다 */
-const MAX_ZOOM_LEVEL = 2;
+/** 이 확대 단계(카카오 지도 1단계 = 축척 20m)까지 확대하면 점 대신 이름 핀을 보여 준다 */
+const NAME_LEVEL = 1;
+/** 이 확대 단계(1단계 = 축척 20m)부터는 겹친 이름 핀을 위아래로 풀어 놓고 실제 위치를 점으로 따로 찍는다 */
+const MAX_ZOOM_LEVEL = 1;
 /** 이름 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치면 한 묶음으로 보고 풀어 놓는다 */
 const PIN_BOX = { width: 110, height: 30 };
 /** 멀리서 "N곳" 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치는 점은 한 핀으로 합친다 */
@@ -23,9 +23,9 @@ const CLUSTER_BOX = { width: 56, height: 32 };
 const SPREAD_STEP = 30;
 
 /**
- * 카카오맵에 식당을 찍는다. 멀리서는 작은 점, 30m 축척까지 확대하면 이름 핀이고, 내가 별점을 준 식당은 이름 옆에 별점이 붙는다.
+ * 카카오맵에 식당을 찍는다. 멀리서는 작은 점, 20m 축척까지 확대하면 이름 핀이고, 내가 별점을 준 식당은 이름 옆에 별점이 붙는다.
  * 앱 데이터의 식당은 파란색, 카카오 검색으로 찾은 주변 음식점(extras)은 흰색이다. 핀은 묶지 않고 모두 따로 보여 준다.
- * 30m 축척부터는 겹친 이름 핀을 위아래로 풀어 놓고, 실제 위치는 점으로 따로 보여 준다.
+ * 20m 축척부터는 겹친 이름 핀을 위아래로 풀어 놓고, 실제 위치는 점으로 따로 보여 준다.
  * 선택한 식당은 멀리서도 이름 핀이다. 핀을 누르면 onSelect 로 그 식당(또는 주변 음식점)의 id 를 알려준다.
  */
 export function PlaceMap({
@@ -136,7 +136,7 @@ export function PlaceMap({
       return typeof x === 'number' && typeof y === 'number' ? { id: p.id, x, y } : null;
     };
 
-    // 30m 축척부터는 겹친 이름 핀을 풀어 놓고(북쪽이 위로), 그보다 멀리서는 가까운 핀을 "N곳" 한 핀으로 합친다.
+    // 20m 축척부터는 겹친 이름 핀을 풀어 놓고(북쪽이 위로), 그보다 멀리서는 가까운 핀을 "N곳" 한 핀으로 합친다.
     // 선택한 식당은 합치지 않고 항상 따로 보여 준다
     const spread = level <= MAX_ZOOM_LEVEL;
     const points = (spread ? [...pins] : pins.filter((p) => p.id !== selectedId))
