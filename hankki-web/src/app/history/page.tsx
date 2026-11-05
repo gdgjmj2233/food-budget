@@ -1,32 +1,24 @@
 'use client';
 
-import Link from 'next/link';
 import React, { useState } from 'react';
-import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
+import { IoChevronBack, IoChevronForward, IoPencilOutline } from 'react-icons/io5';
 
+import { MealEdit } from '@/components/meal-edit';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { PLACES } from '@/data/places';
+import { WeekChart } from '@/components/week-chart';
 import { formatDate, fromDateKey, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { useBudget } from '@/store/budget-store';
-import { C, CAT_COLORS } from '@/theme';
+import { C, mealColor } from '@/theme';
 import styles from './page.module.css';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 const SUN = '#E5484D';
-const SAT = '#3182F6';
+const SAT = C.primary;
 /** 한 칸에 보여줄 최대 칩 수. 넘치면 +n 으로 줄인다 */
 const MAX_CHIPS = 3;
-
-const CAT_OF = new Map(PLACES.map((p) => [p.id, p.cat]));
-const chipColor = (m: Meal) => {
-  // 스킵(0원)은 회색
-  if (m.price === 0) return { bg: C.divider, fg: C.muted };
-  const cat = m.placeId ? CAT_OF.get(m.placeId) : undefined;
-  return cat ? CAT_COLORS[cat] : { bg: C.primarySoft, fg: C.primaryDark };
-};
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const timeOf = (ms: number) => {
@@ -46,13 +38,14 @@ function monthGrid(year: number, month: number): Date[][] {
 }
 
 export default function HistoryPage() {
-  const { summary: s, meals, undo, clearPeriod } = useBudget();
+  const { summary: s, meals, undo, clearPeriod, removeMeal, updateMeal } = useBudget();
   const toast = useToast();
 
   const today = startOfDay(new Date());
   const todayKey = toDateKey(today);
   const [cursor, setCursor] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [selected, setSelected] = useState(todayKey);
+  const [editing, setEditing] = useState<Meal | null>(null);
 
   // 날짜별로 먹은 기록 묶기 (시간순)
   const byDay = new Map<string, Meal[]>();
@@ -83,9 +76,16 @@ export default function HistoryPage() {
     });
   };
 
+  const onRemove = (m: Meal) => {
+    confirm('기록 지우기', `${m.name} ${won(m.price)}원 기록을 지울까요?`, () => {
+      removeMeal(m.id);
+      setEditing(null);
+      toast(`${m.name} 기록을 지웠어요`);
+    });
+  };
+
   return (
     <Screen>
-      <Link href="/" className={styles.homeLink}><IoChevronBack size={18} aria-hidden /> 홈으로</Link>
       <div className={ui.row}>
         <div className={styles.monthNav}>
           <h1 className={styles.month}>
@@ -145,7 +145,7 @@ export default function HistoryPage() {
               </span>
 
               {list.slice(0, MAX_CHIPS).map((m) => {
-                const c = chipColor(m);
+                const c = mealColor(m);
                 return (
                   <span key={m.id} className={styles.chip} style={{ backgroundColor: c.bg, borderLeftColor: c.fg, color: c.fg }}>
                     {m.name}
@@ -169,7 +169,7 @@ export default function HistoryPage() {
           <p className={styles.empty}>이 날은 기록이 없어요</p>
         ) : (
           selMeals.map((m) => {
-            const c = chipColor(m);
+            const c = mealColor(m);
             return (
               <div key={m.id} className={styles.row}>
                 <span className={styles.bar} style={{ backgroundColor: c.fg }} />
@@ -182,6 +182,9 @@ export default function HistoryPage() {
                   {m.price > 0 && '−'}
                   {won(m.price)}원
                 </span>
+                <button type="button" className={styles.edit} onClick={() => setEditing(m)} aria-label={`${m.name} 기록 고치기`}>
+                  <IoPencilOutline size={16} aria-hidden />
+                </button>
               </div>
             );
           })
@@ -192,6 +195,21 @@ export default function HistoryPage() {
         <div className={styles.center}>
           <GhostButton label="이번 기간 기록 초기화" onPress={onReset} />
         </div>
+      )}
+
+      <WeekChart meals={meals} perDay={s.perDay} />
+
+      {editing && (
+        <MealEdit
+          meal={editing}
+          onClose={() => setEditing(null)}
+          onRemove={() => onRemove(editing)}
+          onSave={(patch) => {
+            updateMeal(editing.id, patch);
+            setEditing(null);
+            toast('기록을 고쳤어요');
+          }}
+        />
       )}
     </Screen>
   );

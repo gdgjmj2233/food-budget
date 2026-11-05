@@ -1,0 +1,369 @@
+/* 추천 탭에서 따로 띄울 때: 제목 + 룰렛 */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 20px 20px;
+}
+
+/* 룰렛 내용. 키가 작은 화면에서는 스크롤된다. 아래 여백은 버튼 그림자가 잘리지 않게 */
+.panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 4px;
+}
+
+.head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--primary);
+  text-align: center;
+}
+
+.iconBtn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.iconSpacer {
+  flex: none;
+  width: 44px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* 다른 내용을 뺀 남는 높이만큼 커진다 (한 화면에 다 보이게) */
+.wheelWrap {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 100px;
+  max-height: min(260px, 68vw);
+  aspect-ratio: 1;
+  margin-top: 10px;
+}
+
+.wheel {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.7, 0.12, 1);
+  will-change: transform;
+}
+
+/* 위쪽 가운데 화살표 */
+.pointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 17px solid transparent;
+  border-right: 17px solid transparent;
+  border-top: 30px solid var(--accent);
+  filter: drop-shadow(0 2px 2px rgba(18, 33, 63, 0.3));
+  z-index: 1;
+}
+
+.label {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* 가운데 GO 버튼 */
+.hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(44px, 22%, 56px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.hub:disabled {
+  cursor: default;
+}
+
+.resultArea {
+  flex: none;
+  min-height: 24px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result {
+  width: 100%;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 4px 16px rgba(11, 61, 145, 0.1);
+  animation: pop 260ms ease-out;
+}
+
+.resultImg {
+  flex: none;
+  width: 48px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.resultBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.resultName {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 25px;
+}
+
+.resultMeta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 아래쪽에 붙는 버튼들 */
+.actions {
+  width: 100%;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eat {
+  flex: none;
+  width: 100%;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--accent);
+  box-shadow: 0 4px 0 var(--accent-dark);
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+/* 결과 화면: 가격 칸과 먹기 버튼을 한 줄에 */
+.priceRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.priceRow .eat {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  height: 48px;
+  font-size: 16px;
+}
+
+.again {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+}
+
+.eat:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.eat:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+.ghost {
+  flex: 1;
+  width: 100%;
+  min-height: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 칸 채우기 */
+.editor {
+  flex: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.addRow {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+}
+
+.addBtn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 0 14px 0 10px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.addBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hint {
+  width: 100%;
+  margin-top: -4px;
+  font-size: 12px;
+}
+
+/* 항목이 많아도 돌림판이 너무 작아지지 않게 두 줄까지만 보이고 나머지는 스크롤 */
+.items {
+  width: 100%;
+  max-height: 72px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 3px 4px 3px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--card);
+  font-size: 13px;
+}
+
+.itemName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemDel {
+  flex: none;
+  display: flex;
+  padding: 5px;
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.priceBox {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.priceBox .input {
+  padding-right: 36px;
+  text-align: right;
+}
+
+.unit {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result {
+    animation: none;
+  }
+}

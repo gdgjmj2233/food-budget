@@ -5,12 +5,12 @@ import { usePathname } from 'next/navigation';
 import React from 'react';
 import type { IconType } from 'react-icons';
 import {
+  IoCalendar,
+  IoCalendarOutline,
   IoHome,
   IoHomeOutline,
   IoLocation,
   IoLocationOutline,
-  IoReceipt,
-  IoReceiptOutline,
   IoWallet,
   IoWalletOutline,
 } from 'react-icons/io5';
@@ -22,7 +22,7 @@ import styles from './app-shell.module.css';
 const TABS: { href: string; title: string; icon: IconType; iconOn: IconType }[] = [
   { href: '/', title: '홈', icon: IoHomeOutline, iconOn: IoHome },
   { href: '/recommend', title: '추천', icon: IoLocationOutline, iconOn: IoLocation },
-  { href: '/history', title: '기록', icon: IoReceiptOutline, iconOn: IoReceipt },
+  { href: '/history', title: '기록', icon: IoCalendarOutline, iconOn: IoCalendar },
   { href: '/budget', title: '예산', icon: IoWalletOutline, iconOn: IoWallet },
 ];
 
@@ -36,7 +36,7 @@ function TabBar() {
         const Icon = on ? t.iconOn : t.icon;
         return (
           <Link key={t.href} href={t.href} className={`${styles.tab} ${on ? styles.tabOn : ''}`} aria-current={on ? 'page' : undefined}>
-            <Icon size={22} aria-hidden />
+            <Icon size={24} aria-hidden />
             <span>{t.title}</span>
           </Link>
         );

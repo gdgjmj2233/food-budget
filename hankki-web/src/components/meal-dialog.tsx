@@ -1,13 +1,20 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { IoClose } from 'react-icons/io5';
+import { IoClose, IoListOutline, IoMapOutline } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
 import { PlaceItem } from '@/components/place-item';
-import { bestMenu, mainMenuPrice, PLACES, type Menu, type Place } from '@/data/places';
+import { PlaceMap } from '@/components/place-map';
+import { RoulettePanel } from '@/components/roulette';
+import { CHARACTERS, characterOf } from '@/data/characters';
+import { bestMenu, cheapestPrice, PLACES, type Menu, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
+import { suggestedMenu, suggestToday } from '@/lib/suggest';
+import { useBudget } from '@/store/budget-store';
+import { useProfile } from '@/store/profile-store';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
 import ui from './ui.module.css';
@@ -15,8 +22,19 @@ import ui from './ui.module.css';
 /** 추천 창에 보여줄 식당 수 */
 const MAX_PLACES = 5;
 
+type Tab = 'list' | 'map' | 'roulette';
+
+function WheelIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3v18M3 12h18" />
+    </svg>
+  );
+}
+
 /**
- * 밥먹기 창. 먼저 예산 안 식당을 추천하고, 목록에 없으면 메뉴·가격을 직접 입력한다.
+ * 밥먹기 창. 추천·지도·룰렛 탭으로 고르고, 목록에 없으면 메뉴·가격을 직접 입력한다.
  * 열 때마다 새로 그려서 입력값이 비어 있다.
  */
 export function MealDialog({
@@ -30,45 +48,76 @@ export function MealDialog({
   onPick: (place: Place, menu: Menu) => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
-  const [step, setStep] = useState<'recommend' | 'input'>('recommend');
+  const [tab, setTab] = useState<Tab>('list');
+  const [inputting, setInputting] = useState(false);
+  const [entries, setEntries] = useState<string[]>([]);
 
   return (
-    <Modal onClose={onClose}>
-      {step === 'recommend' ? (
-        <Recommend perMeal={perMeal} onClose={onClose} onPick={onPick} onInput={() => setStep('input')} />
+    <Modal sheet onClose={onClose}>
+      {inputting ? (
+        <MealInput title="직접 입력" perMeal={perMeal} onBack={() => setInputting(false)} onSubmit={onSubmit} />
       ) : (
-        <Input perMeal={perMeal} onBack={() => setStep('recommend')} onSubmit={onSubmit} />
+        <Choose
+          tab={tab}
+          perMeal={perMeal}
+          entries={entries}
+          onTab={setTab}
+          onInput={() => setInputting(true)}
+          onEntries={setEntries}
+          onClose={onClose}
+          onPick={onPick}
+          onSubmit={onSubmit}
+        />
       )}
     </Modal>
   );
 }
 
-/** 예산 안 메뉴가 있는 식당을 가까운 순으로. 하나도 없으면 가장 싼 곳들. */
-function Recommend({
+function Choose({
+  tab,
   perMeal,
+  entries,
+  onTab,
+  onInput,
+  onEntries,
   onClose,
   onPick,
-  onInput,
+  onSubmit,
 }: {
+  tab: Tab;
   perMeal: number;
+  entries: string[];
+  onTab: (tab: Tab) => void;
+  onInput: () => void;
+  onEntries: (entries: string[]) => void;
   onClose: () => void;
   onPick: (place: Place, menu: Menu) => void;
-  onInput: () => void;
+  onSubmit: (menu: string, price: number) => void;
 }) {
-  const fits = PLACES.filter((p) => bestMenu(p, perMeal).fits);
-  const list = fits.length
-    ? fits.sort((a, b) => a.walk - b.walk || mainMenuPrice(a) - mainMenuPrice(b)).slice(0, MAX_PLACES)
-    : [...PLACES].sort((a, b) => mainMenuPrice(a) - mainMenuPrice(b)).slice(0, 3);
+  const hasFits = PLACES.some((p) => bestMenu(p, perMeal).fits);
+  const tabs = [
+    { id: 'list', label: '추천', icon: <IoListOutline size={16} aria-hidden /> },
+    { id: 'map', label: '지도', icon: <IoMapOutline size={16} aria-hidden /> },
+    { id: 'roulette', label: '룰렛', icon: <WheelIcon size={16} /> },
+  ] as const;
 
   return (
-    <div className={styles.body}>
+    <div className={styles.sheetBody}>
       <div className={styles.head}>
         <div>
           <h2 className={styles.title}>오늘 뭐 먹을까요?</h2>
           <p className={styles.sub}>
-            {fits.length
-              ? `대표 메뉴가 ${won(perMeal)}원 안인 가까운 곳`
-              : `대표 메뉴가 ${won(perMeal)}원 안인 곳이 없어 대표 메뉴 가격이 낮은 곳을 골랐어요`}
+            {tab === 'roulette' ? (
+              <>
+                다음 한 끼 권장 <b>{won(perMeal)}원</b>
+              </>
+            ) : hasFits ? (
+              <>
+                한 끼 <b>{won(perMeal)}원</b> 안에서 골랐어요
+              </>
+            ) : (
+              `한 끼 ${won(perMeal)}원 안인 곳이 없어서 가장 싼 곳을 골랐어요`
+            )}
           </p>
         </div>
         <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
@@ -76,30 +125,94 @@ function Recommend({
         </button>
       </div>
 
-      <div className={styles.list}>
-        {list.map((p) => (
-          <PlaceItem key={p.id} place={p} perMeal={perMeal} onPick={(m) => onPick(p, m)} />
+      <div role="tablist" aria-label="고르는 방법" className={styles.tabs}>
+        {tabs.map((t) => (
+          <button
+            type="button"
+            key={t.id}
+            role="tab"
+            aria-selected={t.id === tab}
+            className={`${styles.tab} ${t.id === tab ? styles.tabOn : ''}`}
+            onClick={() => onTab(t.id)}>
+            {t.icon}
+            {t.label}
+          </button>
         ))}
       </div>
 
+      {tab === 'list' && <Recommend perMeal={perMeal} onPick={onPick} />}
+      {tab === 'map' && <MapTab perMeal={perMeal} onPick={onPick} />}
+      {tab === 'roulette' && <RoulettePanel perMeal={perMeal} entries={entries} onEntries={onEntries} onEat={onSubmit} />}
+
       <div className={styles.foot}>
-        <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={onInput}>
-          직접 입력
+        <button type="button" className={`${ui.primary} ${ui.secondary} ${styles.footBtn}`} onClick={onInput}>
+          입력
         </button>
-        <Link href="/recommend" className={styles.more}>
-          추천 탭에서 전체 보기
-        </Link>
       </div>
     </div>
   );
 }
 
+/** 예산 안 메뉴가 있는 식당을 가까운 순으로(어제와 다른 메뉴가 있는 곳이 먼저). 하나도 없으면 가장 싼 곳들. */
+function Recommend({ perMeal, onPick }: { perMeal: number; onPick: (place: Place, menu: Menu) => void }) {
+  const { meals } = useBudget();
+  const profile = useProfile();
+  const tip = suggestToday(meals);
+  const fits = PLACES.filter((p) => bestMenu(p, perMeal).fits);
+  const list = (
+    fits.length
+      ? fits.sort(
+          (a, b) =>
+            Number(!suggestedMenu(a, perMeal, tip)) - Number(!suggestedMenu(b, perMeal, tip)) ||
+            a.walk - b.walk ||
+            cheapestPrice(a) - cheapestPrice(b),
+        )
+      : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b))
+  ).slice(0, fits.length ? MAX_PLACES : 3);
+  const showTip = tip && list.some((p) => suggestedMenu(p, perMeal, tip));
+  const character = profile ? characterOf(profile.character) : CHARACTERS[1];
+
+  return (
+    <div className={styles.list}>
+      {showTip && (
+        <div className={styles.tip}>
+          <Image src={character.img} alt="" unoptimized className={styles.tipImg} />
+          <span>
+            어제 <b>{tip.cat}</b>을 먹어서 오늘은 {tip.theme} 있는 곳을 앞에 뒀어요
+          </span>
+        </div>
+      )}
+      {list.map((p) => (
+        <PlaceItem key={p.id} place={p} perMeal={perMeal} menu={suggestedMenu(p, perMeal, tip)} onPick={(m) => onPick(p, m)} />
+      ))}
+      <Link href="/recommend" className={styles.more}>
+        식당 전체 보기
+      </Link>
+    </div>
+  );
+}
+
+/** 지도에서 핀을 눌러 식당을 고른다 */
+function MapTab({ perMeal, onPick }: { perMeal: number; onPick: (place: Place, menu: Menu) => void }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = PLACES.find((p) => p.id === selectedId);
+
+  return (
+    <div className={styles.list}>
+      <PlaceMap places={PLACES} extras={[]} selectedId={selectedId} onSelect={setSelectedId} />
+      {selected && <PlaceItem key={selected.id} place={selected} perMeal={perMeal} onPick={(m) => onPick(selected, m)} />}
+    </div>
+  );
+}
+
 /** 목록에 없는 끼니를 메뉴·가격 직접 입력으로 기록 */
-function Input({
+export function MealInput({
+  title,
   perMeal,
   onBack,
   onSubmit,
 }: {
+  title: string;
   perMeal: number;
   onBack: () => void;
   onSubmit: (menu: string, price: number) => void;
@@ -117,7 +230,7 @@ function Input({
   return (
     <form className={styles.body} onSubmit={submit}>
       <div>
-        <h2 className={styles.title}>직접 입력</h2>
+        <h2 className={styles.title}>{title}</h2>
         <p className={styles.sub}>다음 한 끼 권장 {won(perMeal)}원</p>
       </div>
 
@@ -157,7 +270,7 @@ function Input({
         <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={onBack}>
           뒤로
         </button>
-        <button type="submit" className={ui.primary} style={{ backgroundColor: C.ink }} disabled={price <= 0}>
+        <button type="submit" className={ui.primary} style={{ backgroundColor: C.primary }} disabled={price <= 0}>
           기록하기
         </button>
       </div>
