@@ -36,7 +36,7 @@ export default function RecommendPage() {
   const [sort, setSort] = useState<SortKey>('price');
   const [onlyFits, setOnlyFits] = useState(true);
   const [query, setQuery] = useState('');
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [roulette, setRoulette] = useState(false);
 
