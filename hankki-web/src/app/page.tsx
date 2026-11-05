@@ -62,7 +62,7 @@ export default function HomePage() {
     return category === '전체' || p.cat === category;
   }).sort((a, b) => Number(bestMenu(b, s.perMeal).fits) - Number(bestMenu(a, s.perMeal).fits) || mainMenuPrice(a) - mainMenuPrice(b) || a.walk - b.walk);
   const exploring = q.length > 0 || category !== '전체';
-  const list = exploring ? filtered : filtered.slice(0, 8);
+  const list = exploring ? filtered : [];
   const onRemove = (meal: Meal) => confirm('기록 지우기', `${meal.name} ${won(meal.price)}원 기록을 지울까요?`, () => {
     removeMeal(meal.id); toast(`${meal.name} 기록을 지웠어요`);
   });
@@ -124,10 +124,10 @@ export default function HomePage() {
     {s.ended && <Link href="/budget" className={styles.ended}>예산 기간이 끝났어요. 새 예산을 설정해 주세요 <IoArrowForward /></Link>}
 
     <section className={styles.restaurants} id="restaurants">
-      <div className={styles.sectionHead}><div><span className={styles.kicker}>HANKKI TABLE</span><h2>{exploring ? `${category === '전체' ? '검색한' : category} 맛집` : '오늘, 이런 한 끼 어때요?'}</h2></div><Link href="/recommend" aria-label="맛집 전체 보기"><IoChevronForward size={22} /></Link></div>
-      <p className={styles.sectionHint}>{exploring ? `${filtered.length}곳을 찾았어요` : '예산 안 대표 메뉴를 가격순으로 골랐어요'}</p>
+      <div className={styles.sectionHead}><div><span className={styles.kicker}>HANKKI TABLE</span><h2>{exploring ? `${category === '전체' ? '검색한' : category} 맛집` : '맛집 찾기'}</h2></div><Link href="/recommend" aria-label="맛집 전체 보기"><IoChevronForward size={22} /></Link></div>
+      <p className={styles.sectionHint}>{exploring ? `${filtered.length}곳을 찾았어요` : '카테고리를 고르거나 식당을 검색해 보세요'}</p>
       {exploring && <button type="button" className={styles.reset} onClick={() => { setCategory('전체'); setQuery(''); setSelected(null); }}>전체 보기 <IoClose size={13} /></button>}
-      {list.length ? <div className={exploring ? styles.resultGrid : styles.carousel}>{list.map((p, index) => {
+      {!exploring ? null : list.length ? <div className={styles.resultGrid}>{list.map((p, index) => {
         const { menu, fits } = bestMenu(p, category === '7천원 이하' ? Math.min(7000, s.perMeal) : s.perMeal);
         return <button type="button" key={p.id} className={`${styles.place} ${selected?.id === p.id ? styles.placeSelected : ''}`} onClick={() => setSelected(selected?.id === p.id ? null : p)} aria-expanded={selected?.id === p.id}>
           <div className={`${styles.placeArt} ${styles[`art${index % 4}`]}`}><span className={styles.placeBadge}>{fits ? '예산 안 한 끼' : '메뉴 살펴보기'}</span><span aria-hidden="true">{DISH[p.cat]}</span><span className={styles.artCaption}>{p.cat} 한 그릇</span></div>
