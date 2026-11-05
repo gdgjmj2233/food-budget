@@ -22,7 +22,7 @@ import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } f
 import { useEat } from '@/hooks/use-eat';
 import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
-import { C } from '@/theme';
+import { C, CAT_EMOJI } from '@/theme';
 import styles from './page.module.css';
 
 type SortKey = 'price' | 'walk';
@@ -81,9 +81,23 @@ export default function RecommendPage() {
         )}
       </div>
 
-      <div className={styles.chips}>
+      <div className={styles.cats} role="group" aria-label="음식 종류">
         {CATEGORIES.map((k) => (
-          <Chip key={k} label={k} on={k === cat} onPress={() => setCat(k)} />
+          <button
+            type="button"
+            key={k}
+            onClick={() => setCat(k)}
+            aria-pressed={k === cat}
+            aria-label={k}
+            title={k}
+            className={`${styles.cat} ${k === cat ? styles.catOn : ''}`}>
+            <span className={styles.catEmoji} aria-hidden>
+              {CAT_EMOJI[k]}
+            </span>
+            <span className={styles.catName} aria-hidden>
+              {k}
+            </span>
+          </button>
         ))}
       </div>
       <div className={styles.chips}>
@@ -120,7 +134,7 @@ export default function RecommendPage() {
 
       <Sub>
         {showMap
-          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격이에요. 빨간 핀은 예산 초과. 핀을 누르면 식당 정보가 나와요.'
+          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격이에요. 빨간 핀은 예산 초과, ★는 내 별점 4점 이상, ♥는 2번 이상 간 곳. 핀 정리를 켜면 축소할수록 주요 가게만 남아요 (1단계 별점 높은 곳 → 2단계 추천·자주 간 곳 → 3단계 싼 곳 → 4단계 전체).'
           : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
       </Sub>
 

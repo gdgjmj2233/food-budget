@@ -6,7 +6,7 @@ import { IoChevronBack, IoClose, IoRefresh, IoShuffle } from 'react-icons/io5';
 import { Modal } from '@/components/modal';
 import type { Menu, Place } from '@/data/places';
 import { won } from '@/lib/budget';
-import { C, CAT_COLORS } from '@/theme';
+import { C, CAT_COLORS, CAT_EMOJI } from '@/theme';
 import styles from './roulette.module.css';
 
 /** 룰렛 한 칸: 식당 하나와 그 식당에서 예산 안에 먹을 수 있는 메뉴 하나 */
@@ -192,7 +192,7 @@ export function RoulettePanel({
             {result && resultCat && (
               <div className={styles.result}>
                 <span className={styles.cat} style={{ backgroundColor: resultCat.bg, color: resultCat.fg }}>
-                  {result.place.cat}
+                  {CAT_EMOJI[result.place.cat]} {result.place.cat}
                 </span>
                 <p className={styles.resultName}>{result.place.name}</p>
                 <p className={styles.resultMenu}>

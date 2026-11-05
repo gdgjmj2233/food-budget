@@ -30,3 +30,14 @@ export const CAT_COLORS: Record<Category, { bg: string; fg: string }> = {
   양식: { bg: '#EFE7F3', fg: '#6D3F86' },
   아시안: { bg: '#FFF3C4', fg: '#7A5A00' },
 };
+
+/** 음식 종류를 한눈에 알아보게 하는 이모지 */
+export const CAT_EMOJI: Record<Category | '전체', string> = {
+  전체: '🍽️',
+  한식: '🍚',
+  분식: '🍢',
+  중식: '🥟',
+  일식: '🍣',
+  양식: '🍝',
+  아시안: '🍜',
+};

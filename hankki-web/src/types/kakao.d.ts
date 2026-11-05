@@ -20,6 +20,7 @@ declare namespace kakao.maps {
     setBounds(bounds: LatLngBounds, paddingTop?: number, paddingRight?: number, paddingBottom?: number, paddingLeft?: number): void;
     panTo(latlng: LatLng): void;
     relayout(): void;
+    getLevel(): number;
   }
 
   class Marker {
@@ -47,6 +48,8 @@ declare namespace kakao.maps {
 
   namespace event {
     function addListener(target: Marker, type: 'click', handler: () => void): void;
+    function addListener(target: Map, type: 'zoom_changed', handler: () => void): void;
+    function removeListener(target: Map, type: 'zoom_changed', handler: () => void): void;
   }
 
   namespace services {

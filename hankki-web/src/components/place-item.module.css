@@ -27,8 +27,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
 }
 
 .body {
@@ -131,4 +131,34 @@
   color: #fff;
   font-size: 13px;
   font-weight: 700;
+}
+
+.myStar {
+  color: #c98a00;
+  font-weight: 700;
+}
+
+.rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0 8px;
+}
+
+.rateLabel {
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.starBtn {
+  display: flex;
+  padding: 4px;
+}
+
+.rateHint {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--muted);
 }
