@@ -35,12 +35,10 @@
   background: rgba(25, 31, 40, 0.8);
   color: #fff;
   font-size: 12px;
-  width: max-content;
-  max-width: calc(100% - 20px);
-  text-align: center;
+  white-space: nowrap;
 }
 
-/* 지도 위 가격 핀 (카카오맵 CustomOverlay 안에 들어감) */
+/* 지도 위 이름·묶음 핀 (카카오맵 CustomOverlay 안에 들어감) */
 .pin {
   position: relative;
   margin-bottom: 8px;
@@ -65,7 +63,7 @@
   border-top-color: var(--pin-color, var(--primary));
 }
 
-/* 선택한 핀은 예산 초과여도 검은색 (.pinOver 보다 우선) */
+/* 선택한 핀은 검은색 */
 .pin.pinOn {
   --pin-color: var(--ink);
   background: var(--ink);
@@ -84,111 +82,57 @@
   font-weight: 700;
 }
 
-/* 핀 정리 ON/OFF 스위치와 지금 단계 표시 */
-.controls {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  z-index: 10;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  pointer-events: none;
+/* 최대 확대에서 풀어 놓은 이름 핀: 실제 위치는 점이 알려 주므로 꼬리표(화살표)를 뗀다 */
+.pin.pinSpread {
+  margin-bottom: 0;
 }
 
-.toggle,
-.tier {
-  pointer-events: auto;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+.pin.pinSpread::after {
+  display: none;
 }
 
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 10px 0 6px;
-  border-radius: 15px;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.knob {
-  position: relative;
-  width: 28px;
-  height: 16px;
-  border-radius: 8px;
-  background: var(--line);
-  transition: background 0.15s;
-}
-
-.knob::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
+/* 멀리서 보면 식당 위치만 알려 주는 작은 점 (30m 축척까지 확대하면 이름 핀) */
+.dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 2px solid #fff;
   border-radius: 50%;
-  background: #fff;
-  transition: transform 0.15s;
-}
-
-.toggleOn {
-  color: var(--ink);
-}
-
-.toggleOn .knob {
   background: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
 }
 
-.toggleOn .knob::after {
-  transform: translateX(12px);
+.dot.dotExtra {
+  background: var(--muted);
 }
 
-.tier {
-  padding: 6px 10px;
-  border-radius: 14px;
-  background: rgba(25, 31, 40, 0.8);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.tier em {
-  font-style: normal;
-  font-weight: 400;
-  opacity: 0.8;
-}
-
-/* 예산 넘는 곳은 흰 바탕 + 빨간 글씨로 덜 눈에 띄게 (예산 안 파란 핀이 먼저 보이도록) */
-.pinOver {
-  --pin-color: var(--over);
+/* 앱 데이터에 없는 주변 음식점은 흰 핀 */
+.pin.pinExtra:not(.pinOn) {
+  --pin-color: #fff;
   background: #fff;
-  color: var(--over);
-  box-shadow: inset 0 0 0 1.5px var(--over), 0 1px 4px rgba(0, 0, 0, 0.18);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--line), 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
-/* 겹치는 핀을 합친 묶음 핀: "6곳 7,500~" */
+/* 멀리서 가까운 식당을 합친 핀: "6곳" */
 .cluster {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 9px 4px 5px;
+  padding: 4px 9px;
 }
 
 .count {
-  padding: 1px 6px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.25);
-  font-size: 11px;
+  font-size: 12px;
 }
 
-.pinOver .count {
-  background: var(--over);
-  color: #fff;
+/* 이름 옆 내 별점 */
+.pinStar {
+  margin-left: 4px;
+  color: #ffd24d;
+}
+
+.pinExtra .pinStar {
+  color: #f5a400;
 }

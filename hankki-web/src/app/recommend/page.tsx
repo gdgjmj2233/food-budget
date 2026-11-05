@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   IoCheckbox,
   IoCloseCircle,
@@ -13,6 +13,7 @@ import {
   IoSwapVertical,
 } from 'react-icons/io5';
 
+import { ExtraPlaceCard } from '@/components/extra-place-card';
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
 import { Roulette } from '@/components/roulette';
@@ -20,6 +21,7 @@ import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
+import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { C, CAT_EMOJI } from '@/theme';
@@ -39,9 +41,7 @@ export default function RecommendPage() {
   const [showMap, setShowMap] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [roulette, setRoulette] = useState(false);
-  const [groupIds, setGroupIds] = useState<string[]>([]);
-  const [groupSameSpot, setGroupSameSpot] = useState(false);
-  const groupRef = useRef<HTMLDivElement>(null);
+  const extras = useExtraPlaces();
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -55,25 +55,12 @@ export default function RecommendPage() {
     sort === 'price' ? cheapestPrice(a) - cheapestPrice(b) || a.walk - b.walk : a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b),
   );
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
+  // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다)
+  const extraList = extras.filter(
+    (e) => (cat === '전체' || e.cat === cat) && area === '전체' && (!q || e.name.includes(q)),
+  );
   const selected = list.find((p) => p.id === selectedId);
-  const group = list.filter((p) => groupIds.includes(p.id));
-  const selectOne = (id: string) => {
-    setSelectedId(id);
-    setGroupIds([]);
-  };
-  const selectGroup = (ids: string[], sameSpot: boolean) => {
-    setGroupIds(ids);
-    setGroupSameSpot(sameSpot);
-    setSelectedId(null);
-  };
-
-  // 묶음 핀을 누르면 아래 가게 목록이 화면 밖에 있을 수 있어서, 첫 카드가 보일 만큼만 내린다 (지도는 최대한 남긴다)
-  useEffect(() => {
-    const top = groupRef.current?.getBoundingClientRect().top;
-    if (top === undefined) return;
-    const visibleBottom = window.innerHeight - 60 - 150; // 하단 탭 + 첫 카드 높이 정도
-    if (top > visibleBottom) window.scrollBy({ top: top - visibleBottom, behavior: 'smooth' });
-  }, [groupIds]);
+  const selectedExtra = extraList.find((e) => e.id === selectedId);
 
   return (
     <Screen>
@@ -159,20 +146,13 @@ export default function RecommendPage() {
         <>
           <PlaceMap
             places={list}
-            perMeal={s.perMeal}
-            selectedId={selected?.id ?? null}
-            onSelect={selectOne}
-            onSelectGroup={selectGroup}
+            extras={extraList}
+            selectedId={selected?.id ?? selectedExtra?.id ?? null}
+            onSelect={setSelectedId}
           />
+          <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 30m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
           {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} />}
-          {group.length > 0 && (
-            <div ref={groupRef} className={styles.list}>
-              <Sub>{groupSameSpot ? `같은 건물에 있는 ${group.length}곳` : `누른 핀에 모인 ${group.length}곳`}</Sub>
-              {group.map((p) => (
-                <PlaceItem key={p.id} place={p} perMeal={s.perMeal} />
-              ))}
-            </div>
-          )}
+          {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
         </>
       )}
 

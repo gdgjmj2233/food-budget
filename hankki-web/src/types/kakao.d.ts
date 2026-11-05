@@ -68,7 +68,11 @@ declare namespace kakao.maps {
     }
 
     interface PlaceResult {
+      id: string;
       place_name: string;
+      category_name: string;
+      address_name: string;
+      road_address_name: string;
       x: string;
       y: string;
     }
@@ -83,6 +87,11 @@ declare namespace kakao.maps {
         keyword: string,
         callback: (result: PlaceResult[], status: Status) => void,
         options?: { location?: LatLng; radius?: number; size?: number },
+      ): void;
+      categorySearch(
+        code: string,
+        callback: (result: PlaceResult[], status: Status) => void,
+        options?: { location?: LatLng; radius?: number; size?: number; page?: number },
       ): void;
     }
 

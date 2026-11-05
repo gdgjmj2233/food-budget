@@ -190,29 +190,12 @@ function Recommend({ perMeal }: { perMeal: number }) {
 /** 지도에서 핀을 눌러 식당 정보를 본다 */
 function MapTab({ perMeal }: { perMeal: number }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [groupIds, setGroupIds] = useState<string[]>([]);
   const selected = PLACES.find((p) => p.id === selectedId);
-  const group = PLACES.filter((p) => groupIds.includes(p.id));
 
   return (
     <div className={styles.list}>
-      <PlaceMap
-        places={PLACES}
-        perMeal={perMeal}
-        selectedId={selectedId}
-        onSelect={(id) => {
-          setSelectedId(id);
-          setGroupIds([]);
-        }}
-        onSelectGroup={(ids) => {
-          setGroupIds(ids);
-          setSelectedId(null);
-        }}
-      />
+      <PlaceMap places={PLACES} extras={[]} selectedId={selectedId} onSelect={setSelectedId} />
       {selected && <PlaceItem key={selected.id} place={selected} perMeal={perMeal} />}
-      {group.map((p) => (
-        <PlaceItem key={p.id} place={p} perMeal={perMeal} />
-      ))}
     </div>
   );
 }
