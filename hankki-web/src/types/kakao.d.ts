@@ -21,6 +21,12 @@ declare namespace kakao.maps {
     panTo(latlng: LatLng): void;
     relayout(): void;
     getLevel(): number;
+    setLevel(level: number, options?: { anchor?: LatLng; animate?: boolean }): void;
+    getProjection(): MapProjection;
+  }
+
+  interface MapProjection {
+    containerPointFromCoords(latlng: LatLng): Point;
   }
 
   class Marker {
@@ -39,6 +45,8 @@ declare namespace kakao.maps {
 
   class Point {
     constructor(x: number, y: number);
+    readonly x: number;
+    readonly y: number;
   }
 
   class CustomOverlay {

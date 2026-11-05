@@ -12,13 +12,14 @@ export const C = {
   primaryDark: '#1B64DA',
   primarySoft: '#E8F3FF',
   warn: '#C26A00',
+  orange: '#E8590C',
   over: '#E5303F',
   orangeSoft: '#FFF0E0',
 } as const;
 
 export const STATUS: Record<BudgetStatus, { label: string; color: string }> = {
   ok: { label: '여유', color: C.primary },
-  warn: { label: '주의', color: C.warn },
+  low: { label: '임박', color: C.orange },
   over: { label: '초과', color: C.over },
 };
 

@@ -42,15 +42,6 @@
   text-align: center;
 }
 
-.empty {
-  font-size: 14px;
-  color: var(--muted);
-  text-align: center;
-  line-height: 21px;
-  padding: 24px 0 12px;
-  white-space: pre-line;
-}
-
 .wheelWrap {
   position: relative;
   flex: none;
@@ -86,11 +77,6 @@
 .label {
   font-size: 12.5px;
   font-weight: 700;
-}
-
-.price {
-  font-size: 11px;
-  font-weight: 600;
 }
 
 /* 가운데 GO 버튼 */
@@ -143,14 +129,6 @@
   text-align: center;
 }
 
-.resultMenu {
-  font-size: 15px;
-}
-
-.resultMenu b {
-  color: var(--primary);
-}
-
 .resultMeta {
   font-size: 12px;
   color: var(--muted);
@@ -197,7 +175,12 @@
   font-weight: 600;
 }
 
-.reshuffle {
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.link {
   flex: none;
   display: flex;
   align-items: center;
@@ -207,9 +190,124 @@
   padding: 4px 10px;
 }
 
-.reshuffle:disabled {
-  opacity: 0.5;
+/* 칸 채우기 */
+.editor {
+  flex: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.addRow {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+}
+
+.addBtn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 0 14px 0 10px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.addBtn:disabled {
+  opacity: 0.4;
   cursor: default;
+}
+
+.hint {
+  width: 100%;
+  margin-top: -4px;
+  font-size: 12px;
+}
+
+.items {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 3px 4px 3px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  font-size: 13px;
+}
+
+.itemName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemDel {
+  flex: none;
+  display: flex;
+  padding: 5px;
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.priceBox {
+  position: relative;
+}
+
+.priceBox .input {
+  padding-right: 36px;
+  text-align: right;
+}
+
+.unit {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--ink);
 }
 
 @keyframes pop {

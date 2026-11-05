@@ -5,106 +5,80 @@ import React, { useState } from 'react';
 import { IoClose, IoDiceOutline } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
-import { PlaceItem } from '@/components/place-item';
 import { RoulettePanel } from '@/components/roulette';
-import { bestMenu, cheapestPrice, PLACES, type Menu, type Place } from '@/data/places';
+import { PLACES } from '@/data/places';
 import { won } from '@/lib/budget';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
 import ui from './ui.module.css';
 
-/** 추천 창에 보여줄 식당 수 */
-const MAX_PLACES = 5;
-
 /**
- * 밥먹기 창. 먼저 예산 안 식당을 추천하고, 목록에 없으면 메뉴·가격을 직접 입력한다.
+ * 밥먹기 창. 룰렛을 돌리거나 메뉴·가격을 직접 입력한다.
  * 열 때마다 새로 그려서 입력값이 비어 있다.
  */
 export function MealDialog({
   perMeal,
   onClose,
-  onPick,
   onSubmit,
 }: {
   perMeal: number;
   onClose: () => void;
-  onPick: (place: Place, menu: Menu) => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
-  const [step, setStep] = useState<'recommend' | 'input' | 'roulette'>('recommend');
+  const [step, setStep] = useState<'choose' | 'input' | 'roulette'>('choose');
 
   return (
     <Modal onClose={onClose}>
-      {step === 'recommend' && (
-        <Recommend
+      {step === 'choose' && (
+        <Choose
           perMeal={perMeal}
           onClose={onClose}
-          onPick={onPick}
           onInput={() => setStep('input')}
           onRoulette={() => setStep('roulette')}
         />
       )}
-      {step === 'input' && <Input perMeal={perMeal} onBack={() => setStep('recommend')} onSubmit={onSubmit} />}
+      {step === 'input' && <Input perMeal={perMeal} onBack={() => setStep('choose')} onSubmit={onSubmit} />}
       {step === 'roulette' && (
-        <RoulettePanel places={PLACES} perMeal={perMeal} onEat={onPick} onClose={onClose} onBack={() => setStep('recommend')} />
+        <RoulettePanel places={PLACES} perMeal={perMeal} onEat={onSubmit} onClose={onClose} onBack={() => setStep('choose')} />
       )}
     </Modal>
   );
 }
 
-/** 예산 안 메뉴가 있는 식당을 가까운 순으로. 하나도 없으면 가장 싼 곳들. */
-function Recommend({
+/** 룰렛과 직접 입력 중에서 고른다. */
+function Choose({
   perMeal,
   onClose,
-  onPick,
   onInput,
   onRoulette,
 }: {
   perMeal: number;
   onClose: () => void;
-  onPick: (place: Place, menu: Menu) => void;
   onInput: () => void;
   onRoulette: () => void;
 }) {
-  const fits = PLACES.filter((p) => bestMenu(p, perMeal).fits);
-  const list = fits.length
-    ? fits.sort((a, b) => a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b)).slice(0, MAX_PLACES)
-    : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b)).slice(0, 3);
-
   return (
     <div className={styles.body}>
       <div className={styles.head}>
         <div>
           <h2 className={styles.title}>오늘 뭐 먹을까요?</h2>
-          <p className={styles.sub}>
-            {fits.length
-              ? `한 끼 ${won(perMeal)}원 안에서 먹을 수 있는 가까운 곳`
-              : `한 끼 ${won(perMeal)}원 안인 곳이 없어서 가장 싼 곳을 골랐어요`}
-          </p>
+          <p className={styles.sub}>다음 한 끼 권장 {won(perMeal)}원</p>
         </div>
         <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
           <IoClose size={22} aria-hidden />
         </button>
       </div>
 
-      <div className={styles.list}>
-        {list.map((p) => (
-          <PlaceItem key={p.id} place={p} perMeal={perMeal} onPick={(m) => onPick(p, m)} />
-        ))}
-      </div>
-
       <div className={styles.foot}>
-        {fits.length > 0 && (
-          <button type="button" className={ui.primary} style={{ backgroundColor: C.primary }} onClick={onRoulette}>
-            <IoDiceOutline size={20} aria-hidden />
-            못 고르겠으면 룰렛 돌리기
-          </button>
-        )}
+        <button type="button" className={ui.primary} style={{ backgroundColor: C.primary }} onClick={onRoulette}>
+          <IoDiceOutline size={20} aria-hidden />
+          못 고르겠으면 룰렛 돌리기
+        </button>
         <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={onInput}>
           직접 입력
         </button>
         <Link href="/recommend" className={styles.more}>
-          추천 탭에서 전체 보기
+          추천 탭에서 식당 고르기
         </Link>
       </div>
     </div>

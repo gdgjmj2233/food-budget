@@ -25,12 +25,15 @@ import styles from './page.module.css';
 export default function HomePage() {
   const { summary: s, settings, meals, removeMeal } = useBudget();
   const profile = useProfile();
-  const { pick, eatCustom, skip } = useEat();
+  const { eatCustom, skip } = useEat();
   const toast = useToast();
   const [eating, setEating] = useState(false);
   const [detail, setDetail] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const myCharacter = profile && characterOf(profile.character);
+  const mascot = myCharacter ?? CHARACTERS[0];
+  // 예산이 임박·초과면 캐릭터도 지친 모습으로
+  const mascotImg = s.status === 'ok' ? mascot.img : mascot.sadImg;
   const status = STATUS[s.status];
   const leftPct = settings.amount > 0 ? Math.min(100, Math.max(0, (s.remain / settings.amount) * 100)) : 0;
 
@@ -72,7 +75,7 @@ export default function HomePage() {
           정적 내보내기(GitHub Pages)에서도 되도록 unoptimized */}
       <div className={styles.heroRow}>
         <div className={styles.mascots} aria-hidden>
-          <Image src={(myCharacter ?? CHARACTERS[0]).img} alt="" unoptimized className={styles.mascot} />
+          <Image src={mascotImg} alt="" unoptimized className={styles.mascot} />
         </div>
 
         <section className={styles.hero} style={{ backgroundColor: status.color }}>
@@ -120,10 +123,6 @@ export default function HomePage() {
         <MealDialog
           perMeal={s.perMeal}
           onClose={() => setEating(false)}
-          onPick={(place, menu) => {
-            pick(place, menu);
-            setEating(false);
-          }}
           onSubmit={(menu, price) => {
             eatCustom(menu, price);
             setEating(false);

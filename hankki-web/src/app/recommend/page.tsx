@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   IoCheckbox,
   IoCloseCircle,
@@ -30,15 +30,18 @@ const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
   const { summary: s } = useBudget();
-  const { pick } = useEat();
+  const { pick, eatCustom } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
   const [sort, setSort] = useState<SortKey>('price');
   const [onlyFits, setOnlyFits] = useState(true);
   const [query, setQuery] = useState('');
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [roulette, setRoulette] = useState(false);
+  const [groupIds, setGroupIds] = useState<string[]>([]);
+  const [groupSameSpot, setGroupSameSpot] = useState(false);
+  const groupRef = useRef<HTMLDivElement>(null);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -53,6 +56,24 @@ export default function RecommendPage() {
   );
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   const selected = list.find((p) => p.id === selectedId);
+  const group = list.filter((p) => groupIds.includes(p.id));
+  const selectOne = (id: string) => {
+    setSelectedId(id);
+    setGroupIds([]);
+  };
+  const selectGroup = (ids: string[], sameSpot: boolean) => {
+    setGroupIds(ids);
+    setGroupSameSpot(sameSpot);
+    setSelectedId(null);
+  };
+
+  // 묶음 핀을 누르면 아래 가게 목록이 화면 밖에 있을 수 있어서, 첫 카드가 보일 만큼만 내린다 (지도는 최대한 남긴다)
+  useEffect(() => {
+    const top = groupRef.current?.getBoundingClientRect().top;
+    if (top === undefined) return;
+    const visibleBottom = window.innerHeight - 60 - 150; // 하단 탭 + 첫 카드 높이 정도
+    if (top > visibleBottom) window.scrollBy({ top: top - visibleBottom, behavior: 'smooth' });
+  }, [groupIds]);
 
   return (
     <Screen>
@@ -134,14 +155,28 @@ export default function RecommendPage() {
 
       <Sub>
         {showMap
-          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격이에요. 빨간 핀은 예산 초과, ★는 내 별점 4점 이상, ♥는 2번 이상 간 곳. 핀 정리를 켜면 축소할수록 주요 가게만 남아요 (1단계 별점 높은 곳 → 2단계 추천·자주 간 곳 → 3단계 싼 곳 → 4단계 전체).'
+          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격, 흰 핀은 예산 초과예요. ★는 내 별점 4점 이상, ♥는 2번 이상 간 곳. "N곳" 핀을 누르면 그 구역이 확대되고 아래에 가게 목록이 나와요. 핀 정리를 켜면 축소할수록 주요 가게만 남아요 (1단계 별점 높은 곳 → 2단계 추천·자주 간 곳 → 3단계 싼 곳 → 4단계 전체).'
           : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
       </Sub>
 
       {showMap && (
         <>
-          <PlaceMap places={list} perMeal={s.perMeal} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+          <PlaceMap
+            places={list}
+            perMeal={s.perMeal}
+            selectedId={selected?.id ?? null}
+            onSelect={selectOne}
+            onSelectGroup={selectGroup}
+          />
           {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} onPick={(m) => pick(selected, m)} />}
+          {group.length > 0 && (
+            <div ref={groupRef} className={styles.list}>
+              <Sub>{groupSameSpot ? `같은 건물에 있는 ${group.length}곳` : `누른 핀에 모인 ${group.length}곳`}</Sub>
+              {group.map((p) => (
+                <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -160,14 +195,14 @@ export default function RecommendPage() {
       <PrimaryButton label="못 고르겠으면 룰렛 돌리기" icon={IoDiceOutline} color={C.primary} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
-      {/* 지금 고른 카테고리·위치·검색 조건 안에서 돌린다 */}
+      {/* 식당 추천은 지금 고른 카테고리·위치·검색 조건 안에서 받는다 */}
       {roulette && (
         <Roulette
           places={base}
           perMeal={s.perMeal}
           onClose={() => setRoulette(false)}
-          onEat={(p, m) => {
-            pick(p, m);
+          onEat={(name, price) => {
+            eatCustom(name, price);
             setRoulette(false);
           }}
         />
