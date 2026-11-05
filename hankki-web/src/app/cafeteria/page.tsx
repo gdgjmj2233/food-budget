@@ -2,87 +2,104 @@
 
 import React, { useState } from 'react';
 import { IoOpenOutline } from 'react-icons/io5';
-import { LuSoup } from 'react-icons/lu';
 
-import { MealInput } from '@/components/meal-dialog';
-import { Modal } from '@/components/modal';
-import { AccentButton, Screen, Sub, Title } from '@/components/ui';
-import { CAFETERIA_SOURCE, CAFETERIAS, type CafeteriaItem } from '@/data/cafeteria';
-import { useEat } from '@/hooks/use-eat';
-import { won } from '@/lib/budget';
+import { Screen, Sub, Title } from '@/components/ui';
+import ui from '@/components/ui.module.css';
+import { CAFETERIA, CAFETERIA_URL, MEALS, type CafeteriaCorner } from '@/data/cafeteria';
+import { DAY_NAMES, formatDate, formatShort, fromDateKey, toDateKey, won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import styles from './page.module.css';
 
-const priceText = ({ price, maxPrice }: CafeteriaItem) => (maxPrice ? `${won(price)}~${won(maxPrice)}원` : `${won(price)}원`);
+function Corner({ corner, limit }: { corner: CafeteriaCorner; limit: number }) {
+  const over = corner.prices.length ? Math.min(...corner.prices) - limit : 0;
 
-/** 교내 식당의 코너별 가격과 운영 시간. 오늘 메뉴는 학교 홈페이지에서 보고, 먹은 건 직접 입력한다. */
+  return (
+    <li className={styles.corner}>
+      <div className={styles.cornerHead}>
+        <span className={styles.cornerName}>
+          {corner.name}
+          {over > 0 && <b className={styles.tag}> +{won(over)}원 초과</b>}
+        </span>
+        {corner.prices.length > 0 && (
+          <span className={`${styles.price} ${over > 0 ? styles.priceOver : ''}`}>{corner.prices.map((p) => won(p)).join('/')}원</span>
+        )}
+      </div>
+      {/* 줄이 바뀌어도 구분점이 줄 맨 앞에 오지 않게 앞쪽은 줄바꿈 없는 공백으로 */}
+      {corner.items.length > 0 && <p className={styles.items}>{corner.items.join(' · ')}</p>}
+    </li>
+  );
+}
+
+/** 학생식당의 요일별 메뉴와 가격 */
 export default function CafeteriaPage() {
   const { summary: s } = useBudget();
-  const { eatCustom } = useEat();
-  const [eating, setEating] = useState(false);
+  const todayKey = toDateKey(new Date());
+  const hasToday = CAFETERIA.days.some((d) => d.date === todayKey);
+  const [selected, setSelected] = useState(hasToday ? todayKey : CAFETERIA.days[0].date);
+  const day = CAFETERIA.days.find((d) => d.date === selected) ?? CAFETERIA.days[0];
 
   return (
     <Screen>
-      <Title>인하대 학식</Title>
+      <div className={ui.row}>
+        <div>
+          <Title>인하대 학식</Title>
+          <Sub>학생식당(학생회관)</Sub>
+        </div>
+        <a href={CAFETERIA_URL} target="_blank" rel="noreferrer" className={styles.link}>
+          학교 홈페이지
+          <IoOpenOutline size={14} aria-hidden />
+        </a>
+      </div>
 
       <div className={styles.today}>
         <span className={styles.todayLabel}>오늘 남은 금액</span>
         <span className={styles.todayVal}>{won(s.todayLeft)}원</span>
       </div>
 
-      {CAFETERIAS.map((c) => (
-        <section key={c.id} className={styles.card} aria-labelledby={`cafeteria-${c.id}`}>
-          <div className={styles.head}>
-            <h2 id={`cafeteria-${c.id}`} className={styles.name}>
-              {c.name}
-            </h2>
-            <a href={c.menuUrl} target="_blank" rel="noreferrer" className={styles.link}>
-              오늘 메뉴
-              <IoOpenOutline size={14} aria-hidden />
-            </a>
-          </div>
+      {!hasToday && <p className={styles.notice}>오늘 메뉴는 아직 없어요. {CAFETERIA.week} 메뉴를 보여 드려요.</p>}
 
-          {c.meals.map((meal) => (
-            <div key={meal.title} className={styles.meal}>
-              <div className={styles.mealHead}>
-                <h3 className={styles.mealTitle}>{meal.title}</h3>
-                <span className={styles.hours}>{meal.hours}</span>
-              </div>
-              <ul className={styles.items}>
-                {meal.items.map((item) => {
-                  const over = item.price - s.todayLeft;
-                  return (
-                    <li key={item.name} className={styles.item}>
-                      <span>
-                        {item.name}
-                        {over > 0 && <b className={styles.tag}> +{won(over)}원 초과</b>}
-                      </span>
-                      <span className={`${styles.price} ${over > 0 ? styles.priceOver : ''}`}>{priceText(item)}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+      <div className={styles.days} role="group" aria-label="요일">
+        {CAFETERIA.days.map((d) => {
+          const date = fromDateKey(d.date);
+          return (
+            <button
+              type="button"
+              key={d.date}
+              onClick={() => setSelected(d.date)}
+              aria-pressed={d.date === day.date}
+              aria-label={formatDate(date)}
+              className={`${styles.day} ${d.date === day.date ? styles.dayOn : ''}`}>
+              {DAY_NAMES[date.getDay()]}
+              <span className={styles.dayDate}>{d.date === todayKey ? '오늘' : formatShort(date)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {MEALS.map((meal) => {
+        const corners = day.corners.filter((c) => c.meal === meal.key);
+        if (!corners.length) return null;
+        return (
+          <section key={meal.key} className={styles.card} aria-labelledby={`meal-${meal.key}`}>
+            <div className={styles.mealHead}>
+              <h2 id={`meal-${meal.key}`} className={styles.mealTitle}>
+                <span className={styles.emoji} aria-hidden>
+                  {meal.emoji}
+                </span>
+                {meal.title}
+              </h2>
+              <span className={styles.hours}>{CAFETERIA.hours[meal.key]}</span>
             </div>
-          ))}
-        </section>
-      ))}
+            <ul className={styles.corners}>
+              {corners.map((c) => (
+                <Corner key={c.name} corner={c} limit={s.todayLeft} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
 
-      <AccentButton label="먹은 것 기록하기" icon={LuSoup} onPress={() => setEating(true)} />
-      <Sub style={{ textAlign: 'center' }}>가격 정보: {CAFETERIA_SOURCE} · 실제 가격은 메뉴에 따라 달라요</Sub>
-
-      {eating && (
-        <Modal onClose={() => setEating(false)}>
-          <MealInput
-            title="학식 직접 입력"
-            limit={s.todayLeft}
-            onBack={() => setEating(false)}
-            onSubmit={(menu, price) => {
-              eatCustom(menu, price);
-              setEating(false);
-            }}
-          />
-        </Modal>
-      )}
+      <Sub style={{ textAlign: 'center' }}>메뉴·가격: 인하대학교 홈페이지 · {CAFETERIA.week} 기준 · 식당 사정으로 바뀔 수 있어요</Sub>
     </Screen>
   );
 }

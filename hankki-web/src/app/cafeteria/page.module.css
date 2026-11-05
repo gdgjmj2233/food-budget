@@ -1,3 +1,14 @@
+.link {
+  flex: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
 .today {
   display: flex;
   justify-content: space-between;
@@ -19,6 +30,48 @@
   font-weight: 800;
 }
 
+.notice {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.days {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #e3e9f2;
+}
+
+.day {
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dayOn {
+  background: #fff;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.dayDate {
+  font-size: 11px;
+  font-weight: 500;
+}
+
 .card {
   display: flex;
   flex-direction: column;
@@ -28,69 +81,61 @@
   background: var(--card);
 }
 
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.name {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.link {
-  flex: none;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.meal {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid var(--divider);
-}
-
 .mealHead {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
 }
 
 .mealTitle {
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
   font-weight: 700;
-  color: var(--muted);
+}
+
+.emoji {
+  font-size: 24px;
+  line-height: 1;
 }
 
 .hours {
+  flex: none;
   font-size: 12px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
-.items {
+.corners {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   list-style: none;
 }
 
-.item {
+.corner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--divider);
+}
+
+.corner:last-child {
+  padding-bottom: 0;
+}
+
+.cornerHead {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
+}
+
+.cornerName {
   font-size: 15px;
+  font-weight: 600;
 }
 
 .tag {
@@ -100,10 +145,18 @@
 
 .price {
   flex: none;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .priceOver {
   color: var(--over);
+}
+
+.items {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  word-break: keep-all;
 }
