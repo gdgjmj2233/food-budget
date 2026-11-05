@@ -17,16 +17,16 @@ import styles from './place-item.module.css';
  */
 export function PlaceItem({
   place,
-  perMeal,
+  limit,
   menu: shownMenu,
 }: {
   place: Place;
-  perMeal: number;
+  limit: number;
   menu?: Menu;
 }) {
   const [open, setOpen] = useState(false);
-  const menu = shownMenu ?? bestMenu(place, perMeal).menu;
-  const fits = menu.price <= perMeal;
+  const menu = shownMenu ?? bestMenu(place, limit).menu;
+  const fits = menu.price <= limit;
   const cat = CAT_COLORS[place.cat];
   const menus = [...place.menus].sort((a, b) => a.price - b.price);
   const Chevron = open ? IoChevronUp : IoChevronDown;
@@ -49,7 +49,7 @@ export function PlaceItem({
             <span className={styles.name}>{place.name}</span>
             <span className={styles.menuName}>
               {menu.name}
-              {!fits && <b className={styles.tag}> +{won(menu.price - perMeal)}원 초과</b>}
+              {!fits && <b className={styles.tag}> +{won(menu.price - limit)}원 초과</b>}
             </span>
             <span className={styles.meta}>
               <span className={styles.where}>
@@ -91,7 +91,7 @@ export function PlaceItem({
           {menus.map((m) => (
             <div key={m.name} className={styles.menuRow}>
               <span className={styles.menuRowName}>{m.name}</span>
-              <span className={styles.menuRowPrice} style={{ color: m.price <= perMeal ? C.ink : C.over }}>
+              <span className={styles.menuRowPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
                 {won(m.price)}원
               </span>
             </div>

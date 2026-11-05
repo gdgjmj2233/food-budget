@@ -1,4 +1,4 @@
-// 어제 먹은 끼니를 보고 오늘 메뉴를 권한다. UI와 분리된 순수 함수만 둔다.
+// 어제 먹은 기록을 보고 오늘 메뉴를 권한다. UI와 분리된 순수 함수만 둔다.
 
 import { PLACES, type Category, type Menu, type Place } from '@/data/places';
 import { addDays, startOfDay, toDateKey, type Meal } from '@/lib/budget';
@@ -21,7 +21,7 @@ export interface Suggestion {
   theme: Theme;
 }
 
-/** 어제 마지막으로 먹은 식당 끼니로 오늘 권할 메뉴를 정한다. 없으면 null. */
+/** 어제 마지막으로 먹은 식당 기록으로 오늘 권할 메뉴를 정한다. 없으면 null. */
 export function suggestToday(meals: Meal[], now: Date = new Date()): Suggestion | null {
   const yesterday = toDateKey(addDays(startOfDay(now), -1));
   const last = meals.filter((m) => m.date === yesterday && m.price > 0 && m.placeId).sort((a, b) => b.at - a.at)[0];

@@ -50,7 +50,7 @@ export default function RecommendPage() {
       (area === '전체' || p.area === area) &&
       (!q || p.name.includes(q) || p.menus.some((m) => m.name.includes(q))),
   );
-  const inBudget = base.filter((p) => bestMenu(p, s.perMeal).fits);
+  const inBudget = base.filter((p) => bestMenu(p, s.todayLeft).fits);
   const list = (onlyFits ? inBudget : base).sort((a, b) =>
     sort === 'price' ? cheapestPrice(a) - cheapestPrice(b) || a.walk - b.walk : a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b),
   );
@@ -69,7 +69,7 @@ export default function RecommendPage() {
       <div className={styles.loc}>
         <IoLocationOutline size={20} color={C.primary} aria-hidden />
         <span className={styles.locText}>인하대 주변 {PLACES.length}곳</span>
-        <span className={styles.locLimit}>한 끼 {won(s.perMeal)}원 이하</span>
+        <span className={styles.locLimit}>오늘 {won(s.todayLeft)}원 이하</span>
       </div>
 
       <div className={styles.search}>
@@ -151,7 +151,7 @@ export default function RecommendPage() {
             onSelect={setSelectedId}
           />
           <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
-          {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} />}
+          {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} />}
           {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
         </>
       )}
@@ -159,7 +159,7 @@ export default function RecommendPage() {
       {!showMap && (
         <div className={styles.list}>
           {list.length ? (
-            list.map((p) => <PlaceItem key={p.id} place={p} perMeal={s.perMeal} />)
+            list.map((p) => <PlaceItem key={p.id} place={p} limit={s.todayLeft} />)
           ) : (
             <p className={styles.empty}>
               {onlyFits ? '조건에 맞으면서 예산 안인 곳이 없어요.\n"예산 안만" 체크를 풀어 보세요.' : '조건에 맞는 곳이 없어요.'}
@@ -173,7 +173,7 @@ export default function RecommendPage() {
 
       {roulette && (
         <Roulette
-          perMeal={s.perMeal}
+          limit={s.todayLeft}
           onClose={() => setRoulette(false)}
           onEat={(name, price) => {
             eatCustom(name, price);

@@ -52,7 +52,6 @@ function isSettings(v: unknown): v is Settings {
     !!s &&
     (s.period === 'week' || s.period === 'month') &&
     isCount(s.amount) &&
-    isCount(s.mealsPerDay) &&
     typeof s.skipWeekend === 'boolean' &&
     typeof s.startDate === 'string' &&
     DATE_KEY.test(s.startDate)

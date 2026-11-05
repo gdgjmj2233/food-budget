@@ -32,16 +32,16 @@ export function tierForLevel(level: number): Tier {
 /** 식당마다 처음 보이기 시작하는 단계를 매긴다 */
 export function placeTiers(
   places: Place[],
-  perMeal: number,
+  limit: number,
   ratings: Record<string, number>,
   visits: Record<string, number>,
 ): Record<string, Tier> {
-  const prices = places.map((p) => bestMenu(p, perMeal).menu.price).sort((a, b) => a - b);
+  const prices = places.map((p) => bestMenu(p, limit).menu.price).sort((a, b) => a - b);
   const cheapLimit = prices.length ? prices[Math.max(0, Math.ceil(prices.length / 3) - 1)] : 0;
 
   const out: Record<string, Tier> = {};
   for (const p of places) {
-    const { menu, fits } = bestMenu(p, perMeal);
+    const { menu, fits } = bestMenu(p, limit);
     if ((ratings[p.id] ?? 0) >= HIGH_RATING) out[p.id] = 1;
     else if ((fits && p.walk <= NEAR_WALK) || (visits[p.id] ?? 0) >= FREQUENT_VISITS) out[p.id] = 2;
     else if (menu.price <= cheapLimit) out[p.id] = 3;

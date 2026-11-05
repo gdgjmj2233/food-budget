@@ -13,7 +13,7 @@ import { C } from '@/theme';
 import styles from './roulette.module.css';
 
 type RouletteProps = {
-  perMeal: number;
+  limit: number;
   onEat: (name: string, price: number) => void;
 };
 
@@ -31,7 +31,7 @@ const FILL_LAST_ODD = C.accentSoft;
 const short = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
 /** 추천 탭처럼 따로 띄울 때: 창(Modal) + 룰렛 */
-export function Roulette({ perMeal, onEat, onClose }: RouletteProps & { onClose: () => void }) {
+export function Roulette({ limit, onEat, onClose }: RouletteProps & { onClose: () => void }) {
   const [entries, setEntries] = useState<string[]>([]);
 
   return (
@@ -44,7 +44,7 @@ export function Roulette({ perMeal, onEat, onClose }: RouletteProps & { onClose:
             <IoClose size={22} aria-hidden />
           </button>
         </div>
-        <RoulettePanel perMeal={perMeal} entries={entries} onEntries={setEntries} onEat={onEat} />
+        <RoulettePanel limit={limit} entries={entries} onEntries={setEntries} onEat={onEat} />
       </div>
     </Modal>
   );
@@ -56,7 +56,7 @@ export function Roulette({ perMeal, onEat, onClose }: RouletteProps & { onClose:
  * 적어 둔 후보(entries)는 밥먹기 창에서 탭을 오가도 남도록 바깥에서 들고 있는다.
  */
 export function RoulettePanel({
-  perMeal,
+  limit,
   entries,
   onEntries,
   onEat,
@@ -64,7 +64,7 @@ export function RoulettePanel({
   entries: string[];
   onEntries: (entries: string[]) => void;
 }) {
-  const { perMealAfter } = useBudget();
+  const { todayLeftAfter } = useBudget();
   const profile = useProfile();
   const character = profile ? characterOf(profile.character) : CHARACTERS[0];
   const [draft, setDraft] = useState('');
@@ -175,7 +175,7 @@ export function RoulettePanel({
                 <span className={styles.badge}>오늘은 이거다!</span>
                 <p className={styles.resultName}>{result}</p>
                 <p className={styles.resultMeta}>
-                  {price > 0 ? `먹고 나면 다음 한 끼 ${won(perMealAfter(price))}원` : '가격을 넣으면 예산에서 빠져요'}
+                  {price > 0 ? `먹고 나면 오늘 ${won(todayLeftAfter(price))}원 남아요` : '가격을 넣으면 예산에서 빠져요'}
                 </p>
               </div>
             </div>
@@ -244,7 +244,7 @@ export function RoulettePanel({
                   value={digits && won(price)}
                   onChange={(e) => setDigits(e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 7))}
                   inputMode="numeric"
-                  placeholder={won(perMeal)}
+                  placeholder={won(limit)}
                   aria-label="가격"
                 />
                 <span className={styles.unit}>원</span>

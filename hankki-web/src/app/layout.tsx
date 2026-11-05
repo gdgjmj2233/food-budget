@@ -10,7 +10,7 @@ const plex = IBM_Plex_Sans_KR({ weight: ['400', '500', '600', '700'], subsets: [
 
 export const metadata: Metadata = {
   title: '한끼예산',
-  description: '식비 예산에 맞춰 인하대 주변 식당을 추천하고, 먹을 때마다 다음 한 끼 금액을 다시 계산해 주는 앱',
+  description: '식비 예산에 맞춰 인하대 주변 식당을 추천하고, 먹은 만큼 하루 단위로 기록해 오늘 쓸 수 있는 금액을 알려 주는 앱',
 };
 
 export const viewport: Viewport = {
