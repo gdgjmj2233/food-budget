@@ -86,7 +86,7 @@ export function PlaceMap({
       if (!pos) return [];
       const ll = new kakao.maps.LatLng(pos.lat, pos.lng);
       const pt = proj.containerPointFromCoords(ll);
-      return [{ place: p, pos, ll, x: pt.getX(), y: pt.getY(), ...bestMenu(p, perMeal) }];
+      return [{ place: p, pos, ll, x: pt.x, y: pt.y, ...bestMenu(p, perMeal) }];
     });
     const byId = new Map(info.map((i) => [i.place.id, i]));
 
