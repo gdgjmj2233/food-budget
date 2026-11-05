@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { bestMenu, PLACES, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { INHA, loadKakaoMap, locatePlaces } from '@/lib/kakao-map';
 import { clusterPoints, isSameSpot } from '@/lib/map-cluster';
+import { countVisits, FREQUENT_VISITS, HIGH_RATING, placeTiers, TIER_LABEL, tierForLevel, type Tier } from '@/lib/map-tiers';
+import { useBudget } from '@/store/budget-store';
+import { setDeclutter, useDeclutter, useRatings } from '@/store/rating-store';
 import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
@@ -18,6 +21,7 @@ const PIN_BOX = { width: 104, height: 34 };
  * 화면에서 겹치는 핀은 "N곳 · 최저가~" 묶음 핀으로 합친다.
  * 핀을 누르면 onSelect 로 식당을, 묶음 핀을 누르면 onSelectGroup 으로 묶음 안 식당들을 알려주고 그 구역을 확대한다.
  * (같은 건물이라 확대해도 안 풀리는 묶음은 확대하지 않고 sameSpot 으로 알려준다)
+ * "핀 정리"가 켜져 있으면 축소할수록 주요 가게만 남긴 뒤 묶는다 (단계는 lib/map-tiers 참고).
  */
 export function PlaceMap({
   places,
@@ -38,6 +42,13 @@ export function PlaceMap({
   const [positions, setPositions] = useState<Record<string, Pos>>({});
   const [located, setLocated] = useState(false);
   const [level, setLevel] = useState(4);
+
+  const { meals } = useBudget();
+  const ratings = useRatings();
+  const declutter = useDeclutter();
+  const visits = useMemo(() => countVisits(meals), [meals]);
+  const tiers = useMemo(() => placeTiers(places, perMeal, ratings, visits), [places, perMeal, ratings, visits]);
+  const tier: Tier = declutter ? tierForLevel(level) : 4;
 
   // 지도를 만들고 모든 식당의 좌표를 찾는다 (처음 한 번)
   useEffect(() => {
@@ -84,15 +95,18 @@ export function PlaceMap({
     const proj = map.getProjection();
     const info = places.flatMap((p) => {
       const pos = positions[p.id];
-      if (!pos) return [];
+      if (!pos || (p.id !== selectedId && tiers[p.id] > tier)) return [];
       const ll = new kakao.maps.LatLng(pos.lat, pos.lng);
       const pt = proj.containerPointFromCoords(ll);
       return [{ place: p, pos, ll, x: pt.x, y: pt.y, ...bestMenu(p, perMeal) }];
     });
     const byId = new Map(info.map((i) => [i.place.id, i]));
 
-    // 선택한 식당은 묶지 않고 항상 이름과 함께 보여 준다. 싼 곳을 기준점으로 삼도록 가격순으로 묶는다
-    const rest = info.filter((i) => i.place.id !== selectedId).sort((a, b) => a.menu.price - b.menu.price);
+    // 선택한 식당은 묶지 않고 항상 이름과 함께 보여 준다.
+    // 주요 가게(낮은 단계)를 먼저, 같은 단계면 싼 곳을 기준점으로 삼도록 정렬해서 묶는다
+    const rest = info
+      .filter((i) => i.place.id !== selectedId)
+      .sort((a, b) => tiers[a.place.id] - tiers[b.place.id] || a.menu.price - b.menu.price);
     const groups = clusterPoints(
       rest.map((i) => ({ id: i.place.id, x: i.x, y: i.y })),
       PIN_BOX.width,
@@ -111,14 +125,20 @@ export function PlaceMap({
         const { place: p, menu, fits } = g[0];
         const on = p.id === selectedId;
         pin.className = `${styles.pin} ${fits ? '' : styles.pinOver} ${on ? styles.pinOn : ''}`;
-        pin.textContent = on ? `${p.name} · ${won(menu.price)}원` : won(menu.price);
-        pin.setAttribute('aria-label', `${p.name}, ${menu.name} ${won(menu.price)}원`);
+        const star = (ratings[p.id] ?? 0) >= HIGH_RATING;
+        const regular = (visits[p.id] ?? 0) >= FREQUENT_VISITS;
+        const mark = `${star ? '★' : ''}${regular ? '♥' : ''}`;
+        pin.textContent = `${mark ? `${mark} ` : ''}${on ? `${p.name} · ${won(menu.price)}원` : won(menu.price)}`;
+        pin.setAttribute(
+          'aria-label',
+          `${p.name}, ${menu.name} ${won(menu.price)}원${star ? `, 내 별점 ${ratings[p.id]}점` : ''}${regular ? `, ${visits[p.id]}번 방문` : ''}`,
+        );
         pin.onclick = () => onSelectRef.current(p.id);
         zIndex = on ? 4 : fits ? 2 : 1;
       } else {
         const anyFits = g.some((i) => i.fits);
-        // 묶음 핀은 기준점(가장 싼 곳) 자리에 그려야 다른 핀과 겹치지 않는다
-        const min = g[0].menu.price;
+        // 묶음 핀은 기준점(첫 점) 자리에 그려야 다른 핀과 겹치지 않는다
+        const min = Math.min(...g.map((i) => i.menu.price));
         pin.className = `${styles.pin} ${styles.cluster} ${anyFits ? '' : styles.pinOver}`;
         pin.innerHTML = `<b class="${styles.count}">${g.length}곳</b>${won(min)}~`;
         pin.setAttribute('aria-label', `식당 ${g.length}곳, 가장 싼 메뉴 ${won(min)}원. 눌러서 보기`);
@@ -141,7 +161,7 @@ export function PlaceMap({
       return new kakao.maps.CustomOverlay({ map, position, content: pin, yAnchor: 1, zIndex });
     });
     return () => overlays.forEach((o) => o.setMap(null));
-  }, [map, places, positions, perMeal, selectedId, level]);
+  }, [map, places, positions, perMeal, selectedId, level, tiers, tier, ratings, visits]);
 
   // 좌표를 다 찾았거나 목록(필터)이 바뀌면 보이는 식당이 다 들어오게 지도를 맞춘다
   const listKey = places.map((p) => p.id).join(',');
@@ -157,10 +177,34 @@ export function PlaceMap({
   }, [map, located, listKey]);
 
   const missing = located ? places.filter((p) => !positions[p.id]).length : 0;
+  const shown = places.filter((p) => positions[p.id] && tiers[p.id] <= tier).length;
+  const hidden = places.filter((p) => positions[p.id]).length - shown;
 
   return (
     <div className={styles.wrap}>
       <div ref={boxRef} className={styles.map} />
+      {map && !error && (
+        <div className={styles.controls}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={declutter}
+            onClick={() => setDeclutter(!declutter)}
+            className={`${styles.toggle} ${declutter ? styles.toggleOn : ''}`}>
+            <span className={styles.knob} aria-hidden />
+            핀 정리 {declutter ? 'ON' : 'OFF'}
+          </button>
+          {declutter && (
+            <span className={styles.tier} aria-live="polite">
+              {tier}단계 · {TIER_LABEL[tier]}
+              {hidden > 0 && <em> (+{hidden}곳은 확대하면 보여요)</em>}
+            </span>
+          )}
+        </div>
+      )}
+      {declutter && located && tier === 1 && shown === 0 && (
+        <p className={styles.status}>별점 4점 이상 준 가게가 없어요. 식당 카드에서 별점을 매기거나 확대해 보세요</p>
+      )}
       {error && <p className={styles.notice}>{error}. 잠시 후 다시 열어 보세요.</p>}
       {!error && !located && map && <p className={styles.status}>식당 위치를 찾는 중…</p>}
       {missing > 0 && <p className={styles.status}>위치를 못 찾은 {missing}곳은 지도에 없어요</p>}
