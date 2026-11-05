@@ -32,10 +32,6 @@
   flex-direction: column;
 }
 
-.sheet::backdrop {
-  background: rgba(18, 33, 63, 0.92);
-}
-
 .handle {
   flex: none;
   align-self: center;
