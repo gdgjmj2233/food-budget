@@ -10,9 +10,9 @@ import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
 import { RoulettePanel } from '@/components/roulette';
 import { CHARACTERS, characterOf } from '@/data/characters';
-import { bestMenu, cheapestPrice, PLACES, type Menu, type Place } from '@/data/places';
+import { bestMenu, cheapestPrice, mainMenu, PLACES, type Menu, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
-import { suggestedMenu, suggestToday } from '@/lib/suggest';
+import { matchesTheme, suggestToday } from '@/lib/suggest';
 import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
 import { C } from '@/theme';
@@ -131,7 +131,10 @@ function Choose({
   );
 }
 
-/** 예산 안 메뉴가 있는 식당을 가까운 순으로(어제와 다른 메뉴가 있는 곳이 먼저). 하나도 없으면 가장 싼 곳들. */
+/**
+ * 예산 안 메뉴가 있는 식당을 가까운 순으로. 카드에는 각 가게의 대표 메뉴를 보여 주고,
+ * 대표 메뉴가 어제와 다른 종류(국물·면·밥)인 곳을 앞에 둔다. 하나도 없으면 가장 싼 곳들.
+ */
 function Recommend({ perMeal, onPick }: { perMeal: number; onPick: (place: Place, menu: Menu) => void }) {
   const { meals } = useBudget();
   const profile = useProfile();
@@ -141,13 +144,13 @@ function Recommend({ perMeal, onPick }: { perMeal: number; onPick: (place: Place
     fits.length
       ? fits.sort(
           (a, b) =>
-            Number(!suggestedMenu(a, perMeal, tip)) - Number(!suggestedMenu(b, perMeal, tip)) ||
+            Number(!matchesTheme(mainMenu(a), tip)) - Number(!matchesTheme(mainMenu(b), tip)) ||
             a.walk - b.walk ||
             cheapestPrice(a) - cheapestPrice(b),
         )
       : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b))
   ).slice(0, fits.length ? MAX_PLACES : 3);
-  const showTip = tip && list.some((p) => suggestedMenu(p, perMeal, tip));
+  const showTip = tip && list.some((p) => matchesTheme(mainMenu(p), tip));
   const character = profile ? characterOf(profile.character) : CHARACTERS[1];
 
   return (
@@ -161,7 +164,7 @@ function Recommend({ perMeal, onPick }: { perMeal: number; onPick: (place: Place
         </div>
       )}
       {list.map((p) => (
-        <PlaceItem key={p.id} place={p} perMeal={perMeal} menu={suggestedMenu(p, perMeal, tip)} onPick={(m) => onPick(p, m)} />
+        <PlaceItem key={p.id} place={p} perMeal={perMeal} onPick={(m) => onPick(p, m)} />
       ))}
       <Link href="/recommend" className={styles.more}>
         식당 전체 보기

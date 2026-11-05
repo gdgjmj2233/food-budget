@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { bestMenu, PLACES, type Place } from '@/data/places';
+import { mainMenu, PLACES, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { INHA, loadKakaoMap, locatePlaces } from '@/lib/kakao-map';
 import { clusterPoints, isSameSpot } from '@/lib/map-cluster';
@@ -27,7 +27,7 @@ function countVisits(meals: { placeId?: string }[]): Record<string, number> {
 }
 
 /**
- * 카카오맵에 식당을 가격 핀으로 찍는다. 예산 안이면 파란색, 넘으면 빨간 테두리.
+ * 카카오맵에 식당을 대표 메뉴 가격 핀으로 찍는다. 예산 안이면 파란색, 넘으면 빨간 테두리.
  * 화면에서 겹치는 핀은 "N곳 · 최저가~" 묶음 핀으로 합친다.
  * 핀을 누르면 onSelect 로 식당을, 묶음 핀을 누르면 onSelectGroup 으로 묶음 안 식당들을 알려주고 그 구역을 확대한다.
  * (같은 건물이라 확대해도 안 풀리는 묶음은 확대하지 않고 sameSpot 으로 알려준다)
@@ -104,7 +104,9 @@ export function PlaceMap({
       if (!pos) return [];
       const ll = new kakao.maps.LatLng(pos.lat, pos.lng);
       const pt = proj.containerPointFromCoords(ll);
-      return [{ place: p, pos, ll, x: pt.x, y: pt.y, ...bestMenu(p, perMeal) }];
+      // 핀에는 가게의 대표 메뉴 가격을 보여 준다
+      const menu = mainMenu(p);
+      return [{ place: p, pos, ll, x: pt.x, y: pt.y, menu, fits: menu.price <= perMeal }];
     });
     const byId = new Map(info.map((i) => [i.place.id, i]));
 
@@ -147,7 +149,7 @@ export function PlaceMap({
         const min = Math.min(...g.map((i) => i.menu.price));
         pin.className = `${styles.pin} ${styles.cluster} ${anyFits ? '' : styles.pinOver}`;
         pin.innerHTML = `<b class="${styles.count}">${g.length}곳</b>${won(min)}~`;
-        pin.setAttribute('aria-label', `식당 ${g.length}곳, 가장 싼 메뉴 ${won(min)}원. 눌러서 보기`);
+        pin.setAttribute('aria-label', `식당 ${g.length}곳, 대표 메뉴 가장 싼 곳 ${won(min)}원. 눌러서 보기`);
         pin.onclick = () => {
           // 묶음 안 식당 목록은 항상 알려주고, 같은 건물이 아니면 묶음이 풀리도록 그 부분을 확대
           const sameSpot = isSameSpot(g.map((i) => i.pos)) || map.getLevel() <= 1;
