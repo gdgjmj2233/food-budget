@@ -195,10 +195,8 @@ export default function RecommendPage() {
       <AccentButton label="못 고르겠으면 룰렛" icon={IoDiceOutline} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
-      {/* 식당 추천은 지금 고른 카테고리·위치·검색 조건 안에서 받는다 */}
       {roulette && (
         <Roulette
-          places={base}
           perMeal={s.perMeal}
           onClose={() => setRoulette(false)}
           onEat={(name, price) => {
