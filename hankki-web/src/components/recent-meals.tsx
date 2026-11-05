@@ -2,29 +2,40 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { IoTrashOutline } from 'react-icons/io5';
+import { IoAdd, IoTrashOutline } from 'react-icons/io5';
 
-import { formatShort, fromDateKey, toDateKey, won, type Meal } from '@/lib/budget';
+import { addDays, formatShort, fromDateKey, slotOf, startOfDay, toDateKey, won, type Meal, type MissingMeal } from '@/lib/budget';
+import { catOfMeal, mealColor } from '@/theme';
 import styles from './recent-meals.module.css';
 import ui from './ui.module.css';
 
 /** 보여줄 최근 기록 수 */
 const MAX_ROWS = 5;
 
-const pad = (n: number) => String(n).padStart(2, '0');
-
-const timeOf = (ms: number) => {
-  const d = new Date(ms);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+/** 오늘·어제는 말로, 그 전은 날짜로 */
+const dayName = (date: string) => {
+  const today = startOfDay(new Date());
+  if (date === toDateKey(today)) return '오늘';
+  if (date === toDateKey(addDays(today, -1))) return '어제';
+  return formatShort(fromDateKey(date));
 };
 
-/** 최근에 기록한 끼니. 잘못 기록한 것을 바로 지울 수 있다. */
-export function RecentMeals({ meals, onRemove }: { meals: Meal[]; onRemove: (meal: Meal) => void }) {
-  const todayKey = toDateKey(new Date());
+/** 최근에 기록한 끼니. 잘못 기록한 것을 바로 지울 수 있고, 어제 빠진 끼니가 있으면 맨 위에 보여준다. */
+export function RecentMeals({
+  meals,
+  missing,
+  onFill,
+  onRemove,
+}: {
+  meals: Meal[];
+  missing: MissingMeal | null;
+  onFill: () => void;
+  onRemove: (meal: Meal) => void;
+}) {
   const recent = [...meals].sort((a, b) => b.at - a.at).slice(0, MAX_ROWS);
 
   return (
-    <section className={ui.card}>
+    <section className={styles.section}>
       <div className={ui.row}>
         <h2 className={ui.sec}>최근 기록</h2>
         <Link href="/history" className={styles.more}>
@@ -32,33 +43,53 @@ export function RecentMeals({ meals, onRemove }: { meals: Meal[]; onRemove: (mea
         </Link>
       </div>
 
-      {recent.length === 0 ? (
+      {recent.length === 0 && !missing ? (
         <p className={styles.empty}>아직 기록이 없어요</p>
       ) : (
         <ul className={styles.list}>
-          {recent.map((m) => (
-            <li key={m.id} className={styles.row}>
-              <span className={styles.when}>
-                <span>{m.date === todayKey ? '오늘' : formatShort(fromDateKey(m.date))}</span>
-                <span>{timeOf(m.at)}</span>
+          {missing && (
+            <li className={styles.row}>
+              <span className={styles.blank}>
+                <IoAdd size={18} aria-hidden />
               </span>
               <span className={styles.body}>
-                <span className={styles.name}>{m.name}</span>
-                <span className={styles.menu}>{m.menu}</span>
+                <span className={styles.blankName}>기록 없음</span>
+                <span className={styles.when}>어제 {missing.slot}</span>
               </span>
-              <span className={styles.price}>
-                {m.price > 0 && '−'}
-                {won(m.price)}원
-              </span>
-              <button
-                type="button"
-                className={styles.remove}
-                onClick={() => onRemove(m)}
-                aria-label={`${m.name} ${won(m.price)}원 기록 지우기`}>
-                <IoTrashOutline size={18} aria-hidden />
+              <button type="button" className={styles.fill} onClick={onFill}>
+                채우기
               </button>
             </li>
-          ))}
+          )}
+          {recent.map((m) => {
+            const color = mealColor(m);
+            return (
+              <li key={m.id} className={styles.row}>
+                <span className={styles.cat} style={{ backgroundColor: color.bg, color: color.fg }}>
+                  {m.price === 0 ? '스킵' : (catOfMeal(m) ?? '직접')}
+                </span>
+                <span className={styles.body}>
+                  <span className={styles.name}>
+                    {m.name} · {m.menu}
+                  </span>
+                  <span className={styles.when}>
+                    {dayName(m.date)} {slotOf(m.at)}
+                  </span>
+                </span>
+                <span className={styles.price}>
+                  {m.price > 0 && '−'}
+                  {won(m.price)}원
+                </span>
+                <button
+                  type="button"
+                  className={styles.remove}
+                  onClick={() => onRemove(m)}
+                  aria-label={`${m.name} ${won(m.price)}원 기록 지우기`}>
+                  <IoTrashOutline size={16} aria-hidden />
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

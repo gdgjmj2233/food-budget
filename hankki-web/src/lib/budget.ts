@@ -54,6 +54,15 @@ export interface BudgetSummary {
   periodMeals: Meal[];
 }
 
+export type MealSlot = '아침' | '점심' | '저녁';
+
+/** 비어 있는 끼니. at 은 그 끼니를 기록할 때 쓰는 시각(ms) */
+export interface MissingMeal {
+  date: string;
+  slot: MealSlot;
+  at: number;
+}
+
 export const DEFAULT_AMOUNT: Record<Period, number> = { week: 70000, month: 300000 };
 
 // ---- 날짜 ----
@@ -136,6 +145,47 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
     start, end, ended, totalDays, daysLeft, mealsLeft, mealsLeftToday, eatenToday,
     spent, remain, perMeal, perDay, base, status, periodMeals,
   };
+}
+
+// ---- 끼니 ----
+/** 하루 식사 횟수별 끼니 */
+const SLOTS: Record<number, MealSlot[]> = { 1: ['저녁'], 2: ['점심', '저녁'], 3: ['아침', '점심', '저녁'] };
+const SLOT_HOUR: Record<MealSlot, number> = { 아침: 8, 점심: 12, 저녁: 18 };
+
+export function slotOf(at: number): MealSlot {
+  const h = new Date(at).getHours();
+  return h < 11 ? '아침' : h < 16 ? '점심' : '저녁';
+}
+
+/** 어제 끼니 중 기록이 빠진 것. 여러 개면 가장 늦은 끼니 하나만 돌려준다. */
+export function findMissingMeal(settings: Settings, meals: Meal[], now: Date = new Date()): MissingMeal | null {
+  const day = addDays(startOfDay(now), -1);
+  const date = toDateKey(day);
+  if (date < settings.startDate || day >= periodEnd(settings)) return null;
+  if (settings.skipWeekend && isWeekend(day)) return null;
+
+  const slots = SLOTS[Math.min(3, Math.max(1, settings.mealsPerDay))];
+  const eaten = meals.filter((m) => m.date === date);
+  if (eaten.length >= slots.length) return null;
+
+  const filled = new Set(eaten.map((m) => slotOf(m.at)));
+  const slot = [...slots].reverse().find((s) => !filled.has(s))!;
+  return { date, slot, at: new Date(day.getFullYear(), day.getMonth(), day.getDate(), SLOT_HOUR[slot]).getTime() };
+}
+
+/** 자주 먹은 끼니. 같은 횟수면 최근에 먹은 것이 앞에 온다. */
+export function frequentMeals(meals: Meal[], limit = 3): Meal[] {
+  const groups = new Map<string, { meal: Meal; count: number }>();
+  for (const m of meals) {
+    if (m.price <= 0) continue;
+    const key = `${m.name}|${m.menu}|${m.price}`;
+    const g = groups.get(key);
+    groups.set(key, { meal: !g || m.at > g.meal.at ? m : g.meal, count: (g?.count ?? 0) + 1 });
+  }
+  return [...groups.values()]
+    .sort((a, b) => b.count - a.count || b.meal.at - a.meal.at)
+    .slice(0, limit)
+    .map((g) => g.meal);
 }
 
 // ---- 표시용 ----

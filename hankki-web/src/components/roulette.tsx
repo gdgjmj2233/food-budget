@@ -1,12 +1,16 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
-import { IoAdd, IoChevronBack, IoClose, IoCreateOutline, IoRefresh, IoRestaurantOutline } from 'react-icons/io5';
+import { IoAdd, IoChevronBack, IoClose, IoRestaurantOutline } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
+import { CHARACTERS, characterOf } from '@/data/characters';
 import type { Place } from '@/data/places';
 import { won } from '@/lib/budget';
-import { C, CAT_COLORS, CAT_EMOJI } from '@/theme';
+import { useBudget } from '@/store/budget-store';
+import { useProfile } from '@/store/profile-store';
+import { C, CAT_EMOJI } from '@/theme';
 import styles from './roulette.module.css';
 
 /** 룰렛 한 칸. 추천받은 칸에는 식당 정보가 붙고, 직접 넣은 칸은 이름만 있다. */
@@ -28,14 +32,14 @@ const SPIN_MS_REDUCED = 600;
 
 // 칸 색: 파랑/연파랑을 번갈아 쓰고, 칸 수가 홀수면 마지막 칸만 다른 색 (첫 칸과 같은 색이 붙지 않게)
 const FILL = [C.primary, C.primarySoft];
-const FILL_LAST_ODD = C.orangeSoft;
+const FILL_LAST_ODD = C.accentSoft;
 
 const short = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
 /** 추천 탭처럼 따로 띄울 때: 창(Modal) + 룰렛 */
 export function Roulette(props: RouletteProps) {
   return (
-    <Modal onClose={props.onClose}>
+    <Modal sheet onClose={props.onClose}>
       <RoulettePanel {...props} />
     </Modal>
   );
@@ -47,6 +51,9 @@ export function Roulette(props: RouletteProps) {
  * onBack 이 있으면 (밥먹기 창 안에서 쓸 때) 뒤로 가기 버튼을 보여준다.
  */
 export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: RouletteProps & { onBack?: () => void }) {
+  const { perMealAfter } = useBudget();
+  const profile = useProfile();
+  const character = profile ? characterOf(profile.character) : CHARACTERS[0];
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState('');
   const [digits, setDigits] = useState('');
@@ -108,8 +115,6 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
     return `${(R * Math.cos(rad)).toFixed(2)} ${(R * Math.sin(rad)).toFixed(2)}`;
   };
 
-  const resultCat = result?.place ? CAT_COLORS[result.place.cat] : null;
-
   return (
     <div className={styles.body}>
       <div className={styles.head}>
@@ -120,7 +125,7 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
         ) : (
           <span className={styles.iconSpacer} />
         )}
-        <h2 className={styles.title}>오늘 뭐 먹지? 룰렛</h2>
+        <h2 className={styles.title}>못 고르겠을 땐 룰렛</h2>
         <button type="button" onClick={onClose} aria-label="닫기" className={styles.iconBtn}>
           <IoClose size={22} aria-hidden />
         </button>
@@ -135,7 +140,7 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
           className={styles.wheel}
           style={{ transform: `rotate(${rotation}deg)`, transitionDuration: `${duration}ms` }}
           aria-hidden>
-          <circle r={R + 3} fill={C.ink} />
+          <circle r={R + 3} fill={C.primary} />
           {!n && <circle r={R} fill={C.primarySoft} />}
           {entries.map((e, i) => {
             const a0 = i * seg;
@@ -153,7 +158,7 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
                     d={`M0 0 L${point(a0)} A${R} ${R} 0 ${seg > 180 ? 1 : 0} 1 ${point(a0 + seg)} Z`}
                     fill={fill}
                     stroke="#fff"
-                    strokeWidth={1.5}
+                    strokeWidth={2}
                   />
                 )}
                 <g transform={`rotate(${mid - 90}) translate(${R * 0.6} 0) rotate(${flip ? 180 : 0})`}>
@@ -164,7 +169,7 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
               </g>
             );
           })}
-          <circle r={26} fill="#fff" stroke={C.line} strokeWidth={2} />
+          <circle r={32} fill="#fff" stroke={C.line} strokeWidth={2} />
         </svg>
         <button type="button" onClick={spin} disabled={!canSpin} className={styles.hub} aria-label="룰렛 돌리기">
           {spinning ? '…' : 'GO'}
@@ -176,17 +181,17 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
           {spinning && <p className={styles.sub}>두구두구…</p>}
           {result && (
             <div className={styles.result}>
-              {result.place && resultCat && (
-                <span className={styles.cat} style={{ backgroundColor: resultCat.bg, color: resultCat.fg }}>
-                  {CAT_EMOJI[result.place.cat]} {result.place.cat}
-                </span>
-              )}
-              <p className={styles.resultName}>{result.name}</p>
-              {result.place && (
-                <p className={styles.resultMeta}>
-                  {result.place.area} · 도보 약 {result.place.walk}분{result.place.hours ? ` · ${result.place.hours}` : ''}
-                </p>
-              )}
+              <Image src={character.img} alt="" unoptimized className={styles.resultImg} />
+              <div className={styles.resultBody}>
+                <span className={styles.badge}>오늘은 이거다!</span>
+                <p className={styles.resultName}>{result.name}</p>
+                {result.place && (
+                  <p className={styles.resultMeta}>
+                    {CAT_EMOJI[result.place.cat]} {result.place.cat} · {result.place.area.split('·')[0]} · 도보 {result.place.walk}분
+                  </p>
+                )}
+                {price > 0 && <p className={styles.resultMeta}>먹고 나면 다음 한 끼 {won(perMealAfter(price))}원</p>}
+              </div>
             </div>
           )}
         </div>
@@ -245,8 +250,7 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
       )}
 
       {result ? (
-        <>
-          <form
+        <form
             className={styles.actions}
             onSubmit={(e) => {
               e.preventDefault();
@@ -268,18 +272,21 @@ export function RoulettePanel({ places, perMeal, onEat, onClose, onBack }: Roule
             <button type="submit" className={styles.eat} disabled={price <= 0}>
               {price > 0 ? `이걸로 먹기 · ${won(price)}원 차감` : '이걸로 먹기'}
             </button>
-            <button type="button" className={styles.ghost} onClick={spin}>
-              <IoRefresh size={16} aria-hidden /> 다시 돌리기
-            </button>
-          </form>
-          <button type="button" className={styles.link} onClick={() => setResult(null)}>
-            <IoCreateOutline size={15} aria-hidden /> 칸 고치기
-          </button>
-        </>
+            <div className={styles.again}>
+              <button type="button" className={styles.ghost} onClick={spin}>
+                다시 돌리기
+              </button>
+              <button type="button" className={styles.ghost} onClick={() => setResult(null)}>
+                칸 고치기
+              </button>
+            </div>
+        </form>
       ) : (
-        <button type="button" className={styles.eat} onClick={spin} disabled={!canSpin}>
-          {spinning ? '돌아가는 중…' : '룰렛 돌리기'}
-        </button>
+        <div className={styles.actions}>
+          <button type="button" className={styles.eat} onClick={spin} disabled={!canSpin}>
+            {spinning ? '돌아가는 중…' : '룰렛 돌리기'}
+          </button>
+        </div>
       )}
     </div>
   );

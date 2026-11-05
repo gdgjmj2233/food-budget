@@ -6,26 +6,18 @@ import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { PLACES } from '@/data/places';
+import { WeekChart } from '@/components/week-chart';
 import { formatDate, fromDateKey, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { useBudget } from '@/store/budget-store';
-import { C, CAT_COLORS } from '@/theme';
+import { C, mealColor } from '@/theme';
 import styles from './page.module.css';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 const SUN = '#E5484D';
-const SAT = '#3182F6';
+const SAT = C.primary;
 /** 한 칸에 보여줄 최대 칩 수. 넘치면 +n 으로 줄인다 */
 const MAX_CHIPS = 3;
-
-const CAT_OF = new Map(PLACES.map((p) => [p.id, p.cat]));
-const chipColor = (m: Meal) => {
-  // 스킵(0원)은 회색
-  if (m.price === 0) return { bg: C.divider, fg: C.muted };
-  const cat = m.placeId ? CAT_OF.get(m.placeId) : undefined;
-  return cat ? CAT_COLORS[cat] : { bg: C.primarySoft, fg: C.primaryDark };
-};
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const timeOf = (ms: number) => {
@@ -143,7 +135,7 @@ export default function HistoryPage() {
               </span>
 
               {list.slice(0, MAX_CHIPS).map((m) => {
-                const c = chipColor(m);
+                const c = mealColor(m);
                 return (
                   <span key={m.id} className={styles.chip} style={{ backgroundColor: c.bg, borderLeftColor: c.fg, color: c.fg }}>
                     {m.name}
@@ -167,7 +159,7 @@ export default function HistoryPage() {
           <p className={styles.empty}>이 날은 기록이 없어요</p>
         ) : (
           selMeals.map((m) => {
-            const c = chipColor(m);
+            const c = mealColor(m);
             return (
               <div key={m.id} className={styles.row}>
                 <span className={styles.bar} style={{ backgroundColor: c.fg }} />
@@ -191,6 +183,8 @@ export default function HistoryPage() {
           <GhostButton label="이번 기간 기록 초기화" onPress={onReset} />
         </div>
       )}
+
+      <WeekChart meals={meals} perDay={s.perDay} />
     </Screen>
   );
 }
