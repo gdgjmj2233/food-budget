@@ -1,6 +1,6 @@
 // 어제 먹은 끼니를 보고 오늘 메뉴를 권한다. UI와 분리된 순수 함수만 둔다.
 
-import { PLACES, type Category, type Menu, type Place } from '@/data/places';
+import { PLACES, type Category, type Menu } from '@/data/places';
 import { addDays, startOfDay, toDateKey, type Meal } from '@/lib/budget';
 
 type Theme = '국물' | '면' | '밥';

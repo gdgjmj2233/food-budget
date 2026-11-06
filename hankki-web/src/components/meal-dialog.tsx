@@ -10,7 +10,7 @@ import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
 import { RoulettePanel } from '@/components/roulette';
 import { CHARACTERS, characterOf } from '@/data/characters';
-import { bestMenu, cheapestPrice, mainMenu, PLACES, type Menu, type Place } from '@/data/places';
+import { bestMenu, cheapestPrice, mainMenu, PLACES } from '@/data/places';
 import { won } from '@/lib/budget';
 import { matchesTheme, suggestToday } from '@/lib/suggest';
 import { useBudget } from '@/store/budget-store';
@@ -34,18 +34,16 @@ function WheelIcon({ size }: { size: number }) {
 }
 
 /**
- * 밥먹기 창. 추천·지도·룰렛 탭으로 고르고, 목록에 없으면 메뉴·가격을 직접 입력한다.
+ * 밥먹기 창. 추천·지도·룰렛 탭으로 뭘 먹을지 정하고, 먹은 건 메뉴·가격을 직접 입력해서 기록한다.
  * 열 때마다 새로 그려서 입력값이 비어 있다.
  */
 export function MealDialog({
   perMeal,
   onClose,
-  onPick,
   onSubmit,
 }: {
   perMeal: number;
   onClose: () => void;
-  onPick: (place: Place, menu: Menu) => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
   const [tab, setTab] = useState<Tab>('list');
@@ -65,7 +63,6 @@ export function MealDialog({
           onInput={() => setInputting(true)}
           onEntries={setEntries}
           onClose={onClose}
-          onPick={onPick}
           onSubmit={onSubmit}
         />
       )}
@@ -81,7 +78,6 @@ function Choose({
   onInput,
   onEntries,
   onClose,
-  onPick,
   onSubmit,
 }: {
   tab: Tab;
@@ -91,7 +87,6 @@ function Choose({
   onInput: () => void;
   onEntries: (entries: string[]) => void;
   onClose: () => void;
-  onPick: (place: Place, menu: Menu) => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
   const hasFits = PLACES.some((p) => bestMenu(p, perMeal).fits);
@@ -140,8 +135,8 @@ function Choose({
         ))}
       </div>
 
-      {tab === 'list' && <Recommend perMeal={perMeal} onPick={onPick} />}
-      {tab === 'map' && <MapTab perMeal={perMeal} onPick={onPick} />}
+      {tab === 'list' && <Recommend perMeal={perMeal} />}
+      {tab === 'map' && <MapTab perMeal={perMeal} />}
       {tab === 'roulette' && <RoulettePanel perMeal={perMeal} entries={entries} onEntries={onEntries} onEat={onSubmit} />}
 
       <div className={styles.foot}>
@@ -157,7 +152,7 @@ function Choose({
  * 예산 안 메뉴가 있는 식당을 가까운 순으로. 카드에는 각 가게의 대표 메뉴를 보여 주고,
  * 대표 메뉴가 어제와 다른 종류(국물·면·밥)인 곳을 앞에 둔다. 하나도 없으면 가장 싼 곳들.
  */
-function Recommend({ perMeal, onPick }: { perMeal: number; onPick: (place: Place, menu: Menu) => void }) {
+function Recommend({ perMeal }: { perMeal: number }) {
   const { meals } = useBudget();
   const profile = useProfile();
   const tip = suggestToday(meals);
@@ -186,7 +181,7 @@ function Recommend({ perMeal, onPick }: { perMeal: number; onPick: (place: Place
         </div>
       )}
       {list.map((p) => (
-        <PlaceItem key={p.id} place={p} perMeal={perMeal} onPick={(m) => onPick(p, m)} />
+        <PlaceItem key={p.id} place={p} perMeal={perMeal} />
       ))}
       <Link href="/recommend" className={styles.more}>
         식당 전체 보기
@@ -195,8 +190,8 @@ function Recommend({ perMeal, onPick }: { perMeal: number; onPick: (place: Place
   );
 }
 
-/** 지도에서 핀을 눌러 식당을 고른다 */
-function MapTab({ perMeal, onPick }: { perMeal: number; onPick: (place: Place, menu: Menu) => void }) {
+/** 지도에서 핀을 눌러 식당 정보를 본다 */
+function MapTab({ perMeal }: { perMeal: number }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const selected = PLACES.find((p) => p.id === selectedId);
@@ -217,9 +212,9 @@ function MapTab({ perMeal, onPick }: { perMeal: number; onPick: (place: Place, m
           setSelectedId(null);
         }}
       />
-      {selected && <PlaceItem key={selected.id} place={selected} perMeal={perMeal} onPick={(m) => onPick(selected, m)} />}
+      {selected && <PlaceItem key={selected.id} place={selected} perMeal={perMeal} />}
       {group.map((p) => (
-        <PlaceItem key={p.id} place={p} perMeal={perMeal} onPick={(m) => onPick(p, m)} />
+        <PlaceItem key={p.id} place={p} perMeal={perMeal} />
       ))}
     </div>
   );
