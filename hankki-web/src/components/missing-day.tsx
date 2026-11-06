@@ -5,15 +5,15 @@ import React, { useState } from 'react';
 
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { frequentMeals, won, type Meal, type MissingMeal } from '@/lib/budget';
+import { frequentMeals, won, type Meal, type MissingDay } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
-import styles from './missing-meal.module.css';
+import styles from './missing-day.module.css';
 
 const label = (m: Meal) => `${m.name} ${won(m.price)}원`;
 
-/** 어제 끼니 기록이 비어 있을 때 홈 맨 위에서 묻는 카드 */
-export function MissingMealCard({ missing, onInput }: { missing: MissingMeal; onInput: () => void }) {
+/** 어제 기록이 하나도 없을 때 홈 맨 위에서 묻는 카드 */
+export function MissingDayCard({ missing, onInput }: { missing: MissingDay; onInput: () => void }) {
   const { meals, dismissMissing } = useBudget();
   const { fillMissing } = useEat();
   const profile = useProfile();
@@ -26,9 +26,9 @@ export function MissingMealCard({ missing, onInput }: { missing: MissingMeal; on
       <div className={styles.head}>
         <Image src={character.img} alt="" unoptimized className={styles.mascot} />
         <div className={styles.headText}>
-          <span className={styles.notice}>어제 {missing.slot} 기록이 비어 있어요</span>
+          <span className={styles.notice}>어제 기록이 비어 있어요</span>
           <h2 id="ask-title" className={styles.title}>
-            어제 {missing.slot} 뭐 먹었어?
+            어제 뭐 먹었어?
           </h2>
         </div>
       </div>
@@ -58,7 +58,7 @@ export function MissingMealCard({ missing, onInput }: { missing: MissingMeal; on
         <button type="button" className={styles.choice} onClick={onInput}>
           직접 입력
         </button>
-        <button type="button" className={styles.choice} onClick={() => fillMissing(missing, '스킵', '끼니 건너뜀', 0)}>
+        <button type="button" className={styles.choice} onClick={() => dismissMissing(missing.date)}>
           안 먹었어
         </button>
         <button type="button" className={styles.choice} onClick={() => dismissMissing(missing.date)}>
@@ -71,7 +71,7 @@ export function MissingMealCard({ missing, onInput }: { missing: MissingMeal; on
           type="button"
           className={styles.save}
           onClick={() => fillMissing(missing, picked.name, picked.menu, picked.price, picked.placeId)}>
-          어제 {missing.slot}으로 기록하기 · {label(picked)}
+          어제 기록으로 남기기 · {label(picked)}
         </button>
       )}
     </section>

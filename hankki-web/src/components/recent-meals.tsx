@@ -4,7 +4,7 @@ import Link from 'next/link';
 import React from 'react';
 import { IoAdd, IoTrashOutline } from 'react-icons/io5';
 
-import { addDays, formatShort, fromDateKey, slotOf, startOfDay, toDateKey, won, type Meal, type MissingMeal } from '@/lib/budget';
+import { addDays, formatShort, fromDateKey, startOfDay, toDateKey, won, type Meal, type MissingDay } from '@/lib/budget';
 import { catOfMeal, mealColor } from '@/theme';
 import styles from './recent-meals.module.css';
 import ui from './ui.module.css';
@@ -20,7 +20,7 @@ const dayName = (date: string) => {
   return formatShort(fromDateKey(date));
 };
 
-/** 최근에 기록한 끼니. 잘못 기록한 것을 바로 지울 수 있고, 어제 빠진 끼니가 있으면 맨 위에 보여준다. */
+/** 최근 기록. 잘못 기록한 것을 바로 지울 수 있고, 어제 기록이 하나도 없으면 맨 위에 보여준다. */
 export function RecentMeals({
   meals,
   missing,
@@ -28,7 +28,7 @@ export function RecentMeals({
   onRemove,
 }: {
   meals: Meal[];
-  missing: MissingMeal | null;
+  missing: MissingDay | null;
   onFill: () => void;
   onRemove: (meal: Meal) => void;
 }) {
@@ -54,7 +54,7 @@ export function RecentMeals({
               </span>
               <span className={styles.body}>
                 <span className={styles.blankName}>기록 없음</span>
-                <span className={styles.when}>어제 {missing.slot}</span>
+                <span className={styles.when}>어제</span>
               </span>
               <button type="button" className={styles.fill} onClick={onFill}>
                 채우기
@@ -72,9 +72,7 @@ export function RecentMeals({
                   <span className={styles.name}>
                     {m.name} · {m.menu}
                   </span>
-                  <span className={styles.when}>
-                    {dayName(m.date)} {slotOf(m.at)}
-                  </span>
+                  <span className={styles.when}>{dayName(m.date)}</span>
                 </span>
                 <span className={styles.price}>
                   {m.price > 0 && '−'}

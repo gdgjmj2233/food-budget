@@ -17,18 +17,18 @@ import styles from './place-item.module.css';
  */
 export function PlaceItem({
   place,
-  perMeal,
+  limit,
   menu: shownMenu,
 }: {
   place: Place;
-  perMeal: number;
+  limit: number;
   menu?: Menu;
 }) {
   const [open, setOpen] = useState(false);
   const menu = shownMenu ?? mainMenu(place);
-  const fits = menu.price <= perMeal;
+  const fits = menu.price <= limit;
   // 대표 메뉴는 비싸도 예산 안에서 먹을 수 있는 다른 메뉴가 있는지 ("예산 안만" 필터와 같은 기준)
-  const otherFits = !fits && !shownMenu && bestMenu(place, perMeal).fits;
+  const otherFits = !fits && !shownMenu && bestMenu(place, limit).fits;
   const cat = CAT_COLORS[place.cat];
   // 펼친 메뉴는 보여 주는 메뉴(대표)를 맨 위에, 나머지는 싼 순서로
   const menus = [menu, ...place.menus.filter((m) => m.name !== menu.name).sort((a, b) => a.price - b.price)];
@@ -54,7 +54,7 @@ export function PlaceItem({
               {menu.name}
               {!fits && (
                 <b className={styles.tag} style={otherFits ? { color: C.primary } : undefined}>
-                  {otherFits ? ' · 예산 안 메뉴 있음' : ` +${won(menu.price - perMeal)}원 초과`}
+                  {otherFits ? ' · 예산 안 메뉴 있음' : ` +${won(menu.price - limit)}원 초과`}
                 </b>
               )}
             </span>
@@ -101,7 +101,7 @@ export function PlaceItem({
                 {m.name === menu.name && !shownMenu && <span className={styles.mainBadge}>대표</span>}
                 {m.name}
               </span>
-              <span className={styles.menuRowPrice} style={{ color: m.price <= perMeal ? C.ink : C.over }}>
+              <span className={styles.menuRowPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
                 {won(m.price)}원
               </span>
             </div>

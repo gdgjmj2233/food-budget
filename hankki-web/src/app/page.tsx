@@ -8,7 +8,7 @@ import { LuSoup } from 'react-icons/lu';
 
 import { BudgetDetail } from '@/components/budget-detail';
 import { MealDialog, MealInput } from '@/components/meal-dialog';
-import { MissingMealCard } from '@/components/missing-meal';
+import { MissingDayCard } from '@/components/missing-day';
 import { Modal } from '@/components/modal';
 import { ProfileDialog } from '@/components/profile-dialog';
 import { RecentMeals } from '@/components/recent-meals';
@@ -27,7 +27,7 @@ import styles from './page.module.css';
 export default function HomePage() {
   const { summary: s, settings, meals, missing, removeMeal } = useBudget();
   const profile = useProfile();
-  const { eatCustom, skip, fillMissing } = useEat();
+  const { eatCustom, fillMissing } = useEat();
   const toast = useToast();
   const [eating, setEating] = useState(false);
   const [detail, setDetail] = useState(false);
@@ -74,7 +74,7 @@ export default function HomePage() {
 
       {missing ? (
         <div ref={askRef}>
-          <MissingMealCard missing={missing} onInput={() => setFilling(true)} />
+          <MissingDayCard missing={missing} onInput={() => setFilling(true)} />
         </div>
       ) : (
         // 정적 내보내기(GitHub Pages)에서도 되도록 unoptimized
@@ -89,11 +89,17 @@ export default function HomePage() {
                   <br />
                   오늘은 {tip.theme} 어때?
                 </>
-              ) : (
+              ) : s.todayLeft > 0 ? (
                 <>
-                  오늘 한 끼는 {won(s.perMeal)}원이야.
+                  오늘은 {won(s.todayLeft)}원 쓸 수 있어.
                   <br />
                   뭐 먹을지 같이 골라 볼까?
+                </>
+              ) : (
+                <>
+                  오늘 쓸 금액은 다 썼어.
+                  <br />
+                  더 먹으면 남은 날이 빠듯해.
                 </>
               )}
             </span>
@@ -121,19 +127,17 @@ export default function HomePage() {
         {missing ? (
           <span className={styles.heroNote}>
             <IoInformationCircleOutline size={15} aria-hidden />
-            빠진 끼니가 있어서 실제보다 많아 보일 수 있어요
+            어제 기록이 없어서 실제보다 많아 보일 수 있어요
           </span>
         ) : (
           <span className={styles.stats}>
             <span className={styles.stat}>
-              <span className={styles.statLabel}>다음 한 끼</span>
-              <span className={styles.statVal}>{won(s.perMeal)}원</span>
+              <span className={styles.statLabel}>오늘 남은 금액</span>
+              <span className={styles.statVal}>{won(s.todayLeft)}원</span>
             </span>
             <span className={styles.stat}>
-              <span className={styles.statLabel}>남은 끼니</span>
-              <span className={styles.statVal}>
-                {s.mealsLeft}끼 · {s.daysLeft}일
-              </span>
+              <span className={styles.statLabel}>오늘 쓴 금액</span>
+              <span className={styles.statVal}>{won(s.spentToday)}원</span>
             </span>
           </span>
         )}
@@ -145,12 +149,7 @@ export default function HomePage() {
           오늘 밥먹기
         </button>
       ) : (
-        <div className={styles.actions}>
-          <AccentButton label="밥먹기" icon={LuSoup} onPress={() => setEating(true)} />
-          <button type="button" className={styles.skip} onClick={skip}>
-            이번 끼니 건너뛰기
-          </button>
-        </div>
+        <AccentButton label="밥먹기" icon={LuSoup} onPress={() => setEating(true)} />
       )}
 
       <RecentMeals
@@ -162,7 +161,7 @@ export default function HomePage() {
 
       {eating && (
         <MealDialog
-          perMeal={s.perMeal}
+          limit={s.todayLeft}
           onClose={() => setEating(false)}
           onSubmit={(menu, price) => {
             eatCustom(menu, price);
@@ -174,8 +173,7 @@ export default function HomePage() {
       {filling && missing && (
         <Modal onClose={() => setFilling(false)}>
           <MealInput
-            title={`어제 ${missing.slot} 직접 입력`}
-            perMeal={s.perMeal}
+            title="어제 먹은 것 직접 입력"
             onBack={() => setFilling(false)}
             onSubmit={(menu, price) => {
               fillMissing(missing, menu || '식사', '직접 입력', price);

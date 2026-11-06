@@ -91,26 +91,6 @@ export default function BudgetPage() {
 
       <Card style={{ paddingTop: 6, paddingBottom: 6 }}>
         <div className={styles.setRow}>
-          <span className={styles.setLabel}>하루 식사 횟수</span>
-          <div className={styles.step}>
-            <button
-              type="button"
-              className={styles.stepBtn}
-              aria-label="식사 횟수 줄이기"
-              onClick={() => updateSettings({ mealsPerDay: Math.max(1, settings.mealsPerDay - 1) })}>
-              −
-            </button>
-            <span className={styles.stepVal}>{settings.mealsPerDay}끼</span>
-            <button
-              type="button"
-              className={styles.stepBtn}
-              aria-label="식사 횟수 늘리기"
-              onClick={() => updateSettings({ mealsPerDay: Math.min(3, settings.mealsPerDay + 1) })}>
-              +
-            </button>
-          </div>
-        </div>
-        <div className={`${styles.setRow} ${styles.divider}`}>
           <span className={styles.setLabel}>주말은 예산에서 제외</span>
           <button
             type="button"
@@ -129,11 +109,11 @@ export default function BudgetPage() {
           자동 계산 결과 · {formatShort(s.start)} ~ {formatShort(endDay)}
         </span>
         <div className={styles.resultRow}>
-          <span className={styles.resultLabel}>한 끼 기준</span>
+          <span className={styles.resultLabel}>하루 기준</span>
           <span className={styles.resultBig}>{won(s.base)}원</span>
         </div>
         <span className={styles.resultSmall}>
-          {s.totalDays}일 × 하루 {settings.mealsPerDay}끼 = 총 {s.totalDays * settings.mealsPerDay}끼 기준
+          {won(settings.amount)}원 ÷ {s.totalDays}일
         </span>
       </div>
 
