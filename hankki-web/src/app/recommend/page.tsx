@@ -19,7 +19,7 @@ import { PlaceMap } from '@/components/place-map';
 import { Roulette } from '@/components/roulette';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, CATEGORIES, DATA_SOURCE, mainMenu, PLACES, type Area } from '@/data/places';
+import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
 import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
@@ -51,10 +51,8 @@ export default function RecommendPage() {
       (!q || p.name.includes(q) || p.menus.some((m) => m.name.includes(q))),
   );
   const inBudget = base.filter((p) => bestMenu(p, s.todayLeft).fits);
-  // 가격 순은 카드에 보이는 대표 메뉴 가격 기준
-  const mainPrice = (p: (typeof PLACES)[number]) => mainMenu(p).price;
   const list = (onlyFits ? inBudget : base).sort((a, b) =>
-    sort === 'price' ? mainPrice(a) - mainPrice(b) || a.walk - b.walk : a.walk - b.walk || mainPrice(a) - mainPrice(b),
+    sort === 'price' ? cheapestPrice(a) - cheapestPrice(b) || a.walk - b.walk : a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b),
   );
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다)

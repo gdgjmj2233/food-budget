@@ -21,8 +21,6 @@ export interface Place {
   address: string;
   /** 영업시간 (확인된 곳만) */
   hours?: string;
-  /** 대표 메뉴 이름 (menus 안에 있는 이름) */
-  main: string;
   menus: Menu[];
 }
 
@@ -37,7 +35,6 @@ const P = (id: string, name: string, cat: Category, area: Area, walk: number, ad
   area,
   walk,
   address: address ? `인천 미추홀구 ${address}` : '인천 미추홀구 (인하대 후문 인근)',
-  main: menus[0][0],
   menus: menus.map(([n, price]) => ({ name: n, price })),
 });
 
@@ -174,33 +171,7 @@ const HOURS: Record<string, string> = {
   lEqvy8xcePp3: '10:30~21:00 (브레이크 15:00~16:00)',
 };
 
-// 대표 메뉴: 보통 메뉴 목록의 첫 번째가 대표 메뉴다. 첫 번째가 사이드 메뉴인 곳만 여기서 고른다 (식당 이름 → 메뉴 이름)
-const MAIN: Record<string, string> = {
-  인하반점: '탕볶짜(탕수육+볶음밥+짜장)',
-  춘리마라탕: '마라탕(小)',
-  '마부마라탕 인하대점': '마라샹궈',
-  '구름카츠 인하대점': '1인카츠세트(마제+등심)',
-  '금화왕돈까스 인하대점': '왕돈까스',
-  '피자스쿨 인하대역점': '포테이토피자',
-  '투파인드피터 인천인하대점': '파스타',
-  '찌개사랑 인하대점': '생고기김치찌개',
-  '국대철판닭갈비 인하아리스타점': '국내산 생닭갈비',
-  '팔각도 인하대역점': '숯불닭갈비(1인분)',
-  이조은김밥: '김치김밥',
-  '이치라멘&돈가츠': '돈카츠',
-  지금돈까스: '등심돈까스',
-};
-
-export const PLACES: Place[] = LIST.map((p) => ({
-  ...p,
-  ...(HOURS[p.id] ? { hours: HOURS[p.id] } : {}),
-  ...(MAIN[p.name] && p.menus.some((m) => m.name === MAIN[p.name]) ? { main: MAIN[p.name] } : {}),
-}));
-
-/** 식당의 대표 메뉴 */
-export function mainMenu(place: Place): Menu {
-  return place.menus.find((m) => m.name === place.main) ?? place.menus[0];
-}
+export const PLACES: Place[] = LIST.map((p) => (HOURS[p.id] ? { ...p, hours: HOURS[p.id] } : p));
 
 /** 이 식당에서 주어진 금액 안에 먹을 수 있는 메뉴 중 가장 든든한(비싼) 것. 없으면 가장 싼 메뉴. */
 export function bestMenu(place: Place, limit: number): { menu: Menu; fits: boolean } {
