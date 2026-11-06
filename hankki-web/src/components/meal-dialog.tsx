@@ -9,9 +9,9 @@ import { Modal } from '@/components/modal';
 import { PlaceItem } from '@/components/place-item';
 import { RoulettePanel } from '@/components/roulette';
 import { CHARACTERS, characterOf } from '@/data/characters';
-import { bestMenu, cheapestPrice, PLACES } from '@/data/places';
+import { bestMenu, cheapestPrice, mainMenu, PLACES } from '@/data/places';
 import { won } from '@/lib/budget';
-import { suggestedMenu, suggestToday } from '@/lib/suggest';
+import { matchesTheme, suggestToday } from '@/lib/suggest';
 import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
 import { C } from '@/theme';
@@ -145,7 +145,10 @@ function Choose({
   );
 }
 
-/** 예산 안 메뉴가 있는 식당을 가까운 순으로(어제와 다른 메뉴가 있는 곳이 먼저). 하나도 없으면 가장 싼 곳들. */
+/**
+ * 예산 안 메뉴가 있는 식당을 가까운 순으로. 카드에는 각 가게의 대표 메뉴를 보여 주고,
+ * 대표 메뉴가 어제와 다른 종류(국물·면·밥)인 곳을 앞에 둔다. 하나도 없으면 가장 싼 곳들.
+ */
 function Recommend({ limit }: { limit: number }) {
   const { meals } = useBudget();
   const profile = useProfile();
@@ -155,13 +158,13 @@ function Recommend({ limit }: { limit: number }) {
     fits.length
       ? fits.sort(
           (a, b) =>
-            Number(!suggestedMenu(a, limit, tip)) - Number(!suggestedMenu(b, limit, tip)) ||
+            Number(!matchesTheme(mainMenu(a), tip)) - Number(!matchesTheme(mainMenu(b), tip)) ||
             a.walk - b.walk ||
             cheapestPrice(a) - cheapestPrice(b),
         )
       : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b))
   ).slice(0, fits.length ? MAX_PLACES : 3);
-  const showTip = tip && list.some((p) => suggestedMenu(p, limit, tip));
+  const showTip = tip && list.some((p) => matchesTheme(mainMenu(p), tip));
   const character = profile ? characterOf(profile.character) : CHARACTERS[1];
 
   return (
@@ -175,7 +178,7 @@ function Recommend({ limit }: { limit: number }) {
         </div>
       )}
       {list.map((p) => (
-        <PlaceItem key={p.id} place={p} limit={limit} menu={suggestedMenu(p, limit, tip)} />
+        <PlaceItem key={p.id} place={p} limit={limit} />
       ))}
       <Link href="/recommend" className={styles.more}>
         식당 전체 보기
