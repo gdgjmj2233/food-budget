@@ -121,6 +121,7 @@
   min-height: 24px;
   width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
@@ -195,19 +196,6 @@
 }
 
 /* 결과 화면: 가격 칸과 먹기 버튼을 한 줄에 */
-.priceRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.priceRow .eat {
-  flex: 1;
-  width: auto;
-  min-width: 0;
-  height: 48px;
-  font-size: 16px;
-}
 
 .again {
   width: 100%;
@@ -335,26 +323,6 @@
   color: var(--muted);
 }
 
-.priceBox {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.priceBox .input {
-  padding-right: 36px;
-  text-align: right;
-}
-
-.unit {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 16px;
-  color: var(--ink);
-}
-
 @keyframes pop {
   from {
     transform: scale(0.9);
@@ -366,4 +334,56 @@
   .result {
     animation: none;
   }
+}
+
+/* 룰렛 결과로 먹을 수 있는 메뉴 */
+.menus {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 4px 14px;
+  list-style: none;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.menuRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.menuRow:last-child {
+  border-bottom: none;
+}
+
+.menuName {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menuPlace {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.menuPrice {
+  flex: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.menuMore {
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
 }

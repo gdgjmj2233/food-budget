@@ -62,7 +62,6 @@ export function MealDialog({
           onInput={() => setInputting(true)}
           onEntries={setEntries}
           onClose={onClose}
-          onSubmit={onSubmit}
         />
       )}
     </Modal>
@@ -77,7 +76,6 @@ function Choose({
   onInput,
   onEntries,
   onClose,
-  onSubmit,
 }: {
   tab: Tab;
   limit: number;
@@ -86,7 +84,6 @@ function Choose({
   onInput: () => void;
   onEntries: (entries: string[]) => void;
   onClose: () => void;
-  onSubmit: (menu: string, price: number) => void;
 }) {
   const hasFits = PLACES.some((p) => bestMenu(p, limit).fits);
   const tabs = [
@@ -134,7 +131,7 @@ function Choose({
       </div>
 
       {tab === 'list' && <Recommend limit={limit} />}
-      {tab === 'roulette' && <RoulettePanel limit={limit} entries={entries} onEntries={onEntries} onEat={onSubmit} />}
+      {tab === 'roulette' && <RoulettePanel limit={limit} entries={entries} onEntries={onEntries} />}
 
       <div className={styles.foot}>
         <button type="button" className={`${ui.primary} ${ui.secondary} ${styles.footBtn}`} onClick={onInput}>
