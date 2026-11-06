@@ -19,15 +19,21 @@ import { PlaceMap } from '@/components/place-map';
 import { Roulette } from '@/components/roulette';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, CATEGORIES, DATA_SOURCE, mainMenu, PLACES, type Area } from '@/data/places';
+import { bestMenu, CATEGORIES, DATA_SOURCE, mainMenu, PLACES, type Area, type Place } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
 import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
+import { useRatings } from '@/store/rating-store';
 import { C, CAT_EMOJI } from '@/theme';
 import styles from './page.module.css';
 
-type SortKey = 'price' | 'walk';
+type SortKey = 'price' | 'walk' | 'rating';
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'price', label: '가격 낮은 순' },
+  { key: 'walk', label: '가까운 순' },
+  { key: 'rating', label: '별점 높은 순' },
+];
 const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
@@ -42,6 +48,7 @@ export default function RecommendPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [roulette, setRoulette] = useState(false);
   const extras = useExtraPlaces();
+  const ratings = useRatings();
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -51,11 +58,16 @@ export default function RecommendPage() {
       (!q || p.name.includes(q) || p.menus.some((m) => m.name.includes(q))),
   );
   const inBudget = base.filter((p) => bestMenu(p, s.todayLeft).fits);
-  // 가격 순은 카드에 보이는 대표 메뉴 가격 기준
-  const mainPrice = (p: (typeof PLACES)[number]) => mainMenu(p).price;
-  const list = (onlyFits ? inBudget : base).sort((a, b) =>
-    sort === 'price' ? mainPrice(a) - mainPrice(b) || a.walk - b.walk : a.walk - b.walk || mainPrice(a) - mainPrice(b),
-  );
+  // 가격 순은 카드에 보이는 대표 메뉴 가격 기준. 별점 순은 내 별점이 높은 곳부터, 별점 없는 곳은 뒤로
+  const mainPrice = (p: Place) => mainMenu(p).price;
+  const stars = (p: Place) => ratings[p.id] ?? 0;
+  const compare: Record<SortKey, (a: Place, b: Place) => number> = {
+    price: (a, b) => mainPrice(a) - mainPrice(b) || a.walk - b.walk,
+    walk: (a, b) => a.walk - b.walk || mainPrice(a) - mainPrice(b),
+    rating: (a, b) => stars(b) - stars(a) || mainPrice(a) - mainPrice(b) || a.walk - b.walk,
+  };
+  const list = [...(onlyFits ? inBudget : base)].sort(compare[sort]);
+  const rated = list.filter((p) => stars(p) > 0).length;
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다)
   const extraList = extras.filter(
@@ -129,12 +141,6 @@ export default function RecommendPage() {
           </Sub>
         </button>
         <div className={styles.tools}>
-          {!showMap && (
-            <button type="button" onClick={() => setSort(sort === 'price' ? 'walk' : 'price')} className={styles.check}>
-              <IoSwapVertical size={16} color={C.ink} aria-hidden />
-              <span className={styles.sortText}>{sort === 'price' ? '가격 낮은 순' : '가까운 순'}</span>
-            </button>
-          )}
           <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
             {showMap ? <IoListOutline size={16} aria-hidden /> : <IoMapOutline size={16} aria-hidden />}
             {showMap ? '목록' : '지도'}
@@ -142,7 +148,29 @@ export default function RecommendPage() {
         </div>
       </div>
 
-      {!showMap && <Sub>식당을 누르면 메뉴가 펼쳐져요.</Sub>}
+      {!showMap && (
+        <>
+          <div className={styles.sorts} role="radiogroup" aria-label="정렬">
+            <IoSwapVertical size={16} color={C.muted} aria-hidden />
+            {SORTS.map((o) => (
+              <button
+                type="button"
+                key={o.key}
+                role="radio"
+                aria-checked={sort === o.key}
+                onClick={() => setSort(o.key)}
+                className={`${styles.chip} ${styles.chipSmall} ${sort === o.key ? styles.chipOn : ''}`}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+          <Sub>
+            {sort === 'rating' && rated === 0
+              ? '아직 별점을 준 식당이 없어요. 식당을 눌러 별점을 남기면 별점 높은 곳이 위로 올라와요.'
+              : '식당을 누르면 메뉴가 펼쳐져요.'}
+          </Sub>
+        </>
+      )}
 
       {showMap && (
         <>

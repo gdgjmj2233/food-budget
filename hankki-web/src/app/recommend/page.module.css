@@ -157,11 +157,6 @@
   color: #fff;
 }
 
-.sortText {
-  font-size: 13px;
-  font-weight: 500;
-}
-
 .list {
   display: flex;
   flex-direction: column;
@@ -175,4 +170,12 @@
   padding: 24px 0;
   line-height: 21px;
   white-space: pre-line;
+}
+
+/* 정렬 고르기: 가격 낮은 순 · 가까운 순 · 별점 높은 순 */
+.sorts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
