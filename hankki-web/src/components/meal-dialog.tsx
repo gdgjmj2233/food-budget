@@ -7,9 +7,11 @@ import { IoClose, IoListOutline } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
 import { PlaceItem } from '@/components/place-item';
+import { PlaceMap } from '@/components/place-map';
 import { RoulettePanel } from '@/components/roulette';
+import { GhostButton } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
-import { bestMenu, cheapestPrice, PLACES } from '@/data/places';
+import { bestMenu, cheapestPrice, PLACES, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { suggestedMenu, suggestToday } from '@/lib/suggest';
 import { useBudget } from '@/store/budget-store';
@@ -20,6 +22,10 @@ import ui from './ui.module.css';
 
 /** 추천 창에 보여줄 식당 수 */
 const MAX_PLACES = 5;
+/** 식당 이름으로 찾을 때 보여줄 결과 수 */
+const MAX_RESULTS = 4;
+/** 입력 창 안 지도 높이(px) */
+const MAP_HEIGHT = 240;
 
 type Tab = 'list' | 'roulette';
 
@@ -33,7 +39,7 @@ function WheelIcon({ size }: { size: number }) {
 }
 
 /**
- * 밥먹기 창. 추천·룰렛 탭으로 뭘 먹을지 정하고, 먹은 건 메뉴·가격을 직접 입력해서 기록한다.
+ * 밥먹기 창. 추천·룰렛 탭으로 뭘 먹을지 정하고, 먹은 건 식당을 고른 뒤 메뉴·가격을 입력해서 기록한다.
  * 열 때마다 새로 그려서 입력값이 비어 있다.
  */
 export function MealDialog({
@@ -43,7 +49,7 @@ export function MealDialog({
 }: {
   limit: number;
   onClose: () => void;
-  onSubmit: (menu: string, price: number) => void;
+  onSubmit: (menu: string, price: number, place?: Place) => void;
 }) {
   const [tab, setTab] = useState<Tab>('list');
   const [inputting, setInputting] = useState(false);
@@ -184,7 +190,10 @@ function Recommend({ limit }: { limit: number }) {
   );
 }
 
-/** 먹은 것을 메뉴·가격 직접 입력으로 기록. limit 은 오늘 남은 금액이고, 지난 날을 채울 때는 주지 않는다 */
+/**
+ * 먹은 것을 기록하는 창. 먼저 지도에서 먹은 식당을 고르고(지도에 없으면 건너뛰고), 메뉴·가격을 적는다.
+ * limit 은 오늘 남은 금액이고, 지난 날을 채울 때는 주지 않는다.
+ */
 export function MealInput({
   title,
   limit,
@@ -194,12 +203,114 @@ export function MealInput({
   title: string;
   limit?: number;
   onBack: () => void;
+  onSubmit: (menu: string, price: number, place?: Place) => void;
+}) {
+  // undefined: 아직 식당을 고르는 중, null: 지도에 없는 곳
+  const [place, setPlace] = useState<Place | null>();
+
+  if (place === undefined) return <PlacePicker title={title} onBack={onBack} onPick={setPlace} />;
+  return (
+    <MenuForm
+      title={title}
+      limit={limit}
+      place={place}
+      onBack={() => setPlace(undefined)}
+      onSubmit={(menu, price) => onSubmit(menu, price, place ?? undefined)}
+    />
+  );
+}
+
+/** 지도에서 먹은 식당 고르기. 이름으로 찾을 수도 있다 */
+function PlacePicker({
+  title,
+  onBack,
+  onPick,
+}: {
+  title: string;
+  onBack: () => void;
+  onPick: (place: Place | null) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const q = query.trim();
+  const found = q ? PLACES.filter((p) => p.name.includes(q)) : PLACES;
+  const picked = PLACES.find((p) => p.id === pickedId);
+
+  return (
+    <div className={`${styles.body} ${styles.scroll}`}>
+      <div>
+        <h2 className={styles.title}>{title}</h2>
+        <p className={styles.sub}>어디서 먹었어요? 지도에서 식당을 눌러 주세요</p>
+      </div>
+
+      <input
+        type="search"
+        className={styles.input}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="식당 이름으로 찾기"
+        aria-label="식당 이름으로 찾기"
+      />
+
+      {q && (
+        <div className={styles.results}>
+          {found.length === 0 && <p className={styles.noResult}>이름이 맞는 식당이 없어요</p>}
+          {found.slice(0, MAX_RESULTS).map((p) => (
+            <button
+              type="button"
+              key={p.id}
+              aria-pressed={p.id === pickedId}
+              className={`${styles.result} ${p.id === pickedId ? styles.resultOn : ''}`}
+              onClick={() => setPickedId(p.id)}>
+              <span className={styles.resultName}>{p.name}</span>
+              <span className={styles.resultWhere}>
+                {p.area} · 도보 {p.walk}분
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <PlaceMap places={found} extras={[]} selectedId={pickedId} onSelect={setPickedId} height={MAP_HEIGHT} />
+
+      <GhostButton label="지도에 없는 곳이에요" onPress={() => onPick(null)} />
+
+      <div className={styles.actions}>
+        <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={onBack}>
+          뒤로
+        </button>
+        <button
+          type="button"
+          className={ui.primary}
+          style={{ backgroundColor: C.primary }}
+          disabled={!picked}
+          onClick={() => picked && onPick(picked)}>
+          {picked ? `${picked.name}에서 먹었어요` : '식당을 골라 주세요'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** 메뉴·가격 적기. 고른 식당이 있으면 그 식당 메뉴를 눌러서 채울 수 있다 */
+function MenuForm({
+  title,
+  limit,
+  place,
+  onBack,
+  onSubmit,
+}: {
+  title: string;
+  limit?: number;
+  place: Place | null;
+  onBack: () => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
   const [menu, setMenu] = useState('');
   const [digits, setDigits] = useState('');
   const price = Number(digits);
   const over = limit === undefined ? 0 : price - limit;
+  const menus = place ? [...place.menus].sort((a, b) => a.price - b.price) : [];
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,11 +318,41 @@ export function MealInput({
   };
 
   return (
-    <form className={styles.body} onSubmit={submit}>
+    <form className={`${styles.body} ${styles.scroll}`} onSubmit={submit}>
       <div>
         <h2 className={styles.title}>{title}</h2>
         {limit !== undefined && <p className={styles.sub}>오늘 남은 금액 {won(limit)}원</p>}
       </div>
+
+      {place && (
+        <div className={styles.pickedPlace}>
+          <span className={styles.resultName}>{place.name}</span>
+          <button type="button" className={styles.repick} onClick={onBack}>
+            다시 고르기
+          </button>
+        </div>
+      )}
+
+      {menus.length > 0 && (
+        <div className={styles.chips} role="group" aria-label={`${place?.name} 메뉴`}>
+          {menus.map((m) => {
+            const on = menu === m.name && price === m.price;
+            return (
+              <button
+                type="button"
+                key={m.name}
+                aria-pressed={on}
+                className={`${styles.chip} ${on ? styles.chipOn : ''}`}
+                onClick={() => {
+                  setMenu(m.name);
+                  setDigits(String(m.price));
+                }}>
+                {m.name} {won(m.price)}원
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <label className={styles.field}>
         메뉴
@@ -219,9 +360,9 @@ export function MealInput({
           className={styles.input}
           value={menu}
           onChange={(e) => setMenu(e.target.value)}
-          placeholder="예: 김치찌개"
+          placeholder={menus[0]?.name ? `예: ${menus[0].name}` : '예: 김치찌개'}
           maxLength={20}
-          autoFocus
+          autoFocus={!place}
         />
       </label>
 

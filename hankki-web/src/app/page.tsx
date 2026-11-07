@@ -178,8 +178,8 @@ export default function HomePage() {
         <MealDialog
           limit={s.todayLeft}
           onClose={() => setEating(false)}
-          onSubmit={(menu, price) => {
-            eatCustom(menu, price);
+          onSubmit={(menu, price, place) => {
+            eatCustom(menu, price, place);
             setEating(false);
           }}
         />
@@ -190,8 +190,8 @@ export default function HomePage() {
           <MealInput
             title="어제 먹은 것 직접 입력"
             onBack={() => setFilling(false)}
-            onSubmit={(menu, price) => {
-              fillMissing(missing, menu || '식사', '직접 입력', price);
+            onSubmit={(menu, price, place) => {
+              fillMissing(missing, menu, price, place);
               setFilling(false);
             }}
           />

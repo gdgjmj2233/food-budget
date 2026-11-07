@@ -30,17 +30,20 @@ const SPREAD_STEP = 30;
  * 앱 데이터의 식당은 파란색, 카카오 검색으로 찾은 주변 음식점(extras)은 흰색이다. 핀은 묶지 않고 모두 따로 보여 준다.
  * 20m 축척부터는 겹친 이름 핀을 위아래로 풀어 놓고, 실제 위치는 점으로 따로 보여 준다.
  * 선택한 식당은 멀리서도 이름 핀이다. 핀을 누르면 onSelect 로 그 식당(또는 주변 음식점)의 id 를 알려준다.
+ * height 를 주면 지도 높이(px)를 바꾼다.
  */
 export function PlaceMap({
   places,
   extras,
   selectedId,
   onSelect,
+  height,
 }: {
   places: Place[];
   extras: ExtraPlace[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  height?: number;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
@@ -280,7 +283,7 @@ export function PlaceMap({
 
   return (
     <div className={styles.wrap}>
-      <div ref={boxRef} className={styles.map} />
+      <div ref={boxRef} className={styles.map} style={height ? { height } : undefined} />
       <button
         type="button"
         onClick={locateMe}

@@ -185,3 +185,94 @@
   gap: 8px;
   margin-top: 4px;
 }
+
+/* 내용이 창보다 길면 창 안에서 스크롤 */
+.scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 식당 이름으로 찾은 결과 */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  text-align: left;
+}
+
+.resultOn {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+}
+
+.resultName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.resultWhere {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.noResult {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* 메뉴 적는 단계에서 고른 식당 */
+.pickedPlace {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+}
+
+.repick {
+  flex: none;
+  min-height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* 고른 식당의 메뉴. 누르면 메뉴·가격이 채워진다 */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.chipOn {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
