@@ -36,11 +36,14 @@ export function PlaceMap({
   extras,
   selectedId,
   onSelect,
+  onSelectGroup,
 }: {
   places: Place[];
   extras: ExtraPlace[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** N곳 핀을 누르면 그 안의 식당 id 들을 알려 준다 */
+  onSelectGroup: (ids: string[]) => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
@@ -79,8 +82,10 @@ export function PlaceMap({
 
   // 핀 그리기 (목록, 별점, 선택, 확대 단계가 바뀔 때마다 다시)
   const onSelectRef = useRef(onSelect);
+  const onSelectGroupRef = useRef(onSelectGroup);
   useEffect(() => {
     onSelectRef.current = onSelect;
+    onSelectGroupRef.current = onSelectGroup;
   });
 
   // 확대 단계가 바뀌면 점과 이름 핀을 바꿔 그린다
@@ -172,6 +177,7 @@ export function PlaceMap({
         pin.append(count);
         pin.setAttribute('aria-label', `식당 ${g.length}곳. 눌러서 확대`);
         pin.onclick = () => {
+          onSelectGroupRef.current(g.map((p) => p.id));
           const bounds = new kakao.maps.LatLngBounds();
           g.forEach((p) => bounds.extend(new kakao.maps.LatLng(p.lat, p.lng)));
           map.setBounds(bounds, 60, 40, 40, 40);
