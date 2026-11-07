@@ -27,6 +27,9 @@ export interface Delta {
 /** 기록에서 고칠 수 있는 내용 */
 export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'>;
 
+/** 계정에 저장했다가 불러오는 내용 */
+export type SavedData = Pick<State, 'settings' | 'meals' | 'dismissedDate'>;
+
 interface State {
   settings: Settings;
   meals: Meal[];
@@ -43,7 +46,8 @@ type Action =
   | { type: 'clearPeriod' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
   | { type: 'newPeriod' }
-  | { type: 'dismissMissing'; date: string };
+  | { type: 'dismissMissing'; date: string }
+  | { type: 'replaceData'; data: SavedData };
 
 const initialSettings = (): Settings => ({
   period: 'week',
@@ -90,6 +94,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, settings: { ...state.settings, startDate: toDateKey(new Date()) }, lastDelta: null };
     case 'dismissMissing':
       return { ...state, dismissedDate: action.date };
+    case 'replaceData':
+      return { settings: action.data.settings, meals: action.data.meals, dismissedDate: action.data.dismissedDate, lastDelta: null };
   }
 }
 
@@ -98,6 +104,7 @@ const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slic
 interface BudgetContextValue {
   settings: Settings;
   meals: Meal[];
+  dismissedDate: string | null;
   summary: BudgetSummary;
   lastDelta: Delta | null;
   /** 기록이 하나도 없는 어제. 없거나 넘어가기로 했으면 null */
@@ -115,6 +122,10 @@ interface BudgetContextValue {
   clearPeriod: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
   startNewPeriod: () => void;
+  /** 계정에서 불러온 내용으로 바꾼다 */
+  replaceData: (data: SavedData) => void;
+  /** 로그아웃할 때 이 브라우저의 기록과 설정을 처음 상태로 되돌린다 */
+  resetData: () => void;
 }
 
 const BudgetContext = createContext<BudgetContextValue | null>(null);
@@ -167,6 +178,7 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
   const value: BudgetContextValue = {
     settings: state.settings,
     meals: state.meals,
+    dismissedDate: state.dismissedDate,
     summary,
     lastDelta: state.lastDelta,
     missing,
@@ -187,6 +199,8 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
     clearPeriod: () => dispatch({ type: 'clearPeriod' }),
     updateSettings: (patch) => dispatch({ type: 'updateSettings', patch }),
     startNewPeriod: () => dispatch({ type: 'newPeriod' }),
+    replaceData: (data) => dispatch({ type: 'replaceData', data }),
+    resetData: () => dispatch({ type: 'replaceData', data: { settings: initialSettings(), meals: [], dismissedDate: null } }),
   };
 
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>;

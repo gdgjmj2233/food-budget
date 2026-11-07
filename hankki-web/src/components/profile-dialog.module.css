@@ -111,6 +111,15 @@
   color: var(--over);
 }
 
+.link {
+  align-self: center;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: underline;
+}
+
 .logout {
   align-self: center;
   padding: 6px 12px;

@@ -57,6 +57,17 @@ export function setRating(placeId: string, stars: number) {
   emit();
 }
 
+/** 계정에서 불러온 별점으로 바꾼다 */
+export function replaceRatings(next: Record<string, number>) {
+  ratings = next;
+  try {
+    localStorage.setItem(RATINGS_KEY, JSON.stringify(next));
+  } catch {
+    // 저장이 막힌 브라우저에서는 이번 방문 동안만 유지
+  }
+  emit();
+}
+
 /** 지도에서 멀어질수록 주요 가게만 남기는 기능 켜기/끄기 */
 export function setDeclutter(on: boolean) {
   declutter = on;

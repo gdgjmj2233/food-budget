@@ -19,6 +19,7 @@ import { useEat } from '@/hooks/use-eat';
 import { formatDate, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
+import { useAccount } from '@/store/account-store';
 import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
 import { STATUS } from '@/theme';
@@ -27,6 +28,7 @@ import styles from './page.module.css';
 export default function HomePage() {
   const { summary: s, settings, meals, missing, removeMeal } = useBudget();
   const profile = useProfile();
+  const account = useAccount();
   const { eatCustom, fillMissing } = useEat();
   const toast = useToast();
   const [eating, setEating] = useState(false);
@@ -56,14 +58,20 @@ export default function HomePage() {
           <Sub>{formatDate(new Date())}</Sub>
           <Title>인하대 근처</Title>
         </div>
-        {/* 로그인 전에는 기본 캐릭터(오리)를 보여 주고, 누르면 로그인 창이 열린다 */}
-        <button
-          type="button"
-          className={styles.avatar}
-          onClick={() => setProfileOpen(true)}
-          aria-label={profile ? `${profile.nickname}님 내 정보` : '로그인'}>
-          <Image src={(myCharacter ?? CHARACTERS[1]).img} alt="" unoptimized className={styles.avatarImg} />
-        </button>
+        {/* 로그인 전에는 Log in 버튼을, 로그인 후에는 내 캐릭터를 보여 준다. 누르면 로그인·내 정보 창이 열린다 */}
+        {account === null ? (
+          <button type="button" className={styles.login} onClick={() => setProfileOpen(true)}>
+            Log in
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.avatar}
+            onClick={() => setProfileOpen(true)}
+            aria-label={profile ? `${profile.nickname}님 내 정보` : '내 정보'}>
+            <Image src={(myCharacter ?? CHARACTERS[1]).img} alt="" unoptimized className={styles.avatarImg} />
+          </button>
+        )}
       </header>
 
       {s.ended && (
