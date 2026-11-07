@@ -183,6 +183,25 @@
   pointer-events: none;
 }
 
+/* 목록에서 "내 위치에서 가까운 순"일 때 카드 위의 거리 */
+.dist {
+  margin: 0 0 4px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.moreBtn {
+  align-self: center;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
