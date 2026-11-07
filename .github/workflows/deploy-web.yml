@@ -1,10 +1,14 @@
 # main, jihoon-map 브랜치에 올릴 때마다 웹 버전(hankki-web, Next.js)을 정적 파일로 빌드해서 GitHub Pages에 배포한다.
+# 학식 메뉴가 바뀌도록 매일 아침에도 한 번 다시 배포한다.
 name: Deploy web to GitHub Pages
 
 on:
   push:
     branches: [main, jihoon-map]
   workflow_dispatch:
+  schedule:
+    # 매일 오전 6시(한국 시간). cron 은 UTC 기준이다
+    - cron: '0 21 * * *'
 
 permissions:
   contents: read
@@ -29,6 +33,10 @@ jobs:
           cache-dependency-path: hankki-web/package-lock.json
       - run: npm ci
         working-directory: hankki-web
+      - name: Update cafeteria menu
+        working-directory: hankki-web
+        # 학교 사이트를 못 읽어도 저장소에 있는 메뉴로 배포는 계속한다
+        run: npm run update:cafeteria || echo "::warning::학식 메뉴를 받지 못해서 저장된 메뉴로 배포합니다."
       - name: Export static site
         working-directory: hankki-web
         run: npm run build
