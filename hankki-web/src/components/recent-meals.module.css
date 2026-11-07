@@ -39,24 +39,6 @@
   border-top: none;
 }
 
-.cat,
-.blank {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.blank {
-  border: 2px dashed #c5cedb;
-  color: #8790a0;
-}
-
 .body {
   flex: 1;
   min-width: 0;

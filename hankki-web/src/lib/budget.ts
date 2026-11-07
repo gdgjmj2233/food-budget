@@ -24,6 +24,9 @@ export interface Meal {
   at: number;
 }
 
+/** 기록의 메뉴. 예전 기록은 메뉴 칸에 '직접 입력'이 들어 있어서 빈 값으로 본다 */
+export const menuOf = (m: Meal) => (m.menu === '직접 입력' ? '' : m.menu);
+
 export type BudgetStatus = 'ok' | 'low' | 'over';
 
 /** 남은 예산이 전체의 이 비율보다 적으면 '임박' */

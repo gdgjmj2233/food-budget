@@ -2,10 +2,19 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { IoAdd, IoTrashOutline } from 'react-icons/io5';
+import { IoTrashOutline } from 'react-icons/io5';
 
-import { addDays, formatShort, fromDateKey, startOfDay, toDateKey, won, type Meal, type MissingDay } from '@/lib/budget';
-import { catOfMeal, mealColor } from '@/theme';
+import {
+  addDays,
+  formatShort,
+  fromDateKey,
+  menuOf,
+  startOfDay,
+  toDateKey,
+  won,
+  type Meal,
+  type MissingDay,
+} from '@/lib/budget';
 import styles from './recent-meals.module.css';
 import ui from './ui.module.css';
 
@@ -49,9 +58,6 @@ export function RecentMeals({
         <ul className={styles.list}>
           {missing && (
             <li className={styles.row}>
-              <span className={styles.blank}>
-                <IoAdd size={18} aria-hidden />
-              </span>
               <span className={styles.body}>
                 <span className={styles.blankName}>기록 없음</span>
                 <span className={styles.when}>어제</span>
@@ -61,33 +67,28 @@ export function RecentMeals({
               </button>
             </li>
           )}
-          {recent.map((m) => {
-            const color = mealColor(m);
-            return (
-              <li key={m.id} className={styles.row}>
-                <span className={styles.cat} style={{ backgroundColor: color.bg, color: color.fg }}>
-                  {m.price === 0 ? '스킵' : (catOfMeal(m) ?? '직접')}
+          {recent.map((m) => (
+            <li key={m.id} className={styles.row}>
+              <span className={styles.body}>
+                <span className={styles.name}>
+                  {m.name}
+                  {menuOf(m) && ` · ${menuOf(m)}`}
                 </span>
-                <span className={styles.body}>
-                  <span className={styles.name}>
-                    {m.name} · {m.menu}
-                  </span>
-                  <span className={styles.when}>{dayName(m.date)}</span>
-                </span>
-                <span className={styles.price}>
-                  {m.price > 0 && '−'}
-                  {won(m.price)}원
-                </span>
-                <button
-                  type="button"
-                  className={styles.remove}
-                  onClick={() => onRemove(m)}
-                  aria-label={`${m.name} ${won(m.price)}원 기록 지우기`}>
-                  <IoTrashOutline size={16} aria-hidden />
-                </button>
-              </li>
-            );
-          })}
+                <span className={styles.when}>{dayName(m.date)}</span>
+              </span>
+              <span className={styles.price}>
+                {m.price > 0 && '−'}
+                {won(m.price)}원
+              </span>
+              <button
+                type="button"
+                className={styles.remove}
+                onClick={() => onRemove(m)}
+                aria-label={`${m.name} ${won(m.price)}원 기록 지우기`}>
+                <IoTrashOutline size={16} aria-hidden />
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </section>

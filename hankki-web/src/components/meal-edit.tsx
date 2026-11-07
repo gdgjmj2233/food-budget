@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 
 import { Modal } from '@/components/modal';
 import { GhostButton } from '@/components/ui';
-import { won, type Meal } from '@/lib/budget';
+import { menuOf, won, type Meal } from '@/lib/budget';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
 import ui from './ui.module.css';
@@ -22,7 +22,7 @@ export function MealEdit({
   onRemove: () => void;
 }) {
   const [name, setName] = useState(meal.name);
-  const [menu, setMenu] = useState(meal.menu);
+  const [menu, setMenu] = useState(menuOf(meal));
   const [digits, setDigits] = useState(meal.price ? String(meal.price) : '');
   const price = Number(digits);
 
