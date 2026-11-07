@@ -124,3 +124,11 @@
   display: flex;
   justify-content: center;
 }
+
+/* 이미 쓴 금액이 예산보다 많을 때 알리는 문구 */
+.warn {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--over);
+}
