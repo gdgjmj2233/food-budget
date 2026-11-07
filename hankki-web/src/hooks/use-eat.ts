@@ -26,6 +26,16 @@ export function useEat() {
     toast(`${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
   };
 
+  /** 가게 이름과 메뉴 이름을 나눠서 기록한다 (예: 학생식당 · 한상한담) */
+  const eatAt = (name: string, menu: string, price: number) => {
+    const delta = record(name, menu, price);
+    if (!delta) {
+      toast(ENDED);
+      return;
+    }
+    toast(`${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
+  };
+
   /** 어제 비어 있던 기록을 채운다 */
   const fillMissing = (day: MissingDay, menu: string, price: number, place?: Place) => {
     const delta = save(menu, price, place, day.at);
@@ -36,5 +46,5 @@ export function useEat() {
     toast(`어제 기록을 채웠어요 · ${change(delta)}`);
   };
 
-  return { eatCustom, fillMissing };
+  return { eatCustom, eatAt, fillMissing };
 }

@@ -125,15 +125,12 @@ const CAT_WORDS: [string, Category][] = [
 
 const categoryOf = (kakaoCategory: string): Category | null => CAT_WORDS.find(([word]) => kakaoCategory.includes(word))?.[1] ?? null;
 
-// 한 번 검색에 최대 45곳(15곳 x 3쪽)만 주므로, 인하대 주변을 여러 중심점으로 나눠서 찾는다
-const SEARCH_CENTERS = [
-  { lat: INHA.lat, lng: INHA.lng },
-  { lat: INHA.lat + 0.004, lng: INHA.lng },
-  { lat: INHA.lat - 0.004, lng: INHA.lng },
-  { lat: INHA.lat, lng: INHA.lng + 0.005 },
-  { lat: INHA.lat, lng: INHA.lng - 0.005 },
-];
-const SEARCH_RADIUS_M = 600;
+// 한 번 검색에 최대 45곳(15곳 x 3쪽)만 주므로, 인하대 주변을 약 450m 간격의 5x5 지점으로 나눠서 찾는다
+const GRID = [-2, -1, 0, 1, 2];
+const SEARCH_CENTERS = GRID.flatMap((y) => GRID.map((x) => ({ lat: INHA.lat + y * 0.004, lng: INHA.lng + x * 0.005 })));
+const SEARCH_RADIUS_M = 400;
+/** 한꺼번에 검색하는 지점 수 */
+const SEARCH_BATCH = 5;
 
 function foodPage(center: LatLng, page: number): Promise<kakao.maps.services.PlaceResult[]> {
   return new Promise((resolve) => {
@@ -149,31 +146,67 @@ const squash = (name: string) => name.replace(/\s/g, '');
 
 let nearby: Promise<ExtraPlace[]> | null = null;
 
+// 주변 음식점 검색은 최대 15번 나가서, 결과를 하루 동안 브라우저에 저장해 다시 검색하지 않는다.
+// 비어 있는 결과(검색 실패)는 저장하지 않아서 다음에 다시 찾아본다.
+const NEARBY_KEY = 'hankki/nearby-v2';
+const NEARBY_TTL_MS = 24 * 60 * 60 * 1000;
+
+function readNearbyCache(): ExtraPlace[] | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NEARBY_KEY) ?? 'null') as { at: number; items: ExtraPlace[] } | null;
+    if (saved && Array.isArray(saved.items) && saved.items.length && Date.now() - saved.at < NEARBY_TTL_MS) return saved.items;
+  } catch {
+    // 저장된 값이 깨졌으면 다시 검색한다
+  }
+  return null;
+}
+
+function writeNearbyCache(items: ExtraPlace[]) {
+  if (!items.length) return;
+  try {
+    localStorage.setItem(NEARBY_KEY, JSON.stringify({ at: Date.now(), items }));
+  } catch {
+    // 저장이 막혀 있으면 다음에 다시 검색하면 된다
+  }
+}
+
+async function searchNearby(): Promise<ExtraPlace[]> {
+  const found = new Map<string, ExtraPlace>();
+  const searchAround = async (center: LatLng) => {
+    for (let page = 1; page <= 3; page++) {
+      const result = await foodPage(center, page);
+      for (const r of result) {
+        found.set(r.id, {
+          id: `kakao:${r.id}`,
+          name: r.place_name,
+          address: r.road_address_name || r.address_name,
+          cat: categoryOf(r.category_name),
+          lat: Number(r.y),
+          lng: Number(r.x),
+        });
+      }
+      if (result.length < 15) break;
+    }
+  };
+  for (let i = 0; i < SEARCH_CENTERS.length; i += SEARCH_BATCH) {
+    await Promise.all(SEARCH_CENTERS.slice(i, i + SEARCH_BATCH).map(searchAround));
+  }
+  return [...found.values()];
+}
+
 /**
  * 인하대 주변 음식점을 카카오 장소 검색으로 찾는다. 앱 데이터에 이미 있는 식당(이름이 같거나 포함)은 뺀다.
  * 같은 검색을 두 번 하지 않도록 결과를 기억한다.
  */
 export function findNearbyRestaurants(known: Place[]): Promise<ExtraPlace[]> {
   return (nearby ??= (async () => {
-    const found = new Map<string, ExtraPlace>();
-    for (const center of SEARCH_CENTERS) {
-      for (let page = 1; page <= 3; page++) {
-        const result = await foodPage(center, page);
-        for (const r of result) {
-          found.set(r.id, {
-            id: `kakao:${r.id}`,
-            name: r.place_name,
-            address: r.road_address_name || r.address_name,
-            cat: categoryOf(r.category_name),
-            lat: Number(r.y),
-            lng: Number(r.x),
-          });
-        }
-        if (result.length < 15) break;
-      }
+    let all = readNearbyCache();
+    if (!all) {
+      all = await searchNearby();
+      writeNearbyCache(all);
     }
     const names = known.map((p) => squash(p.name));
-    return [...found.values()].filter((e) => {
+    return all.filter((e) => {
       const n = squash(e.name);
       return !names.some((k) => n.includes(k) || k.includes(n));
     });

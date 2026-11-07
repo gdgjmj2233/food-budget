@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 
+import { BackupCard } from '@/components/backup-card';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub, Title } from '@/components/ui';
 import { DEFAULT_AMOUNT, formatShort, won, type Period } from '@/lib/budget';
@@ -20,7 +21,18 @@ export default function BudgetPage() {
 
   const setPeriod = (period: Period) => {
     if (period === settings.period) return;
-    updateSettings({ period, amount: DEFAULT_AMOUNT[period] });
+    const next = DEFAULT_AMOUNT[period];
+    const apply = () => updateSettings({ period, amount: next });
+    // 기간을 바꾸면 금액이 기본값으로 덮어써져서, 직접 정해 둔 금액이 있으면 먼저 물어본다
+    if (settings.amount === DEFAULT_AMOUNT[settings.period]) {
+      apply();
+      return;
+    }
+    confirm(
+      '예산 기간 바꾸기',
+      `${won(settings.amount)}원으로 정해 둔 예산이 ${won(next)}원(기본값)으로 바뀌어요. 바꿀까요?`,
+      apply,
+    );
   };
 
   const onAmount = (t: string) => {
@@ -86,6 +98,11 @@ export default function BudgetPage() {
           />
           <span className={styles.amountUnit}>원</span>
         </div>
+        {s.spent > settings.amount && (
+          <p className={styles.warn} role="status">
+            이번 기간에 이미 쓴 {won(s.spent)}원이 예산보다 많아요. 남은 예산이 마이너스로 계산돼요.
+          </p>
+        )}
       </div>
 
       <Card style={{ paddingTop: 6, paddingBottom: 6 }}>
@@ -121,6 +138,8 @@ export default function BudgetPage() {
       <div className={styles.center}>
         <GhostButton label="오늘부터 새 기간 시작" onPress={onNewPeriod} />
       </div>
+
+      <BackupCard />
     </Screen>
   );
 }

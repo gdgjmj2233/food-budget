@@ -3,9 +3,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IoLocate } from 'react-icons/io5';
 
-import { PLACES, type Place } from '@/data/places';
-import { INHA, loadKakaoMap, locatePlaces, type ExtraPlace } from '@/lib/kakao-map';
+import type { Place } from '@/data/places';
+import { INHA, loadKakaoMap, type ExtraPlace } from '@/lib/kakao-map';
 import { clusterPoints } from '@/lib/map-cluster';
+import { locationProblem, startLocating, useLocation } from '@/store/location-store';
+import { ensurePlacePositions, usePlacePositions } from '@/store/place-positions';
 import { useRatings } from '@/store/rating-store';
 import styles from './place-map.module.css';
 
@@ -37,29 +39,30 @@ export function PlaceMap({
   extras,
   selectedId,
   onSelect,
+  onSelectGroup,
   height,
 }: {
   places: Place[];
   extras: ExtraPlace[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** N곳 핀을 누르면 그 안의 식당 id 들을 알려 준다 */
+  onSelectGroup: (ids: string[]) => void;
   height?: number;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [positions, setPositions] = useState<Record<string, Pos>>({});
-  const [located, setLocated] = useState(false);
   const [level, setLevel] = useState(4);
-  const [me, setMe] = useState<Pos | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [locError, setLocError] = useState<string | null>(null);
-  const watchRef = useRef<number | null>(null);
+  const { positions, located } = usePlacePositions();
+  const { pos: me, status: locStatus } = useLocation();
+  const locError = locationProblem(locStatus);
   const ratings = useRatings();
 
-  // 지도를 만들고 모든 식당의 좌표를 찾는다 (처음 한 번)
+  // 지도를 만들고 모든 식당의 좌표를 찾는다 (좌표 찾기는 목록과 함께 쓰는 저장소가 한 번만 한다)
   useEffect(() => {
     let alive = true;
+    ensurePlacePositions();
     loadKakaoMap()
       .then(() => {
         if (!alive || !boxRef.current) return;
@@ -71,9 +74,7 @@ export function PlaceMap({
           zIndex: 1,
         });
         setMap(m);
-        return locatePlaces(PLACES, (id, pos) => alive && setPositions((prev) => ({ ...prev, [id]: pos })));
       })
-      .then(() => alive && setLocated(true))
       .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : '카카오맵을 불러오지 못했어요'));
     return () => {
       alive = false;
@@ -82,8 +83,10 @@ export function PlaceMap({
 
   // 핀 그리기 (목록, 별점, 선택, 확대 단계가 바뀔 때마다 다시)
   const onSelectRef = useRef(onSelect);
+  const onSelectGroupRef = useRef(onSelectGroup);
   useEffect(() => {
     onSelectRef.current = onSelect;
+    onSelectGroupRef.current = onSelectGroup;
   });
 
   // 확대 단계가 바뀌면 점과 이름 핀을 바꿔 그린다
@@ -175,6 +178,7 @@ export function PlaceMap({
         pin.append(count);
         pin.setAttribute('aria-label', `식당 ${g.length}곳. 눌러서 확대`);
         pin.onclick = () => {
+          onSelectGroupRef.current(g.map((p) => p.id));
           const bounds = new kakao.maps.LatLngBounds();
           g.forEach((p) => bounds.extend(new kakao.maps.LatLng(p.lat, p.lng)));
           map.setBounds(bounds, 60, 40, 40, 40);
@@ -213,14 +217,6 @@ export function PlaceMap({
     return () => overlay.setMap(null);
   }, [map, me]);
 
-  // 화면을 떠나면 위치 추적을 끝낸다
-  useEffect(
-    () => () => {
-      if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current);
-    },
-    [],
-  );
-
   const flyTo = (pos: Pos) => {
     if (!map) return;
     if (map.getLevel() > ME_LEVEL) map.setLevel(ME_LEVEL);
@@ -230,40 +226,7 @@ export function PlaceMap({
   // "내 위치" 버튼: 처음 누르면 권한을 물어보고 위치 추적을 시작하며 그 자리로 이동한다. 이후에는 마지막 위치로 다시 이동한다
   const locateMe = () => {
     if (!map) return;
-    setLocError(null);
-    if (me) {
-      flyTo(me);
-      return;
-    }
-    if (!('geolocation' in navigator)) {
-      setLocError('이 브라우저에서는 내 위치를 쓸 수 없어요');
-      return;
-    }
-    if (watchRef.current !== null) return; // 이미 위치를 찾는 중
-    setLocating(true);
-    let first = true;
-    watchRef.current = navigator.geolocation.watchPosition(
-      ({ coords }) => {
-        const pos = { lat: coords.latitude, lng: coords.longitude };
-        setMe(pos);
-        setLocating(false);
-        if (first) {
-          first = false;
-          flyTo(pos);
-        }
-      },
-      (err) => {
-        if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current);
-        watchRef.current = null;
-        setLocating(false);
-        setLocError(
-          err.code === err.PERMISSION_DENIED
-            ? '위치 권한이 꺼져 있어요. 브라우저 설정에서 허용해 주세요'
-            : '내 위치를 확인할 수 없어요. 잠시 후 다시 눌러 보세요',
-        );
-      },
-      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 },
-    );
+    startLocating(flyTo);
   };
 
   // 좌표를 다 찾았거나 목록(필터)이 바뀌면 보이는 식당이 다 들어오게 지도를 맞춘다
@@ -291,7 +254,7 @@ export function PlaceMap({
         aria-label="내 위치로 이동"
         className={`${styles.locate} ${me ? styles.locateOn : ''}`}>
         <IoLocate size={18} aria-hidden />
-        {locating ? '찾는 중…' : '내 위치'}
+        {locStatus === 'locating' ? '찾는 중…' : '내 위치'}
       </button>
       {locError && <p className={styles.status}>{locError}</p>}
       {error &&<p className={styles.notice}>{error}. 잠시 후 다시 열어 보세요.</p>}

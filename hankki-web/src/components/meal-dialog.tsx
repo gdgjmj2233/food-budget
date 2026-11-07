@@ -24,6 +24,8 @@ import ui from './ui.module.css';
 const MAX_PLACES = 5;
 /** 식당 이름으로 찾을 때 보여줄 결과 수 */
 const MAX_RESULTS = 4;
+/** 지도에서 N곳 핀을 눌렀을 때 목록으로 보여줄 식당 수 */
+const MAX_GROUP = 6;
 /** 입력 창 안 지도 높이(px) */
 const MAP_HEIGHT = 240;
 
@@ -220,7 +222,7 @@ export function MealInput({
   );
 }
 
-/** 지도에서 먹은 식당 고르기. 이름으로 찾을 수도 있다 */
+/** 지도에서 먹은 식당 고르기. 이름으로 찾거나, N곳 핀을 눌러 나온 목록에서 고를 수도 있다 */
 function PlacePicker({
   title,
   onBack,
@@ -232,9 +234,13 @@ function PlacePicker({
 }) {
   const [query, setQuery] = useState('');
   const [pickedId, setPickedId] = useState<string | null>(null);
+  const [groupIds, setGroupIds] = useState<string[]>([]);
   const q = query.trim();
   const found = q ? PLACES.filter((p) => p.name.includes(q)) : PLACES;
   const picked = PLACES.find((p) => p.id === pickedId);
+  // 지도 아래 목록: 검색어가 있으면 이름이 맞는 식당, 없으면 지도에서 누른 N곳 핀 안의 식당
+  const options = q ? found : PLACES.filter((p) => groupIds.includes(p.id));
+  const shownMax = q ? MAX_RESULTS : MAX_GROUP;
 
   return (
     <div className={`${styles.body} ${styles.scroll}`}>
@@ -252,10 +258,19 @@ function PlacePicker({
         aria-label="식당 이름으로 찾기"
       />
 
-      {q && (
+      <PlaceMap
+        places={found}
+        extras={[]}
+        selectedId={pickedId}
+        onSelect={setPickedId}
+        onSelectGroup={setGroupIds}
+        height={MAP_HEIGHT}
+      />
+
+      {(q || options.length > 0) && (
         <div className={styles.results}>
-          {found.length === 0 && <p className={styles.noResult}>이름이 맞는 식당이 없어요</p>}
-          {found.slice(0, MAX_RESULTS).map((p) => (
+          {q && found.length === 0 && <p className={styles.noResult}>이름이 맞는 식당이 없어요</p>}
+          {options.slice(0, shownMax).map((p) => (
             <button
               type="button"
               key={p.id}
@@ -268,10 +283,13 @@ function PlacePicker({
               </span>
             </button>
           ))}
+          {options.length > shownMax && (
+            <p className={styles.noResult}>
+              {options.length}곳 중 {shownMax}곳만 보여요. 지도를 더 확대하거나 이름으로 찾아 주세요
+            </p>
+          )}
         </div>
       )}
-
-      <PlaceMap places={found} extras={[]} selectedId={pickedId} onSelect={setPickedId} height={MAP_HEIGHT} />
 
       <GhostButton label="지도에 없는 곳이에요" onPress={() => onPick(null)} />
 

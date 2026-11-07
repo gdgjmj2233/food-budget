@@ -15,7 +15,7 @@ import {
   type Settings,
 } from '@/lib/budget';
 
-const STORAGE_KEY = 'hankki/v1';
+export const STORAGE_KEY = 'hankki/v1';
 
 export interface Delta {
   name: string;
