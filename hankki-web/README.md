@@ -15,6 +15,7 @@ npm run dev     # http://localhost:3000
 npm run build   # 배포용 빌드
 npm start       # 빌드한 결과 실행
 npm run lint
+npm run update:cafeteria   # 학생식당 이번 주 메뉴 받아 오기
 ```
 
 Windows PowerShell에서 `npm`이 막히면 `npm.cmd run dev`처럼 `.cmd`를 붙인다.
@@ -38,6 +39,7 @@ src/
     layout.tsx            공통 틀 (html, 메타데이터)
     page.tsx              홈 /           : 오늘 남은 금액, 오늘 쓴 금액, 최근 기록
     recommend/page.tsx    추천 /recommend : 카테고리/위치/검색/정렬
+    cafeteria/page.tsx    학식 /cafeteria : 학생식당 요일별 메뉴·가격·운영 시간
     history/page.tsx      기록 /history   : 월간 달력, 되돌리기
     budget/page.tsx       예산 /budget    : 기간·금액·주말 제외
   components/
@@ -48,6 +50,7 @@ src/
   hooks/use-eat.ts        직접 입력 기록 + 알림
   lib/budget.ts           예산 계산 (순수 함수, UI와 분리)
   data/places.ts          식당 예시 데이터
+  data/cafeteria-menu.json  학생식당 주간 메뉴 (scripts/update-cafeteria.mjs 가 만듦)
   theme.ts                색상
 ```
 
@@ -70,6 +73,15 @@ src/
 - 술집·카페·고깃집처럼 혼자 한 끼 먹기 어려운 곳은 제외
 - 도보 시간은 정문·후문 중 가까운 쪽에서의 직선거리로 계산한 대략값
 - 가격이 바뀌면 해당 식당의 `menus` 배열만 고치면 됨
+
+## 학식 메뉴 (`src/data/cafeteria-menu.json`)
+
+- 인하대 홈페이지의 학생식당 주간 메뉴를 `npm run update:cafeteria`로 받아 저장한다
+- 브라우저가 학교 사이트를 직접 읽지 못해서 미리 받아 두는 방식이다
+- 배포할 때마다 메뉴를 새로 받고, `deploy-web.yml`이 매일 오전 6시(한국 시간)에 다시 배포한다. 예약 실행은 `main`에 있어야 동작한다
+- 메뉴를 못 받으면 Actions 실행 화면에 경고를 남기고 저장소에 있는 메뉴로 배포한다. 오늘 날짜의 메뉴가 없으면 화면에 안내가 나온다
+- 자동으로 받은 메뉴는 저장소에 커밋되지 않는다. 로컬에서 최신 메뉴를 보려면 위 명령을 직접 실행한다
+- GitHub는 저장소에 60일 동안 활동이 없으면 예약 실행을 멈춘다. 멈추면 Actions 화면에서 다시 켠다
 
 ## 다음 단계
 
