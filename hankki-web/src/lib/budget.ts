@@ -148,21 +148,6 @@ export function findMissingDay(settings: Settings, meals: Meal[], now: Date = ne
   return { date, at: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12).getTime() };
 }
 
-/** 자주 먹은 메뉴. 같은 횟수면 최근에 먹은 것이 앞에 온다. */
-export function frequentMeals(meals: Meal[], limit = 3): Meal[] {
-  const groups = new Map<string, { meal: Meal; count: number }>();
-  for (const m of meals) {
-    if (m.price <= 0) continue;
-    const key = `${m.name}|${m.menu}|${m.price}`;
-    const g = groups.get(key);
-    groups.set(key, { meal: !g || m.at > g.meal.at ? m : g.meal, count: (g?.count ?? 0) + 1 });
-  }
-  return [...groups.values()]
-    .sort((a, b) => b.count - a.count || b.meal.at - a.meal.at)
-    .slice(0, limit)
-    .map((g) => g.meal);
-}
-
 // ---- 표시용 ----
 export function won(n: number): string {
   const v = Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');

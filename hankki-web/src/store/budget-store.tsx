@@ -34,7 +34,7 @@ interface State {
   settings: Settings;
   meals: Meal[];
   lastDelta: Delta | null;
-  /** "안 먹었어"나 "기억 안 나"를 누른 날짜. 그 날의 기록은 다시 묻지 않는다 */
+  /** "안 먹었어"를 누른 날짜. 그 날의 기록은 다시 묻지 않는다 */
   dismissedDate: string | null;
 }
 
