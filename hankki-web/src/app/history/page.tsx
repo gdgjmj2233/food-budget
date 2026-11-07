@@ -5,6 +5,7 @@ import { IoChevronBack, IoChevronForward, IoPencilOutline } from 'react-icons/io
 
 import { MealEdit } from '@/components/meal-edit';
 import { MonthStats } from '@/components/month-stats';
+import { MyPlaces } from '@/components/my-places';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub } from '@/components/ui';
 import ui from '@/components/ui.module.css';
@@ -196,6 +197,8 @@ export default function HistoryPage() {
       )}
 
       <WeekChart meals={meals} perDay={s.perDay} />
+
+      <MyPlaces meals={meals} />
 
       {editing && (
         <MealEdit

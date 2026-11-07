@@ -19,7 +19,7 @@ import { PlaceMap } from '@/components/place-map';
 import { Roulette } from '@/components/roulette';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, CATEGORIES, DATA_SOURCE, PLACES, type Area, type Place } from '@/data/places';
+import { bestMenu, CATEGORIES, DATA_SOURCE, mainMenu, PLACES, type Area, type Place } from '@/data/places';
 import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
 import { distanceM, formatDistance } from '@/lib/geo';
@@ -106,7 +106,8 @@ export default function RecommendPage() {
   const nameOf = (r: Row) => r.place?.name ?? r.extra!.name;
   const byName = (a: Row, b: Row) => nameOf(a).localeCompare(nameOf(b), 'ko');
   // 가격은 카드에 보이는 대표 메뉴 값 기준(오늘 예산 안에서 가장 비싼 메뉴)이고, 같으면 가까운 곳이 먼저다
-  const shownPrice = (p: Place) => bestMenu(p, s.todayLeft).menu.price;
+  // 카드에 보이는 가격 = 가게 대표 메뉴 가격
+  const shownPrice = (p: Place) => mainMenu(p).price;
   const stars = (r: Row) => ratings[r.id] ?? 0;
   rows.sort((a, b) => {
     const mixed = effectiveSort === 'near' || effectiveSort === 'rating'; // 이 둘만 주변 음식점을 섞어서 줄 세운다
@@ -311,7 +312,7 @@ export default function RecommendPage() {
       <AccentButton label="못 고르겠으면 룰렛" icon={IoDiceOutline} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
-      {roulette && <Roulette onClose={() => setRoulette(false)} />}
+      {roulette && <Roulette limit={s.todayLeft} onClose={() => setRoulette(false)} />}
     </Screen>
   );
 }

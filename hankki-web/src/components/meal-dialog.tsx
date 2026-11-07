@@ -11,9 +11,9 @@ import { PlaceMap } from '@/components/place-map';
 import { RoulettePanel } from '@/components/roulette';
 import { GhostButton } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
-import { bestMenu, cheapestPrice, PLACES, type Place } from '@/data/places';
+import { bestMenu, cheapestPrice, mainMenu, PLACES, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
-import { suggestedMenu, suggestToday } from '@/lib/suggest';
+import { matchesTheme, suggestToday } from '@/lib/suggest';
 import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
 import { C } from '@/theme';
@@ -139,7 +139,7 @@ function Choose({
       </div>
 
       {tab === 'list' && <Recommend limit={limit} />}
-      {tab === 'roulette' && <RoulettePanel entries={entries} onEntries={onEntries} />}
+      {tab === 'roulette' && <RoulettePanel limit={limit} entries={entries} onEntries={onEntries} />}
 
       {/* 룰렛은 메뉴를 정하는 데만 쓴다. 먹은 건 추천 탭의 "입력"으로 기록한다 */}
       {tab === 'list' && (
@@ -163,13 +163,13 @@ function Recommend({ limit }: { limit: number }) {
     fits.length
       ? fits.sort(
           (a, b) =>
-            Number(!suggestedMenu(a, limit, tip)) - Number(!suggestedMenu(b, limit, tip)) ||
+            Number(!matchesTheme(mainMenu(a), tip)) - Number(!matchesTheme(mainMenu(b), tip)) ||
             a.walk - b.walk ||
             cheapestPrice(a) - cheapestPrice(b),
         )
       : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b))
   ).slice(0, fits.length ? MAX_PLACES : 3);
-  const showTip = tip && list.some((p) => suggestedMenu(p, limit, tip));
+  const showTip = tip && list.some((p) => matchesTheme(mainMenu(p), tip));
   const character = profile ? characterOf(profile.character) : CHARACTERS[1];
 
   return (
@@ -183,7 +183,7 @@ function Recommend({ limit }: { limit: number }) {
         </div>
       )}
       {list.map((p) => (
-        <PlaceItem key={p.id} place={p} limit={limit} menu={suggestedMenu(p, limit, tip)} />
+        <PlaceItem key={p.id} place={p} limit={limit} />
       ))}
       <Link href="/recommend" className={styles.more}>
         식당 전체 보기

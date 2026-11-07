@@ -1,6 +1,6 @@
 // 어제 먹은 기록을 보고 오늘 메뉴를 권한다. UI와 분리된 순수 함수만 둔다.
 
-import { PLACES, type Category, type Menu, type Place } from '@/data/places';
+import { PLACES, type Category, type Menu } from '@/data/places';
 import { addDays, startOfDay, toDateKey, type Meal } from '@/lib/budget';
 
 type Theme = '국물' | '면' | '밥';
@@ -29,8 +29,7 @@ export function suggestToday(meals: Meal[], now: Date = new Date()): Suggestion 
   return cat ? { menu: last.menu, cat, theme: NEXT_THEME[cat] } : null;
 }
 
-/** 이 식당에서 권하는 메뉴 중 예산 안에서 가장 든든한(비싼) 것 */
-export function suggestedMenu(place: Place, limit: number, s: Suggestion | null): Menu | undefined {
-  if (!s) return undefined;
-  return place.menus.filter((m) => m.price <= limit && THEME_MENU[s.theme].test(m.name)).sort((a, b) => b.price - a.price)[0];
+/** 메뉴가 오늘 권하는 종류(국물·면·밥)인지 */
+export function matchesTheme(menu: Menu, s: Suggestion | null): boolean {
+  return !!s && THEME_MENU[s.theme].test(menu.name);
 }
