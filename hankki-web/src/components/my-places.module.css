@@ -1,0 +1,102 @@
+/* 자주 간 곳 / 내 별점 탭 */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--divider);
+}
+
+.tab {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.tabOn {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rank {
+  width: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+}
+
+.emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.count {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stars {
+  display: flex;
+  gap: 1px;
+}
+
+.starOn {
+  color: #ffb400;
+}
+
+.starOff {
+  color: var(--line);
+}
+
+.empty {
+  padding: 16px 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}

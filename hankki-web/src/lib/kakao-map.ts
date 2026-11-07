@@ -161,6 +161,16 @@ function readNearbyCache(): ExtraPlace[] | null {
   return null;
 }
 
+/** 저장해 둔 주변 음식점 이름 (id → 이름). 기간이 지났어도 이름은 그대로 쓸 수 있어서 기간은 보지 않는다 */
+export function cachedNearbyNames(): Record<string, string> {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NEARBY_KEY) ?? 'null') as { items?: ExtraPlace[] } | null;
+    return Object.fromEntries((saved?.items ?? []).map((e) => [e.id, e.name]));
+  } catch {
+    return {};
+  }
+}
+
 function writeNearbyCache(items: ExtraPlace[]) {
   if (!items.length) return;
   try {
