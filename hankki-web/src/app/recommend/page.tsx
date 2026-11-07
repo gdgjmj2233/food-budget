@@ -19,7 +19,7 @@ import { PlaceMap } from '@/components/place-map';
 import { Roulette } from '@/components/roulette';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
+import { bestMenu, CATEGORIES, DATA_SOURCE, PLACES, type Area } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
 import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
@@ -27,7 +27,13 @@ import { useBudget } from '@/store/budget-store';
 import { C, CAT_EMOJI } from '@/theme';
 import styles from './page.module.css';
 
-type SortKey = 'price' | 'walk';
+type SortKey = 'priceAsc' | 'priceDesc' | 'walk';
+/** 정렬 버튼을 누를 때마다 이 순서로 돌아가며 바뀐다 */
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'priceAsc', label: '가격 낮은 순' },
+  { key: 'priceDesc', label: '가격 높은 순' },
+  { key: 'walk', label: '가까운 순' },
+];
 const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
@@ -35,7 +41,7 @@ export default function RecommendPage() {
   const { eatCustom } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
-  const [sort, setSort] = useState<SortKey>('price');
+  const [sort, setSort] = useState<SortKey>('priceAsc');
   const [onlyFits, setOnlyFits] = useState(true);
   const [query, setQuery] = useState('');
   const [showMap, setShowMap] = useState(true);
@@ -51,9 +57,16 @@ export default function RecommendPage() {
       (!q || p.name.includes(q) || p.menus.some((m) => m.name.includes(q))),
   );
   const inBudget = base.filter((p) => bestMenu(p, s.todayLeft).fits);
-  const list = (onlyFits ? inBudget : base).sort((a, b) =>
-    sort === 'price' ? cheapestPrice(a) - cheapestPrice(b) || a.walk - b.walk : a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b),
-  );
+  // 가격은 카드에 보이는 대표 메뉴 값 기준(오늘 예산 안에서 가장 비싼 메뉴)이고, 같으면 가까운 곳이 먼저다
+  const shownPrice = (p: (typeof PLACES)[number]) => bestMenu(p, s.todayLeft).menu.price;
+  const list = (onlyFits ? inBudget : base).sort((a, b) => {
+    const byPrice = shownPrice(a) - shownPrice(b);
+    if (sort === 'priceAsc') return byPrice || a.walk - b.walk;
+    if (sort === 'priceDesc') return -byPrice || a.walk - b.walk;
+    return a.walk - b.walk || byPrice;
+  });
+  const sortLabel = SORTS.find((o) => o.key === sort)!.label;
+  const nextSort = () => setSort(SORTS[(SORTS.findIndex((o) => o.key === sort) + 1) % SORTS.length].key);
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다)
   const extraList = extras.filter(
@@ -128,9 +141,9 @@ export default function RecommendPage() {
         </button>
         <div className={styles.tools}>
           {!showMap && (
-            <button type="button" onClick={() => setSort(sort === 'price' ? 'walk' : 'price')} className={styles.check}>
+            <button type="button" onClick={nextSort} aria-label={`정렬: ${sortLabel}. 누르면 다음 정렬로 바뀜`} className={styles.check}>
               <IoSwapVertical size={16} color={C.ink} aria-hidden />
-              <span className={styles.sortText}>{sort === 'price' ? '가격 낮은 순' : '가까운 순'}</span>
+              <span className={styles.sortText}>{sortLabel}</span>
             </button>
           )}
           <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
