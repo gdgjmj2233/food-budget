@@ -157,6 +157,60 @@
   color: #fff;
 }
 
+/* 정렬 선택 상자: 지도/목록 버튼과 같은 알약 모양 */
+.sortPick {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sortSelect {
+  height: 32px;
+  padding: 0 28px 0 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  appearance: none;
+  cursor: pointer;
+}
+
+.sortPick svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+}
+
+/* 목록에서 "내 위치에서 가까운 순"일 때 카드 위의 거리 */
+.dist {
+  margin: 0 0 4px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.moreBtn {
+  align-self: center;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -170,12 +224,4 @@
   padding: 24px 0;
   line-height: 21px;
   white-space: pre-line;
-}
-
-/* 정렬 고르기: 가격 낮은 순 · 가까운 순 · 별점 높은 순 */
-.sorts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
 }

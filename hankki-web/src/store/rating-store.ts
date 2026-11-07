@@ -4,7 +4,7 @@
 
 import { useSyncExternalStore } from 'react';
 
-export const RATINGS_KEY = 'hankki/ratings/v1';
+const RATINGS_KEY = 'hankki/ratings/v1';
 
 const listeners = new Set<() => void>();
 const subscribe = (fn: () => void) => {
@@ -45,7 +45,19 @@ export function setRating(placeId: string, stars: number) {
   emit();
 }
 
+/** 계정에서 불러온 별점으로 바꾼다 */
+export function replaceRatings(next: Record<string, number>) {
+  ratings = next;
+  try {
+    localStorage.setItem(RATINGS_KEY, JSON.stringify(next));
+  } catch {
+    // 저장이 막힌 브라우저에서는 이번 방문 동안만 유지
+  }
+  emit();
+}
+
 /** 식당 id → 내 별점(1~5) */
 export function useRatings(): Record<string, number> {
   return useSyncExternalStore(subscribe, loadRatings, () => EMPTY);
 }
+

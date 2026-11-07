@@ -13,18 +13,20 @@ import styles from './place-item.module.css';
 /**
  * 식당 카드. 대표 메뉴와 가격을 보여주고, 카드를 누르면 메뉴 전체와 별점이 펼쳐진다.
  * 먹은 건 여기서 기록하지 않고 직접 입력한다.
- * 기본은 가게의 대표 메뉴를 보여주고, menu 를 주면 그 메뉴를 보여준다.
+ * 기본은 가게의 대표 메뉴를 보여주고, menu 를 주면 그 메뉴를 보여준다. defaultOpen 을 주면 펼친 채로 시작한다.
  */
 export function PlaceItem({
   place,
   limit,
   menu: shownMenu,
+  defaultOpen = false,
 }: {
   place: Place;
   limit: number;
   menu?: Menu;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const menu = shownMenu ?? mainMenu(place);
   const fits = menu.price <= limit;
   // 대표 메뉴는 비싸도 예산 안에서 먹을 수 있는 다른 메뉴가 있는지 ("예산 안만" 필터와 같은 기준)
