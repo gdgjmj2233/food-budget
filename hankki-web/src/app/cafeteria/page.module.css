@@ -160,3 +160,21 @@
   color: var(--muted);
   word-break: keep-all;
 }
+
+/* 오늘 메뉴에서 바로 먹은 것으로 기록하는 버튼 */
+.eatRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.eatBtn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}

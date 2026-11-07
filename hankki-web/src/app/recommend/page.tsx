@@ -56,6 +56,7 @@ export default function RecommendPage() {
   const [query, setQuery] = useState('');
   const [showMap, setShowMap] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [groupIds, setGroupIds] = useState<string[]>([]);
   const [roulette, setRoulette] = useState(false);
   const [more, setMore] = useState({ key: '', n: PAGE_SIZE });
   const extras = useExtraPlaces();
@@ -63,6 +64,7 @@ export default function RecommendPage() {
   const { pos: me, status: locStatus } = useLocation();
   const { positions } = usePlacePositions();
   const cardRef = useRef<HTMLDivElement>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -81,6 +83,19 @@ export default function RecommendPage() {
   );
   const selected = list.find((p) => p.id === selectedId);
   const selectedExtra = extraList.find((e) => e.id === selectedId);
+
+  const groupPlaces = list.filter((p) => groupIds.includes(p.id));
+  const groupExtras = extraList.filter((e) => groupIds.includes(e.id));
+  const groupCount = groupPlaces.length + groupExtras.length;
+
+  const selectOne = (id: string) => {
+    setSelectedId(id);
+    setGroupIds([]);
+  };
+  const selectGroup = (ids: string[]) => {
+    setGroupIds(ids);
+    setSelectedId(null);
+  };
 
   // 내 위치를 아직 모르면 "내 위치에서 가까운 순"은 학교에서 가까운 순으로 대신 보여 준다
   const effectiveSort: SortKey = sort === 'near' && !me ? 'walk' : sort;
@@ -134,6 +149,14 @@ export default function RecommendPage() {
   useEffect(() => {
     if (selectedId) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [selectedId]);
+
+  // N곳 핀의 목록은 길 수 있어서 첫 카드가 보일 만큼만 내린다 (지도는 최대한 남긴다)
+  useEffect(() => {
+    const top = groupRef.current?.getBoundingClientRect().top;
+    if (top === undefined) return;
+    const visibleBottom = window.innerHeight - 72 - 150; // 하단 탭 + 첫 카드 높이 정도
+    if (top > visibleBottom) window.scrollBy({ top: top - visibleBottom, behavior: 'smooth' });
+  }, [groupIds]);
 
   return (
     <Screen>
@@ -236,13 +259,25 @@ export default function RecommendPage() {
             places={list}
             extras={extraList}
             selectedId={selected?.id ?? selectedExtra?.id ?? null}
-            onSelect={setSelectedId}
+            onSelect={selectOne}
+            onSelectGroup={selectGroup}
           />
           <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
           {(selected || selectedExtra) && (
             <div ref={cardRef}>
               {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} defaultOpen />}
               {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
+            </div>
+          )}
+          {groupCount > 0 && (
+            <div ref={groupRef} className={styles.list}>
+              <Sub>누른 핀에 모인 {groupCount}곳</Sub>
+              {groupPlaces.map((p) => (
+                <PlaceItem key={p.id} place={p} limit={s.todayLeft} />
+              ))}
+              {groupExtras.map((e) => (
+                <ExtraPlaceCard key={e.id} place={e} />
+              ))}
             </div>
           )}
         </>
