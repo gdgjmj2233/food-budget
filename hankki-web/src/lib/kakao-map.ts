@@ -125,15 +125,12 @@ const CAT_WORDS: [string, Category][] = [
 
 const categoryOf = (kakaoCategory: string): Category | null => CAT_WORDS.find(([word]) => kakaoCategory.includes(word))?.[1] ?? null;
 
-// 한 번 검색에 최대 45곳(15곳 x 3쪽)만 주므로, 인하대 주변을 여러 중심점으로 나눠서 찾는다
-const SEARCH_CENTERS = [
-  { lat: INHA.lat, lng: INHA.lng },
-  { lat: INHA.lat + 0.004, lng: INHA.lng },
-  { lat: INHA.lat - 0.004, lng: INHA.lng },
-  { lat: INHA.lat, lng: INHA.lng + 0.005 },
-  { lat: INHA.lat, lng: INHA.lng - 0.005 },
-];
-const SEARCH_RADIUS_M = 600;
+// 한 번 검색에 최대 45곳(15곳 x 3쪽)만 주므로, 인하대 주변을 약 450m 간격의 5x5 지점으로 나눠서 찾는다
+const GRID = [-2, -1, 0, 1, 2];
+const SEARCH_CENTERS = GRID.flatMap((y) => GRID.map((x) => ({ lat: INHA.lat + y * 0.004, lng: INHA.lng + x * 0.005 })));
+const SEARCH_RADIUS_M = 400;
+/** 한꺼번에 검색하는 지점 수 */
+const SEARCH_BATCH = 5;
 
 function foodPage(center: LatLng, page: number): Promise<kakao.maps.services.PlaceResult[]> {
   return new Promise((resolve) => {
@@ -156,7 +153,7 @@ let nearby: Promise<ExtraPlace[]> | null = null;
 export function findNearbyRestaurants(known: Place[]): Promise<ExtraPlace[]> {
   return (nearby ??= (async () => {
     const found = new Map<string, ExtraPlace>();
-    for (const center of SEARCH_CENTERS) {
+    const searchAround = async (center: LatLng) => {
       for (let page = 1; page <= 3; page++) {
         const result = await foodPage(center, page);
         for (const r of result) {
@@ -171,6 +168,9 @@ export function findNearbyRestaurants(known: Place[]): Promise<ExtraPlace[]> {
         }
         if (result.length < 15) break;
       }
+    };
+    for (let i = 0; i < SEARCH_CENTERS.length; i += SEARCH_BATCH) {
+      await Promise.all(SEARCH_CENTERS.slice(i, i + SEARCH_BATCH).map(searchAround));
     }
     const names = known.map((p) => squash(p.name));
     return [...found.values()].filter((e) => {
