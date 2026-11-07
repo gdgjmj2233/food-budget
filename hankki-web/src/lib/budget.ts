@@ -169,7 +169,7 @@ export function won(n: number): string {
   return n < 0 ? `−${v}` : v;
 }
 
-const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+export const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 export function formatDate(d: Date): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${DAY_NAMES[d.getDay()]})`;

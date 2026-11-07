@@ -1,0 +1,180 @@
+.link {
+  flex: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.today {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+}
+
+.todayLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-dark);
+}
+
+.todayVal {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.notice {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.days {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #e3e9f2;
+}
+
+.day {
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dayOn {
+  background: #fff;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.dayDate {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.mealHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.mealTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.hours {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.corners {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+.corner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--divider);
+}
+
+.corner:last-child {
+  padding-bottom: 0;
+}
+
+.cornerHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.cornerName {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tag {
+  font-size: 12px;
+  color: var(--over);
+}
+
+.price {
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.priceOver {
+  color: var(--over);
+}
+
+.items {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  word-break: keep-all;
+}
+
+/* 오늘 메뉴에서 바로 먹은 것으로 기록하는 버튼 */
+.eatRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.eatBtn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
