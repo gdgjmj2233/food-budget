@@ -312,9 +312,7 @@ export default function RecommendPage() {
       <AccentButton label="못 고르겠으면 룰렛" icon={IoDiceOutline} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
-      {roulette && (
-        <Roulette limit={s.todayLeft} onClose={() => setRoulette(false)} />
-      )}
+      {roulette && <Roulette limit={s.todayLeft} onClose={() => setRoulette(false)} />}
     </Screen>
   );
 }

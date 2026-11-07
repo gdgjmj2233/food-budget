@@ -1,4 +1,5 @@
 import { useToast } from '@/components/toast';
+import type { Place } from '@/data/places';
 import { won, type MissingDay } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
@@ -11,9 +12,13 @@ export function useEat() {
   const { record } = useBudget();
   const toast = useToast();
 
-  /** 먹은 메뉴를 이름·가격 직접 입력으로 기록한다 */
-  const eatCustom = (menu: string, price: number) => {
-    const delta = record(menu || '식사', '직접 입력', price);
+  // 식당을 골랐으면 가게 이름·메뉴로, 안 골랐으면 적은 메뉴를 이름으로 남긴다
+  const save = (menu: string, price: number, place?: Place, at?: number) =>
+    place ? record(place.name, menu, price, { placeId: place.id, at }) : record(menu || '식사', '', price, { at });
+
+  /** 먹은 것을 기록한다. place 는 지도에서 고른 식당 */
+  const eatCustom = (menu: string, price: number, place?: Place) => {
+    const delta = save(menu, price, place);
     if (!delta) {
       toast(ENDED);
       return;
@@ -32,8 +37,8 @@ export function useEat() {
   };
 
   /** 어제 비어 있던 기록을 채운다 */
-  const fillMissing = (day: MissingDay, name: string, menu: string, price: number, placeId?: string) => {
-    const delta = record(name, menu, price, { placeId, at: day.at });
+  const fillMissing = (day: MissingDay, menu: string, price: number, place?: Place) => {
+    const delta = save(menu, price, place, day.at);
     if (!delta) {
       toast(ENDED);
       return;

@@ -41,43 +41,9 @@
   line-height: 27px;
 }
 
-.frequent {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.frequentLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.chip {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: 20px;
-  background: #f7f9fc;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.chipOn {
-  border: 2px solid var(--primary);
-  background: var(--primary-soft);
-  color: var(--primary);
-}
-
 .choices {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -88,14 +54,4 @@
   background: var(--card);
   font-size: 13px;
   font-weight: 600;
-}
-
-.save {
-  min-height: 48px;
-  padding: 0 12px;
-  border-radius: 14px;
-  background: var(--primary);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
 }

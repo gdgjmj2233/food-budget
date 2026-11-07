@@ -24,6 +24,9 @@ export interface Meal {
   at: number;
 }
 
+/** 기록의 메뉴. 예전 기록은 메뉴 칸에 '직접 입력'이 들어 있어서 빈 값으로 본다 */
+export const menuOf = (m: Meal) => (m.menu === '직접 입력' ? '' : m.menu);
+
 export type BudgetStatus = 'ok' | 'low' | 'over';
 
 /** 남은 예산이 전체의 이 비율보다 적으면 '임박' */
@@ -146,21 +149,6 @@ export function findMissingDay(settings: Settings, meals: Meal[], now: Date = ne
   if (settings.skipWeekend && isWeekend(day)) return null;
   if (meals.some((m) => m.date === date)) return null;
   return { date, at: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12).getTime() };
-}
-
-/** 자주 먹은 메뉴. 같은 횟수면 최근에 먹은 것이 앞에 온다. */
-export function frequentMeals(meals: Meal[], limit = 3): Meal[] {
-  const groups = new Map<string, { meal: Meal; count: number }>();
-  for (const m of meals) {
-    if (m.price <= 0) continue;
-    const key = `${m.name}|${m.menu}|${m.price}`;
-    const g = groups.get(key);
-    groups.set(key, { meal: !g || m.at > g.meal.at ? m : g.meal, count: (g?.count ?? 0) + 1 });
-  }
-  return [...groups.values()]
-    .sort((a, b) => b.count - a.count || b.meal.at - a.meal.at)
-    .slice(0, limit)
-    .map((g) => g.meal);
 }
 
 // ---- 표시용 ----

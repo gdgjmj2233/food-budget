@@ -43,6 +43,13 @@ export default function HomePage() {
   const status = STATUS[s.status];
   const spentPct = settings.amount > 0 ? Math.min(100, Math.max(0, (s.spent / settings.amount) * 100)) : 0;
   const tip = suggestToday(meals);
+  // 오늘 쓸 수 있는 금액이 처음 정한 하루 금액보다 많으면 그동안 아껴 쓴 것, 적으면 많이 쓴 것
+  const budgetTalk =
+    s.perDay > s.base
+      ? '지금까지 예산 관리 잘했어!'
+      : s.perDay === s.base
+        ? '이대로만 쓰면 예산 딱 맞아.'
+        : '요즘 좀 많이 썼어. 조금 아껴 보자.';
 
   const onRemove = (m: Meal) => {
     confirm('기록 지우기', `${m.name} ${won(m.price)}원 기록을 지울까요?`, () => {
@@ -101,7 +108,7 @@ export default function HomePage() {
                 <>
                   오늘은 {won(s.todayLeft)}원 쓸 수 있어.
                   <br />
-                  뭐 먹을지 같이 골라 볼까?
+                  {budgetTalk}
                 </>
               ) : (
                 <>
@@ -171,8 +178,8 @@ export default function HomePage() {
         <MealDialog
           limit={s.todayLeft}
           onClose={() => setEating(false)}
-          onSubmit={(menu, price) => {
-            eatCustom(menu, price);
+          onSubmit={(menu, price, place) => {
+            eatCustom(menu, price, place);
             setEating(false);
           }}
         />
@@ -183,8 +190,8 @@ export default function HomePage() {
           <MealInput
             title="어제 먹은 것 직접 입력"
             onBack={() => setFilling(false)}
-            onSubmit={(menu, price) => {
-              fillMissing(missing, menu || '식사', '직접 입력', price);
+            onSubmit={(menu, price, place) => {
+              fillMissing(missing, menu, price, place);
               setFilling(false);
             }}
           />
