@@ -6,8 +6,6 @@ export interface Settings {
   period: Period;
   /** 기간 전체 식비 예산 (원) */
   amount: number;
-  /** 하루 식사 횟수 (1~3) */
-  mealsPerDay: number;
   /** 주말을 예산 일수에서 제외할지 */
   skipWeekend: boolean;
   /** 기간 시작일 YYYY-MM-DD */
@@ -38,28 +36,23 @@ export interface BudgetSummary {
   ended: boolean;
   totalDays: number;
   daysLeft: number;
-  mealsLeft: number;
-  /** 오늘 아직 기록하지 않은 계획 끼니 수 */
-  mealsLeftToday: number;
-  eatenToday: number;
   spent: number;
+  /** 오늘 기록한 금액 합계 */
+  spentToday: number;
   remain: number;
-  /** 다음 한 끼 권장 금액 */
-  perMeal: number;
-  /** 하루 권장 금액 */
+  /** 하루 권장 금액. 오늘 쓰기 전 예산으로 계산해서 오늘 안에서는 그대로다 */
   perDay: number;
-  /** 처음 설정 기준 한 끼 금액 */
+  /** 하루 권장 금액에서 오늘 쓴 만큼 뺀 금액 */
+  todayLeft: number;
+  /** 처음 설정 기준 하루 금액 */
   base: number;
   status: BudgetStatus;
   periodMeals: Meal[];
 }
 
-export type MealSlot = '아침' | '점심' | '저녁';
-
-/** 비어 있는 끼니. at 은 그 끼니를 기록할 때 쓰는 시각(ms) */
-export interface MissingMeal {
+/** 기록이 하나도 없는 날. at 은 그 날로 기록할 때 쓰는 시각(ms) */
+export interface MissingDay {
   date: string;
-  slot: MealSlot;
   at: number;
 }
 
@@ -116,7 +109,6 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const endKey = toDateKey(end);
   const today = startOfDay(now);
   const todayKey = toDateKey(today);
-  const mpd = Math.max(1, settings.mealsPerDay);
 
   const periodMeals = meals.filter((m) => m.date >= startKey && m.date < endKey);
   const spent = periodMeals.reduce((sum, m) => sum + m.price, 0);
@@ -127,53 +119,36 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const from = today > start ? today : start;
   const daysLeft = ended ? 0 : countDays(from, end, settings.skipWeekend);
 
-  const eatenToday = periodMeals.filter((m) => m.date === todayKey).length;
+  const spentToday = periodMeals.filter((m) => m.date === todayKey).reduce((sum, m) => sum + m.price, 0);
   const todayCounts = !ended && today >= start && !(settings.skipWeekend && isWeekend(today));
-  const mealsLeftToday = todayCounts ? Math.max(0, mpd - eatenToday) : 0;
-  const mealsLeft = daysLeft <= 0 ? 0 : todayCounts ? (daysLeft - 1) * mpd + mealsLeftToday : daysLeft * mpd;
 
-  // 남은 계획 끼니가 없는데 기간은 남은 경우(예: 주말 제외 + 마지막 주말, 오늘 끼니를 다 먹음)는
-  // 남은 예산 전체를 쓸 수 있는 금액으로 본다.
+  // 남은 날이 없는데 기간은 남은 경우(예: 주말 제외 + 마지막 주말)는 남은 예산 전체를 쓸 수 있는 금액으로 본다.
   const leftover = ended ? 0 : Math.max(0, floor100(remain));
-  const perMeal = mealsLeft > 0 ? Math.max(0, floor100(remain / mealsLeft)) : leftover;
-  const perDay = daysLeft > 0 ? Math.max(0, floor100(remain / daysLeft)) : leftover;
-  const base = floor100(settings.amount / (totalDays * mpd));
+  const budgetForDays = todayCounts ? remain + spentToday : remain;
+  const perDay = daysLeft > 0 ? Math.max(0, floor100(budgetForDays / daysLeft)) : leftover;
+  const todayLeft = todayCounts ? Math.max(0, perDay - spentToday) : perDay;
+  const base = floor100(settings.amount / totalDays);
   // 초과 > 임박(남은 예산 30% 미만) > 여유
   const status: BudgetStatus = remain < 0 ? 'over' : remain < settings.amount * LOW_RATIO ? 'low' : 'ok';
 
   return {
-    start, end, ended, totalDays, daysLeft, mealsLeft, mealsLeftToday, eatenToday,
-    spent, remain, perMeal, perDay, base, status, periodMeals,
+    start, end, ended, totalDays, daysLeft,
+    spent, spentToday, remain, perDay, todayLeft, base, status, periodMeals,
   };
 }
 
-// ---- 끼니 ----
-/** 하루 식사 횟수별 끼니 */
-const SLOTS: Record<number, MealSlot[]> = { 1: ['저녁'], 2: ['점심', '저녁'], 3: ['아침', '점심', '저녁'] };
-const SLOT_HOUR: Record<MealSlot, number> = { 아침: 8, 점심: 12, 저녁: 18 };
-
-export function slotOf(at: number): MealSlot {
-  const h = new Date(at).getHours();
-  return h < 11 ? '아침' : h < 16 ? '점심' : '저녁';
-}
-
-/** 어제 끼니 중 기록이 빠진 것. 여러 개면 가장 늦은 끼니 하나만 돌려준다. */
-export function findMissingMeal(settings: Settings, meals: Meal[], now: Date = new Date()): MissingMeal | null {
+// ---- 기록 ----
+/** 어제 기록이 하나도 없으면 그 날을 돌려준다. */
+export function findMissingDay(settings: Settings, meals: Meal[], now: Date = new Date()): MissingDay | null {
   const day = addDays(startOfDay(now), -1);
   const date = toDateKey(day);
   if (date < settings.startDate || day >= periodEnd(settings)) return null;
   if (settings.skipWeekend && isWeekend(day)) return null;
-
-  const slots = SLOTS[Math.min(3, Math.max(1, settings.mealsPerDay))];
-  const eaten = meals.filter((m) => m.date === date);
-  if (eaten.length >= slots.length) return null;
-
-  const filled = new Set(eaten.map((m) => slotOf(m.at)));
-  const slot = [...slots].reverse().find((s) => !filled.has(s))!;
-  return { date, slot, at: new Date(day.getFullYear(), day.getMonth(), day.getDate(), SLOT_HOUR[slot]).getTime() };
+  if (meals.some((m) => m.date === date)) return null;
+  return { date, at: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12).getTime() };
 }
 
-/** 자주 먹은 끼니. 같은 횟수면 최근에 먹은 것이 앞에 온다. */
+/** 자주 먹은 메뉴. 같은 횟수면 최근에 먹은 것이 앞에 온다. */
 export function frequentMeals(meals: Meal[], limit = 3): Meal[] {
   const groups = new Map<string, { meal: Meal; count: number }>();
   for (const m of meals) {

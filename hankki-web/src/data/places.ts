@@ -173,7 +173,7 @@ const HOURS: Record<string, string> = {
 
 export const PLACES: Place[] = LIST.map((p) => (HOURS[p.id] ? { ...p, hours: HOURS[p.id] } : p));
 
-/** 이 식당에서 한 끼 권장 금액 안에 먹을 수 있는 메뉴 중 가장 든든한(비싼) 것. 없으면 가장 싼 메뉴. */
+/** 이 식당에서 주어진 금액 안에 먹을 수 있는 메뉴 중 가장 든든한(비싼) 것. 없으면 가장 싼 메뉴. */
 export function bestMenu(place: Place, limit: number): { menu: Menu; fits: boolean } {
   const fits = place.menus.filter((m) => m.price <= limit).sort((a, b) => b.price - a.price);
   if (fits.length) return { menu: fits[0], fits: true };

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { IoLocate } from 'react-icons/io5';
 
 import { PLACES, type Place } from '@/data/places';
 import { INHA, loadKakaoMap, locatePlaces, type ExtraPlace } from '@/lib/kakao-map';
@@ -19,6 +20,8 @@ const MAX_ZOOM_LEVEL = 1;
 const PIN_BOX = { width: 110, height: 30 };
 /** 멀리서 "N곳" 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치는 점은 한 핀으로 합친다 */
 const CLUSTER_BOX = { width: 56, height: 32 };
+/** "내 위치"를 누르면 이 확대 단계(3단계 = 축척 50m)보다 멀리 있을 때만 여기까지 확대한다 */
+const ME_LEVEL = 3;
 /** 풀어 놓은 이름 핀 사이 간격(px) */
 const SPREAD_STEP = 30;
 
@@ -45,6 +48,10 @@ export function PlaceMap({
   const [positions, setPositions] = useState<Record<string, Pos>>({});
   const [located, setLocated] = useState(false);
   const [level, setLevel] = useState(4);
+  const [me, setMe] = useState<Pos | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
+  const watchRef = useRef<number | null>(null);
   const ratings = useRatings();
 
   // 지도를 만들고 모든 식당의 좌표를 찾는다 (처음 한 번)
@@ -187,6 +194,75 @@ export function PlaceMap({
     return () => overlays.forEach((o) => o.setMap(null));
   }, [map, places, extras, positions, ratings, selectedId, level]);
 
+  // 내 위치 점 (위치가 바뀔 때마다 다시 그린다)
+  useEffect(() => {
+    if (!map || !me) return;
+    const dot = document.createElement('div');
+    dot.className = styles.me;
+    dot.setAttribute('aria-label', '내 위치');
+    const overlay = new kakao.maps.CustomOverlay({
+      map,
+      position: new kakao.maps.LatLng(me.lat, me.lng),
+      content: dot,
+      yAnchor: 0.5,
+      zIndex: 5,
+    });
+    return () => overlay.setMap(null);
+  }, [map, me]);
+
+  // 화면을 떠나면 위치 추적을 끝낸다
+  useEffect(
+    () => () => {
+      if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current);
+    },
+    [],
+  );
+
+  const flyTo = (pos: Pos) => {
+    if (!map) return;
+    if (map.getLevel() > ME_LEVEL) map.setLevel(ME_LEVEL);
+    map.panTo(new kakao.maps.LatLng(pos.lat, pos.lng));
+  };
+
+  // "내 위치" 버튼: 처음 누르면 권한을 물어보고 위치 추적을 시작하며 그 자리로 이동한다. 이후에는 마지막 위치로 다시 이동한다
+  const locateMe = () => {
+    if (!map) return;
+    setLocError(null);
+    if (me) {
+      flyTo(me);
+      return;
+    }
+    if (!('geolocation' in navigator)) {
+      setLocError('이 브라우저에서는 내 위치를 쓸 수 없어요');
+      return;
+    }
+    if (watchRef.current !== null) return; // 이미 위치를 찾는 중
+    setLocating(true);
+    let first = true;
+    watchRef.current = navigator.geolocation.watchPosition(
+      ({ coords }) => {
+        const pos = { lat: coords.latitude, lng: coords.longitude };
+        setMe(pos);
+        setLocating(false);
+        if (first) {
+          first = false;
+          flyTo(pos);
+        }
+      },
+      (err) => {
+        if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current);
+        watchRef.current = null;
+        setLocating(false);
+        setLocError(
+          err.code === err.PERMISSION_DENIED
+            ? '위치 권한이 꺼져 있어요. 브라우저 설정에서 허용해 주세요'
+            : '내 위치를 확인할 수 없어요. 잠시 후 다시 눌러 보세요',
+        );
+      },
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 },
+    );
+  };
+
   // 좌표를 다 찾았거나 목록(필터)이 바뀌면 보이는 식당이 다 들어오게 지도를 맞춘다
   const listKey = places.map((p) => p.id).join(',');
   useEffect(() => {
@@ -205,7 +281,17 @@ export function PlaceMap({
   return (
     <div className={styles.wrap}>
       <div ref={boxRef} className={styles.map} />
-      {error && <p className={styles.notice}>{error}. 잠시 후 다시 열어 보세요.</p>}
+      <button
+        type="button"
+        onClick={locateMe}
+        disabled={!map}
+        aria-label="내 위치로 이동"
+        className={`${styles.locate} ${me ? styles.locateOn : ''}`}>
+        <IoLocate size={18} aria-hidden />
+        {locating ? '찾는 중…' : '내 위치'}
+      </button>
+      {locError && <p className={styles.status}>{locError}</p>}
+      {error &&<p className={styles.notice}>{error}. 잠시 후 다시 열어 보세요.</p>}
       {!error && !located && map && <p className={styles.status}>식당 위치를 찾는 중…</p>}
       {missing > 0 && <p className={styles.status}>위치를 못 찾은 {missing}곳은 지도에 없어요</p>}
     </div>

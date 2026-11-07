@@ -9,12 +9,12 @@ import { addDays, formatShort, won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import styles from './budget-detail.module.css';
 
-/** 홈 예산 카드의 "더보기". 한 끼·하루 권장 금액과 남은 끼니 같은 자세한 숫자를 보여준다. */
+/** 홈 예산 카드의 "더보기". 오늘 남은 금액과 하루 권장 금액, 남은 일수 같은 자세한 숫자를 보여준다. */
 export function BudgetDetail({ onClose }: { onClose: () => void }) {
   const { summary: s, settings, lastDelta } = useBudget();
   const stats = [
     { label: '하루 권장', value: `${won(s.perDay)}원` },
-    { label: '남은 끼니 · 일수', value: `${s.mealsLeft}끼 · ${s.daysLeft}일` },
+    { label: '남은 일수', value: `${s.daysLeft}일` },
     { label: '사용한 금액', value: `${won(s.spent)}원` },
     { label: '전체 예산', value: `${won(settings.amount)}원` },
   ];
@@ -34,9 +34,9 @@ export function BudgetDetail({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className={styles.perMeal}>
-          <span className={styles.perMealLabel}>다음 한 끼 권장 금액</span>
-          <span className={styles.perMealVal}>{won(s.perMeal)}원</span>
+        <div className={styles.today}>
+          <span className={styles.todayLabel}>오늘 남은 금액</span>
+          <span className={styles.todayVal}>{won(s.todayLeft)}원</span>
         </div>
 
         <dl className={styles.grid}>
@@ -50,9 +50,7 @@ export function BudgetDetail({ onClose }: { onClose: () => void }) {
 
         {lastDelta && (
           <p className={styles.delta}>
-            {`${lastDelta.name}${lastDelta.price > 0 ? ` ${won(lastDelta.price)}원 차감` : ''} → 한 끼 권장 ${won(
-              lastDelta.before,
-            )}원에서 ${won(lastDelta.after)}원으로 ${lastDelta.after >= lastDelta.before ? '늘었어요' : '줄었어요'}`}
+            {`${lastDelta.name} ${won(lastDelta.price)}원 차감 → 오늘 남은 금액 ${won(lastDelta.after)}원`}
           </p>
         )}
 

@@ -190,19 +190,6 @@
   color: #cfe0f8;
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.skip {
-  height: 44px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--muted);
-}
-
 /* 어제 기록을 먼저 채우도록 밥먹기를 한 단계 낮춘 모양 */
 .eatOutline {
   height: 60px;

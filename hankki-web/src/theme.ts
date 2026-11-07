@@ -49,7 +49,7 @@ export const CAT_EMOJI: Record<Category | '전체', string> = {
 
 const CAT_OF = new Map(PLACES.map((p) => [p.id, p.cat]));
 
-/** 기록의 음식 종류. 직접 입력한 끼니는 없다 */
+/** 기록의 음식 종류. 직접 입력한 기록은 없다 */
 export const catOfMeal = (m: Meal) => (m.placeId ? CAT_OF.get(m.placeId) : undefined);
 
 export const mealColor = (m: Meal) => {

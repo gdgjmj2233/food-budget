@@ -34,7 +34,7 @@
   color: var(--muted);
 }
 
-.perMeal {
+.today {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -43,13 +43,13 @@
   background: var(--primary-soft);
 }
 
-.perMealLabel {
+.todayLabel {
   font-size: 13px;
   font-weight: 500;
   color: var(--primary-dark);
 }
 
-.perMealVal {
+.todayVal {
   font-size: 28px;
   font-weight: 800;
   color: var(--ink);

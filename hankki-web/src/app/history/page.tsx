@@ -21,10 +21,6 @@ const SAT = C.primary;
 const MAX_CHIPS = 3;
 
 const pad = (n: number) => String(n).padStart(2, '0');
-const timeOf = (ms: number) => {
-  const d = new Date(ms);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
 
 /** 달력 한 장: 앞뒤 달 날짜까지 채워 7일 단위 주로 나눈다 */
 function monthGrid(year: number, month: number): Date[][] {
@@ -106,7 +102,7 @@ export default function HistoryPage() {
         <div className={styles.sumCol}>
           <Sub>이번 달 식비</Sub>
           <span className={styles.sumValue}>
-            {won(sumOf(monthMeals))}원 · {monthMeals.filter((m) => m.price > 0).length}끼
+            {won(sumOf(monthMeals))}원 · {new Set(monthMeals.filter((m) => m.price > 0).map((m) => m.date)).size}일
           </span>
         </div>
         <div className={`${styles.sumCol} ${styles.sumRight}`}>
@@ -173,7 +169,6 @@ export default function HistoryPage() {
             return (
               <div key={m.id} className={styles.row}>
                 <span className={styles.bar} style={{ backgroundColor: c.fg }} />
-                <span className={styles.time}>{timeOf(m.at)}</span>
                 <div className={styles.rowBody}>
                   <span className={styles.name}>{m.name}</span>
                   <span className={styles.menu}>{m.menu}</span>
