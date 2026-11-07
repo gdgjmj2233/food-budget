@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   IoCheckbox,
   IoCloseCircle,
@@ -42,6 +42,7 @@ export default function RecommendPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [roulette, setRoulette] = useState(false);
   const extras = useExtraPlaces();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -61,6 +62,11 @@ export default function RecommendPage() {
   );
   const selected = list.find((p) => p.id === selectedId);
   const selectedExtra = extraList.find((e) => e.id === selectedId);
+
+  // 식당 카드는 지도 아래 화면 밖에 생기므로, 핀을 누르면 카드가 보이게 내린다
+  useEffect(() => {
+    if (selectedId) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [selectedId]);
 
   return (
     <Screen>
@@ -151,8 +157,12 @@ export default function RecommendPage() {
             onSelect={setSelectedId}
           />
           <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
-          {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} />}
-          {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
+          {(selected || selectedExtra) && (
+            <div ref={cardRef}>
+              {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} defaultOpen />}
+              {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
+            </div>
+          )}
         </>
       )}
 
