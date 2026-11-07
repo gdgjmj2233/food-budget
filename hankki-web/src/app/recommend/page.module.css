@@ -157,9 +157,39 @@
   color: #fff;
 }
 
-.sortText {
+/* 정렬 선택 상자: 지도/목록 버튼과 같은 알약 모양 */
+.sortPick {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sortSelect {
+  height: 32px;
+  padding: 0 28px 0 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: inherit;
   font-size: 13px;
   font-weight: 500;
+  appearance: none;
+  cursor: pointer;
+}
+
+.sortPick svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .list {

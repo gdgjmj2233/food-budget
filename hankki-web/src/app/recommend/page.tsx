@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import {
   IoCheckbox,
+  IoChevronDown,
   IoCloseCircle,
   IoDiceOutline,
   IoListOutline,
@@ -27,7 +28,7 @@ import { C, CAT_EMOJI } from '@/theme';
 import styles from './page.module.css';
 
 type SortKey = 'priceAsc' | 'priceDesc' | 'walk';
-/** 목록 보기에서 칩으로 골라 쓰는 정렬 방식 */
+/** 목록 보기에서 지도 버튼 옆 선택 상자로 골라 쓰는 정렬 방식 */
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'priceAsc', label: '가격 낮은 순' },
   { key: 'priceDesc', label: '가격 높은 순' },
@@ -137,6 +138,19 @@ export default function RecommendPage() {
           </Sub>
         </button>
         <div className={styles.tools}>
+          {!showMap && (
+            <label className={styles.sortPick}>
+              <span className={styles.srOnly}>정렬</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={styles.sortSelect}>
+                {SORTS.map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <IoChevronDown size={14} aria-hidden />
+            </label>
+          )}
           <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
             {showMap ? <IoListOutline size={16} aria-hidden /> : <IoMapOutline size={16} aria-hidden />}
             {showMap ? '목록' : '지도'}
@@ -144,16 +158,7 @@ export default function RecommendPage() {
         </div>
       </div>
 
-      {!showMap && (
-        <>
-          <div className={styles.chips} role="group" aria-label="정렬">
-            {SORTS.map((o) => (
-              <Chip key={o.key} label={o.label} on={o.key === sort} onPress={() => setSort(o.key)} small />
-            ))}
-          </div>
-          <Sub>식당을 누르면 메뉴가 펼쳐져요.</Sub>
-        </>
-      )}
+      {!showMap && <Sub>식당을 누르면 메뉴가 펼쳐져요.</Sub>}
 
       {showMap && (
         <>
