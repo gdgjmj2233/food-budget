@@ -20,7 +20,6 @@ import { Roulette } from '@/components/roulette';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
-import { useEat } from '@/hooks/use-eat';
 import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
@@ -32,7 +31,6 @@ const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
   const { summary: s } = useBudget();
-  const { eatCustom } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
   const [sort, setSort] = useState<SortKey>('price');
@@ -181,16 +179,7 @@ export default function RecommendPage() {
       <AccentButton label="못 고르겠으면 룰렛" icon={IoDiceOutline} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
-      {roulette && (
-        <Roulette
-          limit={s.todayLeft}
-          onClose={() => setRoulette(false)}
-          onEat={(name, price) => {
-            eatCustom(name, price);
-            setRoulette(false);
-          }}
-        />
-      )}
+      {roulette && <Roulette onClose={() => setRoulette(false)} />}
     </Screen>
   );
 }

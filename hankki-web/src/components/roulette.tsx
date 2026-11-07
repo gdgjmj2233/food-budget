@@ -6,16 +6,9 @@ import { IoAdd, IoClose } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
 import { CHARACTERS, characterOf } from '@/data/characters';
-import { won } from '@/lib/budget';
-import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
 import { C } from '@/theme';
 import styles from './roulette.module.css';
-
-type RouletteProps = {
-  limit: number;
-  onEat: (name: string, price: number) => void;
-};
 
 /** 칸이 너무 많으면 글씨를 못 읽어서 최대 8칸 */
 const MAX_SLOTS = 8;
@@ -31,7 +24,7 @@ const FILL_LAST_ODD = C.accentSoft;
 const short = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
 /** 추천 탭처럼 따로 띄울 때: 창(Modal) + 룰렛 */
-export function Roulette({ limit, onEat, onClose }: RouletteProps & { onClose: () => void }) {
+export function Roulette({ onClose }: { onClose: () => void }) {
   const [entries, setEntries] = useState<string[]>([]);
 
   return (
@@ -44,7 +37,7 @@ export function Roulette({ limit, onEat, onClose }: RouletteProps & { onClose: (
             <IoClose size={22} aria-hidden />
           </button>
         </div>
-        <RoulettePanel limit={limit} entries={entries} onEntries={setEntries} onEat={onEat} />
+        <RoulettePanel entries={entries} onEntries={setEntries} />
       </div>
     </Modal>
   );
@@ -52,23 +45,13 @@ export function Roulette({ limit, onEat, onClose }: RouletteProps & { onClose: (
 
 /**
  * "오늘 뭐 먹지?" 룰렛. 빈 돌림판에서 시작해 후보를 직접 적어서 칸을 채우고, 멈춘 칸을 보여준다.
- * 예산에서 빠지는 건 결과를 보고 가격을 적어 "이걸로 먹기"를 눌렀을 때뿐이다.
+ * 메뉴를 정하는 데만 쓰고 기록은 하지 않는다. 먹은 건 밥먹기 창의 "입력"으로 기록한다.
  * 적어 둔 후보(entries)는 밥먹기 창에서 탭을 오가도 남도록 바깥에서 들고 있는다.
  */
-export function RoulettePanel({
-  limit,
-  entries,
-  onEntries,
-  onEat,
-}: RouletteProps & {
-  entries: string[];
-  onEntries: (entries: string[]) => void;
-}) {
-  const { todayLeftAfter } = useBudget();
+export function RoulettePanel({ entries, onEntries }: { entries: string[]; onEntries: (entries: string[]) => void }) {
   const profile = useProfile();
   const character = profile ? characterOf(profile.character) : CHARACTERS[0];
   const [draft, setDraft] = useState('');
-  const [digits, setDigits] = useState('');
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -86,7 +69,6 @@ export function RoulettePanel({
   // 적어 놓고 "추가"를 안 눌렀어도 빠뜨리지 않고 같이 돌린다
   const wheel = canAdd ? [...entries, name] : entries;
   const canSpin = !spinning && wheel.length >= MIN_SLOTS;
-  const price = Number(digits);
 
   const spin = () => {
     if (!canSpin) return;
@@ -101,7 +83,6 @@ export function RoulettePanel({
     const extra = (((target - now) % 360) + 360) % 360;
     onEntries(wheel);
     setDraft('');
-    setDigits('');
     setDuration(ms);
     setRotation(rotation + (reduced ? 360 : 360 * 6) + extra);
     setResult(null);
@@ -174,9 +155,6 @@ export function RoulettePanel({
               <div className={styles.resultBody}>
                 <span className={styles.badge}>오늘은 이거다!</span>
                 <p className={styles.resultName}>{result}</p>
-                <p className={styles.resultMeta}>
-                  {price > 0 ? `먹고 나면 오늘 ${won(todayLeftAfter(price))}원 남아요` : '가격을 넣으면 예산에서 빠져요'}
-                </p>
               </div>
             </div>
           )}
@@ -231,37 +209,14 @@ export function RoulettePanel({
       )}
 
       {result ? (
-        <form
-            className={styles.actions}
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (price > 0) onEat(result, price);
-            }}>
-            <div className={styles.priceRow}>
-              <span className={styles.priceBox}>
-                <input
-                  className={styles.input}
-                  value={digits && won(price)}
-                  onChange={(e) => setDigits(e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 7))}
-                  inputMode="numeric"
-                  placeholder={won(limit)}
-                  aria-label="가격"
-                />
-                <span className={styles.unit}>원</span>
-              </span>
-              <button type="submit" className={styles.eat} disabled={price <= 0}>
-                이걸로 먹기
-              </button>
-            </div>
-            <div className={styles.again}>
-              <button type="button" className={styles.ghost} onClick={spin}>
-                다시 돌리기
-              </button>
-              <button type="button" className={styles.ghost} onClick={() => setResult(null)}>
-                칸 고치기
-              </button>
-            </div>
-        </form>
+        <div className={styles.actions}>
+          <button type="button" className={styles.eat} onClick={spin}>
+            다시 돌리기
+          </button>
+          <button type="button" className={styles.ghost} onClick={() => setResult(null)}>
+            칸 고치기
+          </button>
+        </div>
       ) : (
         <div className={styles.actions}>
           <button type="button" className={styles.eat} onClick={spin} disabled={!canSpin}>

@@ -168,11 +168,6 @@
   line-height: 25px;
 }
 
-.resultMeta {
-  font-size: 12px;
-  color: var(--muted);
-}
-
 /* 아래쪽에 붙는 버튼들 */
 .actions {
   width: 100%;
@@ -192,27 +187,6 @@
   color: var(--primary);
   font-family: var(--font-display);
   font-size: 18px;
-}
-
-/* 결과 화면: 가격 칸과 먹기 버튼을 한 줄에 */
-.priceRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.priceRow .eat {
-  flex: 1;
-  width: auto;
-  min-width: 0;
-  height: 48px;
-  font-size: 16px;
-}
-
-.again {
-  width: 100%;
-  display: flex;
-  gap: 8px;
 }
 
 .eat:disabled {
@@ -333,26 +307,6 @@
   padding: 5px;
   border-radius: 50%;
   color: var(--muted);
-}
-
-.priceBox {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.priceBox .input {
-  padding-right: 36px;
-  text-align: right;
-}
-
-.unit {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 16px;
-  color: var(--ink);
 }
 
 @keyframes pop {
