@@ -10,7 +10,6 @@ import {
   IoMapOutline,
   IoSearch,
   IoSquareOutline,
-  IoSwapVertical,
 } from 'react-icons/io5';
 
 import { ExtraPlaceCard } from '@/components/extra-place-card';
@@ -28,7 +27,7 @@ import { C, CAT_EMOJI } from '@/theme';
 import styles from './page.module.css';
 
 type SortKey = 'priceAsc' | 'priceDesc' | 'walk';
-/** 정렬 버튼을 누를 때마다 이 순서로 돌아가며 바뀐다 */
+/** 목록 보기에서 칩으로 골라 쓰는 정렬 방식 */
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'priceAsc', label: '가격 낮은 순' },
   { key: 'priceDesc', label: '가격 높은 순' },
@@ -65,8 +64,6 @@ export default function RecommendPage() {
     if (sort === 'priceDesc') return -byPrice || a.walk - b.walk;
     return a.walk - b.walk || byPrice;
   });
-  const sortLabel = SORTS.find((o) => o.key === sort)!.label;
-  const nextSort = () => setSort(SORTS[(SORTS.findIndex((o) => o.key === sort) + 1) % SORTS.length].key);
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다)
   const extraList = extras.filter(
@@ -140,12 +137,6 @@ export default function RecommendPage() {
           </Sub>
         </button>
         <div className={styles.tools}>
-          {!showMap && (
-            <button type="button" onClick={nextSort} aria-label={`정렬: ${sortLabel}. 누르면 다음 정렬로 바뀜`} className={styles.check}>
-              <IoSwapVertical size={16} color={C.ink} aria-hidden />
-              <span className={styles.sortText}>{sortLabel}</span>
-            </button>
-          )}
           <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
             {showMap ? <IoListOutline size={16} aria-hidden /> : <IoMapOutline size={16} aria-hidden />}
             {showMap ? '목록' : '지도'}
@@ -153,7 +144,16 @@ export default function RecommendPage() {
         </div>
       </div>
 
-      {!showMap && <Sub>식당을 누르면 메뉴가 펼쳐져요.</Sub>}
+      {!showMap && (
+        <>
+          <div className={styles.chips} role="group" aria-label="정렬">
+            {SORTS.map((o) => (
+              <Chip key={o.key} label={o.label} on={o.key === sort} onPress={() => setSort(o.key)} small />
+            ))}
+          </div>
+          <Sub>식당을 누르면 메뉴가 펼쳐져요.</Sub>
+        </>
+      )}
 
       {showMap && (
         <>
