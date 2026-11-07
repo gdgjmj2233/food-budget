@@ -4,8 +4,8 @@
 
 import { useSyncExternalStore } from 'react';
 
-export const RATINGS_KEY = 'hankki/ratings/v1';
-export const DECLUTTER_KEY = 'hankki/map-declutter/v1';
+const RATINGS_KEY = 'hankki/ratings/v1';
+const DECLUTTER_KEY = 'hankki/map-declutter/v1';
 
 const listeners = new Set<() => void>();
 const subscribe = (fn: () => void) => {
