@@ -276,3 +276,16 @@
   background: var(--primary-soft);
   color: var(--primary);
 }
+
+/* 최근에 먹은 것·간 곳을 눌러서 바로 기록하는 칸 */
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quickLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}

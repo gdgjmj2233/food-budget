@@ -1,0 +1,140 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: 22px 16px 16px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.close {
+  flex: none;
+  display: flex;
+  margin: -6px -8px 0 0;
+  padding: 6px;
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.required {
+  font-weight: 400;
+  color: var(--primary);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.chipOn {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.input {
+  height: 46px;
+}
+
+.textarea {
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 112px;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+}
+
+.count {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.error {
+  font-size: 13px;
+  color: var(--over);
+}
+
+.done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0 4px;
+  text-align: center;
+}
+
+/* 사람은 못 보는 스팸 함정 칸 (화면 밖으로 치우고, 눈에도 키보드에도 안 걸리게) */
+.trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}

@@ -27,6 +27,7 @@ declare namespace kakao.maps {
 
   interface MapProjection {
     containerPointFromCoords(latlng: LatLng): Point;
+    coordsFromContainerPoint(point: Point): LatLng;
   }
 
   class Marker {
