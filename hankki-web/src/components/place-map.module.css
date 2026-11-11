@@ -38,6 +38,14 @@
   white-space: nowrap;
 }
 
+/* 카카오가 핀에 씌우는 틀은 터치를 끄므로(place-map.tsx 의 add), 핀 자체에서 다시 켠다 */
+.pin,
+.place,
+.placeName,
+.dot {
+  pointer-events: auto;
+}
+
 /* 지도 위 묶음 핀 (카카오맵 CustomOverlay 안에 들어감) */
 .pin {
   position: relative;
@@ -65,7 +73,7 @@
 
 /* 확대하면 보이는 식당 핀: 음식 종류 아이콘 + 내 별점(준 곳만). 식당 이름은 아래에 따로 깐다 (.placeName) */
 .place {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 4px;
   padding: 2px;
@@ -76,6 +84,7 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* 음식 종류 이모지 (추천 탭 종류 버튼과 같은 이모지). 바탕색은 종류별 색을 place-map.tsx 에서 넣는다 */
 .placeIcon {
   display: flex;
   align-items: center;
@@ -83,14 +92,9 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--primary);
-  color: #fff;
-}
-
-.placeIcon svg {
-  display: block;
-  width: 14px;
-  height: 14px;
+  background: var(--primary-soft);
+  font-size: 14px;
+  line-height: 1;
 }
 
 .placeStar {
@@ -100,9 +104,9 @@
   line-height: 1;
 }
 
-/* 앱 데이터에 없는 주변 음식점은 회색 아이콘 */
+/* 앱 데이터에 없는 주변 음식점은 회색 바탕 */
 .placeExtra .placeIcon {
-  background: #8b95a5;
+  background: var(--divider);
 }
 
 /* 선택한 식당은 조금 크게, 진한 바탕 */
@@ -113,10 +117,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* 핀 아래 식당 이름: 바탕 없이 흰 테두리 글씨. 아이콘 배지(높이 26px)의 절반 + 2px 아래에 놓인다 */
+/* 핀 아래 식당 이름: 바탕 없이 흰 테두리 글씨. 놓이는 자리는 place-map.tsx 의 LABEL_GAP 이 정한다
+   (여백을 CSS 로 주면 그 빈 자리가 다른 핀의 터치를 가로챈다) */
 .placeName {
   display: block;
-  margin-top: 15px;
   padding: 0 2px;
   font-size: 12px;
   font-weight: 700;
@@ -136,7 +140,6 @@
 }
 
 .placeName.placeNameOn {
-  margin-top: 17px;
   font-size: 13px;
   color: var(--primary);
 }
