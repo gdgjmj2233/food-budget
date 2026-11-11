@@ -4,9 +4,12 @@
 /**
  * Apps Script 웹 앱 주소 (https://script.google.com/macros/s/.../exec).
  * 비어 있으면 아직 연결 전이라서 앱에 "문의하기" 버튼이 나오지 않는다.
+ * 주소는 여기에 직접 적어도 되고, 내 컴퓨터에서 시험할 때는 .env.local 에 NEXT_PUBLIC_INQUIRY_URL 로 적어도 된다(git 에 올라가지 않는다).
  * 브라우저에 그대로 보이는 주소라서 숨기지 않아도 된다. 이 주소로는 글을 보낼 수만 있고 읽을 수는 없다.
  */
-export const INQUIRY_URL = '';
+export const INQUIRY_URL =
+  process.env.NEXT_PUBLIC_INQUIRY_URL ??
+  'https://script.google.com/macros/s/AKfycbyzK-pm8OEeKhc3ybhN1U_fZUCG3_EFI8xkdyUwdo4yH7B2yCFrF9lg3dedv6IVMp29/exec';
 
 export const INQUIRY_KINDS = ['버그 신고', '건의', '식당 정보 수정', '기타'] as const;
 export type InquiryKind = (typeof INQUIRY_KINDS)[number];
