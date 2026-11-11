@@ -138,3 +138,35 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* 캐릭터가 말하는 머리말 */
+.hello {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mascot {
+  flex: none;
+  width: 58px;
+  height: 70px;
+  object-fit: contain;
+}
+
+.bubble {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--primary-soft);
+}
+
+.mascotBig {
+  width: 96px;
+  height: 116px;
+  object-fit: contain;
+}
+
+.check {
+  vertical-align: -3px;
+}

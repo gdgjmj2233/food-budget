@@ -204,3 +204,23 @@
   font-family: var(--font-display);
   font-size: 20px;
 }
+
+/* 맨 위 오른쪽: 작은 피드백 버튼 + 로그인/내 캐릭터 */
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 15px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}

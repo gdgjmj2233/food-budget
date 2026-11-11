@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { IoCheckmarkCircle, IoClose } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
+import { CHARACTERS, characterOf } from '@/data/characters';
 import {
   INQUIRY_KINDS,
   MAX_BODY,
@@ -13,6 +15,7 @@ import {
   type InquiryKind,
   type InquiryResult,
 } from '@/lib/inquiry';
+import { useProfile } from '@/store/profile-store';
 import styles from './inquiry-dialog.module.css';
 import ui from './ui.module.css';
 
@@ -27,6 +30,8 @@ const limitedMessage = (waitSec = 0) =>
 
 /** 이용자가 우리에게 문의를 보내는 창. 보낸 글은 우리 스프레드시트에 한 줄씩 쌓인다 */
 export function InquiryDialog({ onClose }: { onClose: () => void }) {
+  const profile = useProfile();
+  const mascot = profile ? characterOf(profile.character) : CHARACTERS[0];
   const [kind, setKind] = useState<InquiryKind>(INQUIRY_KINDS[0]);
   const [body, setBody] = useState('');
   const [contact, setContact] = useState('');
@@ -53,10 +58,12 @@ export function InquiryDialog({ onClose }: { onClose: () => void }) {
       {sent ? (
         <div className={styles.body}>
           <div className={styles.done}>
-            <IoCheckmarkCircle size={44} color="var(--primary)" aria-hidden />
-            <h2 className={styles.title}>문의를 보냈어요</h2>
+            <Image src={mascot.img} alt="" unoptimized className={styles.mascotBig} />
+            <h2 className={styles.title}>
+              <IoCheckmarkCircle size={20} color="var(--primary)" aria-hidden className={styles.check} /> 잘 받았어요, 고마워요!
+            </h2>
             <p className={styles.sub}>
-              소중한 의견 고마워요. 확인하고 앱을 고치는 데 쓸게요.
+              소중한 의견은 앱을 고치는 데 쓸게요.
               {contact.trim() && ' 적어 주신 연락처로 답장이 갈 수도 있어요.'}
             </p>
           </div>
@@ -67,9 +74,12 @@ export function InquiryDialog({ onClose }: { onClose: () => void }) {
       ) : (
         <form className={styles.body} onSubmit={submit}>
           <div className={styles.head}>
-            <div>
-              <h2 className={styles.title}>문의하기</h2>
-              <p className={styles.sub}>불편한 점이나 바라는 점을 알려 주세요</p>
+            <div className={styles.hello}>
+              <Image src={mascot.img} alt="" unoptimized className={styles.mascot} />
+              <div className={styles.bubble}>
+                <h2 className={styles.title}>피드백 보내기</h2>
+                <p className={styles.sub}>불편한 점이나 바라는 점을 말해 주면 꼼꼼히 읽고 고칠게요!</p>
+              </div>
             </div>
             <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
               <IoClose size={22} aria-hidden />
