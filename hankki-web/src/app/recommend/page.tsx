@@ -231,8 +231,8 @@ export default function RecommendPage() {
       {!showMap && (
         <>
           <Sub>
-            식당을 누르면 메뉴가 펼쳐져요.
-            {extraList.length > 0 && ' 메뉴 정보가 없는 주변 음식점은 이름과 별점만 보여요.'}
+            식당을 누르면 메뉴가 펼쳐지고, &quot;여기서 밥먹기&quot;로 바로 기록할 수 있어요.
+            {extraList.length > 0 && ' 메뉴 정보가 없는 주변 음식점은 먹은 금액을 직접 입력해서 기록해요.'}
           </Sub>
           {nearHint && <Sub>{nearHint}</Sub>}
         </>
@@ -250,18 +250,18 @@ export default function RecommendPage() {
           <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀리고, 그래도 겹치는 곳은 🍽️ 핀 하나로 합쳐져요. 파란 점과 종류별 색 핀은 메뉴를 볼 수 있는 식당, 회색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
           {(selected || selectedExtra) && (
             <div>
-              {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} defaultOpen />}
-              {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
+              {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} defaultOpen canEat />}
+              {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} limit={s.todayLeft} />}
             </div>
           )}
           {groupCount > 0 && (
             <div className={styles.list}>
               <Sub>누른 핀에 모인 {groupCount}곳</Sub>
               {groupPlaces.map((p) => (
-                <PlaceItem key={p.id} place={p} limit={s.todayLeft} />
+                <PlaceItem key={p.id} place={p} limit={s.todayLeft} canEat />
               ))}
               {groupExtras.map((e) => (
-                <ExtraPlaceCard key={e.id} place={e} />
+                <ExtraPlaceCard key={e.id} place={e} limit={s.todayLeft} />
               ))}
             </div>
           )}
@@ -277,7 +277,11 @@ export default function RecommendPage() {
                   {effectiveSort === 'near' && r.dist !== undefined && (
                     <p className={styles.dist}>내 위치에서 {formatDistance(r.dist)}</p>
                   )}
-                  {r.place ? <PlaceItem place={r.place} limit={s.todayLeft} /> : <ExtraPlaceCard place={r.extra!} />}
+                  {r.place ? (
+                    <PlaceItem place={r.place} limit={s.todayLeft} canEat />
+                  ) : (
+                    <ExtraPlaceCard place={r.extra!} limit={s.todayLeft} />
+                  )}
                 </div>
               ))}
               {rows.length > shownCount && (

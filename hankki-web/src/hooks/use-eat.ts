@@ -7,7 +7,7 @@ const ENDED = '예산 기간이 끝났어요. 예산 탭에서 새 기간을 시
 
 const change = (d: Delta) => `오늘 남은 금액 ${won(d.after)}원`;
 
-/** 직접 입력 + 어제 기록 채우기. 결과를 토스트로 알려준다. */
+/** 직접 입력 + 식당 카드의 "여기서 밥먹기" + 어제 기록 채우기. 결과를 토스트로 알려준다. */
 export function useEat() {
   const { record } = useBudget();
   const toast = useToast();
@@ -26,14 +26,18 @@ export function useEat() {
     toast(`${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
   };
 
-  /** 가게 이름과 메뉴 이름을 나눠서 기록한다 (예: 학생식당 · 한상한담) */
-  const eatAt = (name: string, menu: string, price: number) => {
-    const delta = record(name, menu, price);
+  /**
+   * 가게 이름과 메뉴 이름을 나눠서 기록한다 (예: 학생식당 · 한상한담).
+   * placeId 는 추천 탭 식당 카드에서 기록할 때 넘긴다. 기록했으면 true
+   */
+  const eatAt = (name: string, menu: string, price: number, placeId?: string) => {
+    const delta = record(name, menu, price, placeId ? { placeId } : undefined);
     if (!delta) {
       toast(ENDED);
-      return;
+      return false;
     }
     toast(`${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
+    return true;
   };
 
   /** 어제 비어 있던 기록을 채운다 */

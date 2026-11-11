@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { IoChevronDown, IoChevronUp, IoStar, IoStarOutline } from 'react-icons/io5';
 
 import { bestMenu, mainMenu, type Menu, type Place } from '@/data/places';
@@ -8,11 +8,12 @@ import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { setRating, useRatings } from '@/store/rating-store';
 import { C, CAT_COLORS, CAT_EMOJI } from '@/theme';
+import { EatHere, EatHereButton, keepCardInView } from './eat-here';
 import styles from './place-item.module.css';
 
 /**
  * 식당 카드. 대표 메뉴와 가격을 보여주고, 카드를 누르면 메뉴 전체와 별점이 펼쳐진다.
- * 먹은 건 여기서 기록하지 않고 직접 입력한다.
+ * canEat 을 주면 펼친 카드에 "여기서 밥먹기"가 생겨서, 메뉴를 눌러 추가하거나 직접 입력해서 바로 기록할 수 있다.
  * 기본은 가게의 대표 메뉴를 보여주고, menu 를 주면 그 메뉴를 보여준다. defaultOpen 을 주면 펼친 채로 시작한다.
  */
 export function PlaceItem({
@@ -20,13 +21,21 @@ export function PlaceItem({
   limit,
   menu: shownMenu,
   defaultOpen = false,
+  canEat = false,
 }: {
   place: Place;
   limit: number;
   menu?: Menu;
   defaultOpen?: boolean;
+  canEat?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [eating, setEating] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const closeEat = () => {
+    setEating(false);
+    keepCardInView(cardRef.current);
+  };
   const menu = shownMenu ?? mainMenu(place);
   const fits = menu.price <= limit;
   // 대표 메뉴는 비싸도 예산 안에서 먹을 수 있는 다른 메뉴가 있는지 ("예산 안만" 필터와 같은 기준)
@@ -39,11 +48,14 @@ export function PlaceItem({
   const visits = useBudget().meals.filter((m) => m.placeId === place.id).length;
 
   return (
-    <div className={`${styles.card} ${fits || otherFits ? '' : styles.cardOver}`}>
+    <div ref={cardRef} className={`${styles.card} ${fits || otherFits ? '' : styles.cardOver}`}>
       <div className={styles.top}>
         <button
           type="button"
-          onClick={() => setOpen(!open)}
+          onClick={() => {
+            setOpen(!open);
+            setEating(false);
+          }}
           aria-expanded={open}
           aria-label={`${place.cat} ${place.name}, ${shownMenu ? '' : '대표 메뉴 '}${menu.name} ${won(menu.price)}원, ${fits ? '예산 안' : otherFits ? '예산 안 메뉴 있음' : '예산 초과'}. 눌러서 메뉴 보기`}
           className={styles.head}>
@@ -97,17 +109,31 @@ export function PlaceItem({
             })}
             <span className={styles.rateHint}>4점 이상이면 지도 핀에 ★이 붙어요</span>
           </div>
-          {menus.map((m) => (
-            <div key={m.name} className={styles.menuRow}>
-              <span className={styles.menuRowName}>
-                {m.name === menu.name && !shownMenu && <span className={styles.mainBadge}>대표</span>}
-                {m.name}
-              </span>
-              <span className={styles.menuRowPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
-                {won(m.price)}원
-              </span>
-            </div>
-          ))}
+          {eating ? (
+            <EatHere
+              name={place.name}
+              placeId={place.id}
+              menus={menus}
+              mainName={shownMenu ? undefined : menu.name}
+              limit={limit}
+              onClose={closeEat}
+            />
+          ) : (
+            <>
+              {menus.map((m) => (
+                <div key={m.name} className={styles.menuRow}>
+                  <span className={styles.menuRowName}>
+                    {m.name === menu.name && !shownMenu && <span className={styles.mainBadge}>대표</span>}
+                    {m.name}
+                  </span>
+                  <span className={styles.menuRowPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
+                    {won(m.price)}원
+                  </span>
+                </div>
+              ))}
+              {canEat && <EatHereButton onPress={() => setEating(true)} />}
+            </>
+          )}
         </div>
       )}
     </div>
