@@ -3,33 +3,37 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IoLocate } from 'react-icons/io5';
 
-import type { Place } from '@/data/places';
+import type { Category, Place } from '@/data/places';
 import { INHA, loadKakaoMap, type ExtraPlace } from '@/lib/kakao-map';
 import { clusterPoints } from '@/lib/map-cluster';
+import { catIconSvg } from '@/lib/map-icons';
 import { locationProblem, startLocating, useLocation } from '@/store/location-store';
 import { ensurePlacePositions, usePlacePositions } from '@/store/place-positions';
 import { useRatings } from '@/store/rating-store';
 import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
-type Pin = Pos & { id: string; name: string; extra: boolean };
+type Pin = Pos & { id: string; name: string; cat: Category | null; extra: boolean };
 
 /** 이 확대 단계(카카오 지도 1단계 = 축척 20m)까지 확대하면 점 대신 이름 핀을 보여 준다 */
 const NAME_LEVEL = 1;
 /** 이 확대 단계(1단계 = 축척 20m)부터는 겹친 이름 핀을 위아래로 풀어 놓고 실제 위치를 점으로 따로 찍는다 */
 const MAX_ZOOM_LEVEL = 1;
-/** 이름 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치면 한 묶음으로 보고 풀어 놓는다 */
-const PIN_BOX = { width: 110, height: 30 };
+/** 이름 핀 하나(아이콘 + 아래 이름)가 차지하는 화면 크기(px). 이 안에 겹치면 한 묶음으로 보고 풀어 놓는다 */
+const PIN_BOX = { width: 110, height: 44 };
 /** 멀리서 "N곳" 핀 하나가 차지하는 화면 크기(px). 이 안에 겹치는 점은 한 핀으로 합친다 */
 const CLUSTER_BOX = { width: 56, height: 32 };
 /** "내 위치"를 누르면 이 확대 단계(3단계 = 축척 50m)보다 멀리 있을 때만 여기까지 확대한다 */
 const ME_LEVEL = 3;
 /** 풀어 놓은 이름 핀 사이 간격(px) */
-const SPREAD_STEP = 30;
+const SPREAD_STEP = 44;
+/** 핀 아래 식당 이름의 zIndex. 아이콘(2~4)보다 낮아서 이름이 다른 식당의 아이콘을 가리지 않는다 */
+const LABEL_Z = 1;
 
 /**
- * 카카오맵에 식당을 찍는다. 멀리서는 작은 점, 20m 축척까지 확대하면 이름 핀이고, 내가 별점을 준 식당은 이름 옆에 별점이 붙는다.
- * 앱 데이터의 식당은 파란색, 카카오 검색으로 찾은 주변 음식점(extras)은 흰색이다. 핀은 묶지 않고 모두 따로 보여 준다.
+ * 카카오맵에 식당을 찍는다. 멀리서는 작은 점, 20m 축척까지 확대하면 이름 핀이다.
+ * 이름 핀은 음식 종류 아이콘 배지(내가 별점을 준 식당만 옆에 별점)와 그 아래 식당 이름으로 되어 있다.
+ * 앱 데이터의 식당은 파란 아이콘, 카카오 검색으로 찾은 주변 음식점(extras)은 회색 아이콘이다. 핀은 묶지 않고 모두 따로 보여 준다.
  * 20m 축척부터는 겹친 이름 핀을 위아래로 풀어 놓고, 실제 위치는 점으로 따로 보여 준다.
  * 선택한 식당은 멀리서도 이름 핀이다. 핀을 누르면 onSelect 로 그 식당(또는 주변 음식점)의 id 를 알려준다.
  * height 를 주면 지도 높이(px)를 바꾼다.
@@ -102,8 +106,8 @@ export function PlaceMap({
     if (!map) return;
     const named = level <= NAME_LEVEL;
     const pins: Pin[] = [
-      ...places.flatMap((p) => (positions[p.id] ? [{ id: p.id, name: p.name, ...positions[p.id], extra: false }] : [])),
-      ...extras.map((e) => ({ id: e.id, name: e.name, lat: e.lat, lng: e.lng, extra: true })),
+      ...places.flatMap((p) => (positions[p.id] ? [{ id: p.id, name: p.name, cat: p.cat, ...positions[p.id], extra: false }] : [])),
+      ...extras.map((e) => ({ id: e.id, name: e.name, cat: e.cat, lat: e.lat, lng: e.lng, extra: true })),
     ];
 
     const dotOf = (p: Pin) => {
@@ -115,27 +119,51 @@ export function PlaceMap({
       return dot;
     };
 
+    // 이름 핀: 음식 종류 아이콘 배지(내 별점이 있으면 옆에 숫자, 없으면 비움)와 그 아래 식당 이름
     const namedOf = (p: Pin) => {
       const stars = ratings[p.id];
+      const on = p.id === selectedId;
+      const select = () => onSelectRef.current(p.id);
+
       const pin = document.createElement('button');
       pin.type = 'button';
-      pin.className = `${styles.pin} ${p.extra ? styles.pinExtra : ''} ${p.id === selectedId ? styles.pinOn : ''}`;
-      pin.append(p.name);
+      pin.className = `${styles.place} ${p.extra ? styles.placeExtra : ''} ${on ? styles.placeOn : ''}`;
+      const icon = document.createElement('span');
+      icon.className = styles.placeIcon;
+      icon.innerHTML = catIconSvg(p.cat);
+      pin.append(icon);
       if (stars) {
-        const badge = document.createElement('span');
-        badge.className = styles.pinStar;
-        badge.textContent = `★${stars}`;
-        pin.append(badge);
+        const star = document.createElement('span');
+        star.className = styles.placeStar;
+        star.textContent = stars.toFixed(1);
+        pin.append(star);
       }
       pin.setAttribute('aria-label', stars ? `${p.name}, 내 별점 ${stars}점` : p.name);
-      pin.onclick = () => onSelectRef.current(p.id);
-      return pin;
+      pin.onclick = select;
+
+      // 이름도 눌러서 고를 수 있다. 화면 읽기 프로그램에는 핀이 이미 이름을 알려 주므로 숨긴다
+      const label = document.createElement('button');
+      label.type = 'button';
+      label.tabIndex = -1;
+      label.setAttribute('aria-hidden', 'true');
+      label.className = `${styles.placeName} ${p.extra ? styles.placeNameExtra : ''} ${on ? styles.placeNameOn : ''}`;
+      label.textContent = p.name;
+      label.onclick = select;
+      return { pin, label };
     };
 
     const overlays: kakao.maps.CustomOverlay[] = [];
     const add = (content: HTMLElement, pos: Pos, yAnchor: number, zIndex: number) =>
       overlays.push(new kakao.maps.CustomOverlay({ map, position: new kakao.maps.LatLng(pos.lat, pos.lng), content, yAnchor, zIndex }));
     const zOf = (p: Pin) => (p.id === selectedId ? 4 : p.extra ? 2 : 3);
+
+    // 아이콘 배지는 at 위치 한가운데에, 이름은 그 바로 아래에 따로 깐다. shiftY 만큼 위아래로 옮길 수 있다
+    const addNamed = (p: Pin, at: Pos, shiftY = 0) => {
+      const { pin, label } = namedOf(p);
+      if (shiftY) pin.style.transform = label.style.transform = `translateY(${shiftY}px)`;
+      add(pin, at, 0.5, zOf(p));
+      add(label, at, 0, LABEL_Z);
+    };
 
     // 화면 좌표(px). SDK 버전에 따라 getX()/getY() 메서드 또는 x/y 값으로 온다. 못 읽은 핀은 묶지 않고 그대로 둔다
     const proj = map.getProjection();
@@ -163,8 +191,8 @@ export function PlaceMap({
     groups.forEach((g) => {
       if (g.length === 1) {
         const [p] = g;
-        const showName = named || p.id === selectedId;
-        add(showName ? namedOf(p) : dotOf(p), p, showName ? 1 : 0.5, zOf(p));
+        if (named || p.id === selectedId) addNamed(p, p);
+        else add(dotOf(p), p, 0.5, zOf(p));
         return;
       }
       if (!spread) {
@@ -191,10 +219,7 @@ export function PlaceMap({
       const center = { lat: g.reduce((s, p) => s + p.lat, 0) / g.length, lng: g.reduce((s, p) => s + p.lng, 0) / g.length };
       g.forEach((p, i) => {
         add(dotOf(p), p, 0.5, 1);
-        const pin = namedOf(p);
-        pin.classList.add(styles.pinSpread);
-        pin.style.transform = `translateY(${(i - (g.length - 1) / 2) * SPREAD_STEP}px)`;
-        add(pin, center, 0.5, zOf(p));
+        addNamed(p, center, (i - (g.length - 1) / 2) * SPREAD_STEP);
       });
     });
 
