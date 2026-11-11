@@ -30,6 +30,48 @@
   font-weight: 700;
 }
 
+/* 직접 설정 기간의 시작일 ~ 마지막 날 */
+.dates {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.dateField {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dateLabel {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dateInput {
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.dateSep {
+  padding-bottom: 12px;
+  color: var(--muted);
+}
+
+/* 점심·저녁 한 끼 금액 */
+.mealGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .amount {
   background: #fff;
   border: 1.5px solid var(--primary);

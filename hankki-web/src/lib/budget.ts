@@ -1,6 +1,10 @@
 // 예산 계산 로직. UI와 분리된 순수 함수만 둔다.
 
-export type Period = 'week' | 'month';
+export type Period = 'week' | 'month' | 'custom';
+
+export type MealSlot = 'lunch' | 'dinner';
+
+export const SLOT_LABEL: Record<MealSlot, string> = { lunch: '점심', dinner: '저녁' };
 
 export interface Settings {
   period: Period;
@@ -10,6 +14,10 @@ export interface Settings {
   skipWeekend: boolean;
   /** 기간 시작일 YYYY-MM-DD */
   startDate: string;
+  /** 직접 설정한 기간의 마지막 날 YYYY-MM-DD (이 날 포함) */
+  endDate?: string;
+  /** 끼니별 하루 금액. 있으면 기간 예산은 (점심 + 저녁) x 날 수로 계산한다 */
+  mealAmounts?: Record<MealSlot, number> | null;
 }
 
 export interface Meal {
@@ -22,6 +30,19 @@ export interface Meal {
   date: string;
   /** 기록 시각 (ms) */
   at: number;
+  /** 점심·저녁. 없으면 기록 시각으로 정한다 */
+  slot?: MealSlot;
+}
+
+/** 오후 3시 전은 점심, 그 뒤는 저녁 */
+export const slotOfTime = (at: number): MealSlot => (new Date(at).getHours() < 15 ? 'lunch' : 'dinner');
+
+export const slotOfMeal = (m: Pick<Meal, 'slot' | 'at'>): MealSlot => m.slot ?? slotOfTime(m.at);
+
+export interface SlotSummary {
+  limit: number;
+  spent: number;
+  left: number;
 }
 
 /** 기록의 메뉴. 예전 기록은 메뉴 칸에 '직접 입력'이 들어 있어서 빈 값으로 본다 */
@@ -51,6 +72,10 @@ export interface BudgetSummary {
   base: number;
   status: BudgetStatus;
   periodMeals: Meal[];
+  /** 기간 전체 예산. 끼니별 금액을 정했으면 그걸로 계산한 값 */
+  amount: number;
+  /** 오늘 점심·저녁 각각의 금액. 끼니별 금액을 안 정했거나 오늘이 예산 날이 아니면 null */
+  slots: Record<MealSlot, SlotSummary> | null;
 }
 
 /** 기록이 하나도 없는 날. at 은 그 날로 기록할 때 쓰는 시각(ms) */
@@ -59,7 +84,10 @@ export interface MissingDay {
   at: number;
 }
 
-export const DEFAULT_AMOUNT: Record<Period, number> = { week: 70000, month: 300000 };
+export const DEFAULT_AMOUNT: Record<Period, number> = { week: 70000, month: 300000, custom: 140000 };
+
+/** 끼니별 금액을 처음 켤 때의 값 */
+export const DEFAULT_MEAL_AMOUNTS: Record<MealSlot, number> = { lunch: 7000, dinner: 9000 };
 
 // ---- 날짜 ----
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -83,10 +111,14 @@ export function addDays(d: Date, n: number): Date {
 
 const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
 
-/** 기간 종료일(미포함). 주간은 7일, 월간은 다음 달 같은 날. */
-export function periodEnd(settings: Pick<Settings, 'period' | 'startDate'>): Date {
+/** 기간 종료일(미포함). 주간은 7일, 월간은 다음 달 같은 날, 직접 설정은 고른 마지막 날의 다음 날. */
+export function periodEnd(settings: Pick<Settings, 'period' | 'startDate' | 'endDate'>): Date {
   const start = fromDateKey(settings.startDate);
   if (settings.period === 'week') return addDays(start, 7);
+  if (settings.period === 'custom') {
+    const last = settings.endDate && settings.endDate >= settings.startDate ? fromDateKey(settings.endDate) : start;
+    return addDays(last, 1);
+  }
   const y = start.getFullYear();
   const m = start.getMonth() + 1;
   const lastDay = new Date(y, m + 1, 0).getDate();
@@ -104,6 +136,18 @@ export function countDays(from: Date, to: Date, skipWeekend: boolean): number {
 
 const floor100 = (n: number) => Math.floor(n / 100) * 100;
 
+/** 기간 전체 예산. 끼니별 금액을 정했으면 (점심 + 저녁) x 예산 날 수 */
+export function periodAmount(settings: Settings): number {
+  const m = settings.mealAmounts;
+  if (!m) return settings.amount;
+  const days = Math.max(1, countDays(fromDateKey(settings.startDate), periodEnd(settings), settings.skipWeekend));
+  return (m.lunch + m.dinner) * days;
+}
+
+/** 화면에 쓰는 기간 이름 */
+export const periodName = (period: Period) => ({ week: '주간', month: '월간', custom: '직접 설정' })[period];
+export const periodThis = (period: Period) => ({ week: '이번 주', month: '이번 달', custom: '이번 기간' })[period];
+
 // ---- 핵심 계산 ----
 export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Date()): BudgetSummary {
   const start = fromDateKey(settings.startDate);
@@ -115,7 +159,8 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
 
   const periodMeals = meals.filter((m) => m.date >= startKey && m.date < endKey);
   const spent = periodMeals.reduce((sum, m) => sum + m.price, 0);
-  const remain = settings.amount - spent;
+  const amount = periodAmount(settings);
+  const remain = amount - spent;
 
   const totalDays = Math.max(1, countDays(start, end, settings.skipWeekend));
   const ended = today >= end;
@@ -130,13 +175,21 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const budgetForDays = todayCounts ? remain + spentToday : remain;
   const perDay = daysLeft > 0 ? Math.max(0, floor100(budgetForDays / daysLeft)) : leftover;
   const todayLeft = todayCounts ? Math.max(0, perDay - spentToday) : perDay;
-  const base = floor100(settings.amount / totalDays);
+  const base = floor100(amount / totalDays);
   // 초과 > 임박(남은 예산 30% 미만) > 여유
-  const status: BudgetStatus = remain < 0 ? 'over' : remain < settings.amount * LOW_RATIO ? 'low' : 'ok';
+  const status: BudgetStatus = remain < 0 ? 'over' : remain < amount * LOW_RATIO ? 'low' : 'ok';
+
+  const todayMeals = periodMeals.filter((m) => m.date === todayKey);
+  const slotOf = (slot: MealSlot): SlotSummary => {
+    const limit = settings.mealAmounts![slot];
+    const used = todayMeals.filter((m) => slotOfMeal(m) === slot).reduce((sum, m) => sum + m.price, 0);
+    return { limit, spent: used, left: limit - used };
+  };
+  const slots = settings.mealAmounts && todayCounts ? { lunch: slotOf('lunch'), dinner: slotOf('dinner') } : null;
 
   return {
     start, end, ended, totalDays, daysLeft,
-    spent, spentToday, remain, perDay, todayLeft, base, status, periodMeals,
+    spent, spentToday, remain, perDay, todayLeft, base, status, periodMeals, amount, slots,
   };
 }
 

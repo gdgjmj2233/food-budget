@@ -5,9 +5,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useSyncExternalStore } from 'react';
 
 import {
+  addDays,
   calcBudget,
   DEFAULT_AMOUNT,
   findMissingDay,
+  fromDateKey,
   toDateKey,
   type BudgetSummary,
   type Meal,
@@ -25,7 +27,7 @@ export interface Delta {
 }
 
 /** 기록에서 고칠 수 있는 내용 */
-export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'>;
+export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'> & Partial<Pick<Meal, 'slot'>>;
 
 /** 계정에 저장했다가 불러오는 내용 */
 export type SavedData = Pick<State, 'settings' | 'meals' | 'dismissedDate'>;
@@ -90,8 +92,14 @@ function reducer(state: State, action: Action): State {
     }
     case 'updateSettings':
       return { ...state, settings: { ...state.settings, ...action.patch }, lastDelta: null };
-    case 'newPeriod':
-      return { ...state, settings: { ...state.settings, startDate: toDateKey(new Date()) }, lastDelta: null };
+    case 'newPeriod': {
+      const startDate = toDateKey(new Date());
+      const { settings } = state;
+      // 직접 설정한 기간은 같은 길이로 오늘부터 다시 잡는다
+      const days = settings.period === 'custom' && settings.endDate ? Math.round((fromDateKey(settings.endDate).getTime() - fromDateKey(settings.startDate).getTime()) / 86400000) : 0;
+      const endDate = settings.period === 'custom' ? toDateKey(addDays(fromDateKey(startDate), Math.max(0, days))) : settings.endDate;
+      return { ...state, settings: { ...settings, startDate, endDate }, lastDelta: null };
+    }
     case 'dismissMissing':
       return { ...state, dismissedDate: action.date };
     case 'replaceData':

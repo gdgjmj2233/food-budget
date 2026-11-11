@@ -17,7 +17,7 @@ import { useToast } from '@/components/toast';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { formatDate, won, type Meal } from '@/lib/budget';
+import { formatDate, periodThis, SLOT_LABEL, won, type Meal } from '@/lib/budget';
 import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
@@ -44,7 +44,7 @@ export default function HomePage() {
   // 예산이 임박·초과면 캐릭터도 지친 모습으로
   const mascotImg = s.status === 'ok' ? mascot.img : mascot.sadImg;
   const status = STATUS[s.status];
-  const spentPct = settings.amount > 0 ? Math.min(100, Math.max(0, (s.spent / settings.amount) * 100)) : 0;
+  const spentPct = s.amount > 0 ? Math.min(100, Math.max(0, (s.spent / s.amount) * 100)) : 0;
   const tip = suggestToday(meals);
   // 오늘 쓸 수 있는 금액이 처음 정한 하루 금액보다 많으면 그동안 아껴 쓴 것, 적으면 많이 쓴 것
   const budgetTalk =
@@ -137,7 +137,7 @@ export default function HomePage() {
 
       <button type="button" className={styles.hero} onClick={() => setDetail(true)} aria-label="예산 자세히 보기">
         <span className={styles.heroTop}>
-          <span className={styles.heroLabel}>{settings.period === 'week' ? '이번 주' : '이번 달'} 남은 예산</span>
+          <span className={styles.heroLabel}>{periodThis(settings.period)} 남은 예산</span>
           {!missing && (
             <span className={styles.pill} style={{ backgroundColor: status.bg, color: status.fg }}>
               {status.label}
@@ -156,6 +156,17 @@ export default function HomePage() {
           <span className={styles.heroNote}>
             <IoInformationCircleOutline size={15} aria-hidden />
             어제 기록이 없어서 실제보다 많아 보일 수 있어요
+          </span>
+        ) : s.slots ? (
+          <span className={styles.stats}>
+            {(['lunch', 'dinner'] as const).map((slot) => (
+              <span key={slot} className={styles.stat}>
+                <span className={styles.statLabel}>
+                  {SLOT_LABEL[slot]} 남은 금액 · {won(s.slots![slot].limit)}원 중
+                </span>
+                <span className={styles.statVal}>{won(s.slots![slot].left)}원</span>
+              </span>
+            ))}
           </span>
         ) : (
           <span className={styles.stats}>
