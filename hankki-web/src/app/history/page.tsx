@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { IoChevronBack, IoChevronForward, IoPencilOutline } from 'react-icons/io5';
 
 import { MealEdit } from '@/components/meal-edit';
-import { MonthStats } from '@/components/month-stats';
 import { MyPlaces } from '@/components/my-places';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub } from '@/components/ui';
@@ -114,8 +113,6 @@ export default function HistoryPage() {
           </span>
         </div>
       </div>
-
-      <MonthStats meals={monthMeals} />
 
       {/* 달력 */}
       <div className={styles.calendar}>
