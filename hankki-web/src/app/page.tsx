@@ -17,7 +17,7 @@ import { useToast } from '@/components/toast';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { formatDate, won, type Meal } from '@/lib/budget';
+import { formatDate, PERIOD_THIS, won, type Meal } from '@/lib/budget';
 import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
@@ -137,7 +137,7 @@ export default function HomePage() {
 
       <button type="button" className={styles.hero} onClick={() => setDetail(true)} aria-label="예산 자세히 보기">
         <span className={styles.heroTop}>
-          <span className={styles.heroLabel}>{settings.period === 'week' ? '이번 주' : '이번 달'} 남은 예산</span>
+          <span className={styles.heroLabel}>{PERIOD_THIS[settings.period]} 남은 예산</span>
           {!missing && (
             <span className={styles.pill} style={{ backgroundColor: status.bg, color: status.fg }}>
               {status.label}
@@ -169,6 +169,18 @@ export default function HomePage() {
             </span>
           </span>
         )}
+        {!missing && s.split && (
+          <span className={styles.stats}>
+            <span className={styles.stat}>
+              <span className={styles.statLabel}>점심 남은 금액</span>
+              <span className={styles.statVal}>{won(s.split.lunchLeft)}원</span>
+            </span>
+            <span className={styles.stat}>
+              <span className={styles.statLabel}>저녁 남은 금액</span>
+              <span className={styles.statVal}>{won(s.split.dinnerLeft)}원</span>
+            </span>
+          </span>
+        )}
       </button>
 
       {missing ? (
@@ -191,8 +203,8 @@ export default function HomePage() {
         <MealDialog
           limit={s.todayLeft}
           onClose={() => setEating(false)}
-          onSubmit={(menu, price, place) => {
-            eatCustom(menu, price, place);
+          onSubmit={(menu, price, place, slot) => {
+            eatCustom(menu, price, place, slot);
             setEating(false);
           }}
         />

@@ -5,7 +5,7 @@ import React from 'react';
 import { IoChevronForward, IoClose } from 'react-icons/io5';
 
 import { Modal } from '@/components/modal';
-import { addDays, formatShort, won } from '@/lib/budget';
+import { addDays, formatShort, PERIOD_NAME, won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import styles from './budget-detail.module.css';
 
@@ -26,7 +26,7 @@ export function BudgetDetail({ onClose }: { onClose: () => void }) {
           <div>
             <h2 className={styles.title}>예산 자세히</h2>
             <p className={styles.sub}>
-              {formatShort(s.start)} – {formatShort(addDays(s.end, -1))} · {settings.period === 'week' ? '주간' : '월간'} 예산
+              {formatShort(s.start)} – {formatShort(addDays(s.end, -1))} · {PERIOD_NAME[settings.period]} 예산
             </p>
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">

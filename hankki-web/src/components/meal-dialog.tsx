@@ -7,7 +7,7 @@ import { Modal } from '@/components/modal';
 import { PlaceMap } from '@/components/place-map';
 import { GhostButton } from '@/components/ui';
 import { PLACES, type Place } from '@/data/places';
-import { won } from '@/lib/budget';
+import { currentSlot, won, type MealSlot } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
@@ -31,7 +31,7 @@ export function MealDialog({
 }: {
   limit: number;
   onClose: () => void;
-  onSubmit: (menu: string, price: number, place?: Place) => void;
+  onSubmit: (menu: string, price: number, place?: Place, slot?: MealSlot) => void;
 }) {
   return (
     <Modal sheet onClose={onClose}>
@@ -47,14 +47,19 @@ function DirectInput({
 }: {
   limit: number;
   onClose: () => void;
-  onSubmit: (menu: string, price: number, place?: Place) => void;
+  onSubmit: (menu: string, price: number, place?: Place, slot?: MealSlot) => void;
 }) {
+  const { summary } = useBudget();
+  const split = summary.split;
+  // 점심·저녁을 나눠 관리할 때는 지금 시각에 맞는 끼니를 기본으로 하고, 바꿀 수 있다
+  const [slot, setSlot] = useState<MealSlot>(currentSlot());
+  const slotLeft = split ? (slot === 'lunch' ? split.lunchLeft : split.dinnerLeft) : limit;
   const [name, setName] = useState('');
   const [place, setPlace] = useState<Place | null>(null);
   const [menu, setMenu] = useState('');
   const [digits, setDigits] = useState('');
   const price = Number(digits);
-  const over = price - limit;
+  const over = price - slotLeft;
   const q = name.trim();
   const suggestions = !place && q ? PLACES.filter((p) => p.name.includes(q)).slice(0, MAX_RESULTS) : [];
   const menus = place ? [...place.menus].sort((a, b) => a.price - b.price) : [];
@@ -69,8 +74,9 @@ function DirectInput({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (price <= 0) return;
-    if (place) onSubmit(menu.trim(), price, place);
-    else onSubmit([q, menu.trim()].filter(Boolean).join(' ') || '식사', price);
+    const meal = split ? slot : undefined;
+    if (place) onSubmit(menu.trim(), price, place, meal);
+    else onSubmit([q, menu.trim()].filter(Boolean).join(' ') || '식사', price, undefined, meal);
   };
 
   return (
@@ -78,12 +84,35 @@ function DirectInput({
       <div className={styles.head}>
         <div>
           <h2 className={styles.title}>뭐 먹었어요?</h2>
-          <p className={styles.sub}>오늘 남은 금액 {won(limit)}원</p>
+          <p className={styles.sub}>
+            {split ? `${slot === 'lunch' ? '점심' : '저녁'} 남은 금액` : '오늘 남은 금액'} {won(Math.max(0, slotLeft))}원
+          </p>
         </div>
         <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
           <IoClose size={22} aria-hidden />
         </button>
       </div>
+
+      {split && (
+        <div className={styles.chips} role="radiogroup" aria-label="끼니">
+          {(
+            [
+              ['lunch', '점심'],
+              ['dinner', '저녁'],
+            ] as const
+          ).map(([k, l]) => (
+            <button
+              type="button"
+              key={k}
+              role="radio"
+              aria-checked={slot === k}
+              className={`${styles.chip} ${slot === k ? styles.chipOn : ''}`}
+              onClick={() => setSlot(k)}>
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
 
       {place ? (
         <div className={styles.pickedPlace}>
@@ -156,7 +185,7 @@ function DirectInput({
             value={digits && won(price)}
             onChange={(e) => setDigits(e.target.value.replace(/D/g, '').replace(/^0+/, '').slice(0, 7))}
             inputMode="numeric"
-            placeholder={won(limit)}
+            placeholder={won(Math.max(0, slotLeft))}
           />
           <span className={styles.unit}>원</span>
         </span>
@@ -165,7 +194,7 @@ function DirectInput({
       {place && <p className={styles.hint}>목록 가격은 바뀌었을 수 있어요. 다르면 고쳐서 기록하세요</p>}
       {price > 0 && over > 0 && (
         <p className={styles.hint} style={{ color: C.warn }}>
-          오늘 남은 금액보다 {won(over)}원 많아요
+          {split ? (slot === 'lunch' ? '점심' : '저녁') : '오늘'} 남은 금액보다 {won(over)}원 많아요
         </p>
       )}
 

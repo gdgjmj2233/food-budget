@@ -1,6 +1,6 @@
 import { useToast } from '@/components/toast';
 import type { Place } from '@/data/places';
-import { won, type MissingDay } from '@/lib/budget';
+import { won, type MealSlot, type MissingDay } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
 const ENDED = '예산 기간이 끝났어요. 예산 탭에서 새 기간을 시작하세요.';
@@ -13,12 +13,12 @@ export function useEat() {
   const toast = useToast();
 
   // 식당을 골랐으면 가게 이름·메뉴로, 안 골랐으면 적은 메뉴를 이름으로 남긴다
-  const save = (menu: string, price: number, place?: Place, at?: number) =>
-    place ? record(place.name, menu, price, { placeId: place.id, at }) : record(menu || '식사', '', price, { at });
+  const save = (menu: string, price: number, place?: Place, at?: number, slot?: MealSlot) =>
+    place ? record(place.name, menu, price, { placeId: place.id, at, slot }) : record(menu || '식사', '', price, { at, slot });
 
   /** 먹은 것을 기록한다. place 는 지도에서 고른 식당 */
-  const eatCustom = (menu: string, price: number, place?: Place) => {
-    const delta = save(menu, price, place);
+  const eatCustom = (menu: string, price: number, place?: Place, slot?: MealSlot) => {
+    const delta = save(menu, price, place, undefined, slot);
     if (!delta) {
       toast(ENDED);
       return;

@@ -5,12 +5,17 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useSyncExternalStore } from 'react';
 
 import {
+  addDays,
   calcBudget,
+  countDays,
   DEFAULT_AMOUNT,
   findMissingDay,
+  fromDateKey,
+  periodEnd,
   toDateKey,
   type BudgetSummary,
   type Meal,
+  type MealSlot,
   type MissingDay,
   type Settings,
 } from '@/lib/budget';
@@ -90,8 +95,16 @@ function reducer(state: State, action: Action): State {
     }
     case 'updateSettings':
       return { ...state, settings: { ...state.settings, ...action.patch }, lastDelta: null };
-    case 'newPeriod':
-      return { ...state, settings: { ...state.settings, startDate: toDateKey(new Date()) }, lastDelta: null };
+    case 'newPeriod': {
+      const today = new Date();
+      const patch: Partial<Settings> = { startDate: toDateKey(today) };
+      // 직접 정한 기간은 길이를 그대로 두고 오늘부터 다시 센다
+      if (state.settings.period === 'custom') {
+        const days = countDays(fromDateKey(state.settings.startDate), periodEnd(state.settings), false);
+        patch.endDate = toDateKey(addDays(today, Math.max(1, days) - 1));
+      }
+      return { ...state, settings: { ...state.settings, ...patch }, lastDelta: null };
+    }
     case 'dismissMissing':
       return { ...state, dismissedDate: action.date };
     case 'replaceData':
@@ -110,7 +123,7 @@ interface BudgetContextValue {
   /** 기록이 하나도 없는 어제. 없거나 넘어가기로 했으면 null */
   missing: MissingDay | null;
   /** 먹은 것을 기록하고, 예산 변화를 돌려준다 */
-  record: (name: string, menu: string, price: number, extra?: { placeId?: string; at?: number }) => Delta | null;
+  record: (name: string, menu: string, price: number, extra?: { placeId?: string; at?: number; slot?: MealSlot }) => Delta | null;
   /** 이 금액을 먹고 나면 오늘 남는 금액 */
   todayLeftAfter: (price: number) => number;
   dismissMissing: (date: string) => void;
@@ -164,7 +177,7 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
   }, [summary.ended, state.settings, state.meals, state.dismissedDate]);
 
   // 기록 하나를 남기고(at 이 없으면 지금), 오늘 남은 금액 변화를 돌려준다
-  const addMeal = ({ at, ...fields }: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'> & { at?: number }): Delta | null => {
+  const addMeal = ({ at, ...fields }: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price' | 'slot'> & { at?: number }): Delta | null => {
     if (summary.ended) return null;
     const now = new Date();
     const when = at === undefined ? now : new Date(at);
