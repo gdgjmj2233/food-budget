@@ -3,10 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
-import { IoInformationCircleOutline } from 'react-icons/io5';
+import { IoChatbubbleEllipsesOutline, IoInformationCircleOutline } from 'react-icons/io5';
 import { LuSoup } from 'react-icons/lu';
 
 import { BudgetDetail } from '@/components/budget-detail';
+import { InquiryDialog } from '@/components/inquiry-dialog';
 import { MealDialog, MealInput } from '@/components/meal-dialog';
 import { MissingDayCard } from '@/components/missing-day';
 import { Modal } from '@/components/modal';
@@ -17,6 +18,7 @@ import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
 import { formatDate, won, type Meal } from '@/lib/budget';
+import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
 import { useAccount } from '@/store/account-store';
@@ -34,6 +36,7 @@ export default function HomePage() {
   const [eating, setEating] = useState(false);
   const [detail, setDetail] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [feedback, setFeedback] = useState(false);
   const [filling, setFilling] = useState(false);
   const askRef = useRef<HTMLDivElement>(null);
   const myCharacter = profile && characterOf(profile.character);
@@ -65,6 +68,13 @@ export default function HomePage() {
           <Sub>{formatDate(new Date())}</Sub>
           <Title>인하대 근처</Title>
         </div>
+        <div className={styles.topRight}>
+          {inquiryReady() && (
+            <button type="button" className={styles.feedback} onClick={() => setFeedback(true)}>
+              <IoChatbubbleEllipsesOutline size={14} aria-hidden />
+              피드백
+            </button>
+          )}
         {/* 로그인 전에는 Log in 버튼을, 로그인 후에는 내 캐릭터를 보여 준다. 누르면 로그인·내 정보 창이 열린다 */}
         {account === null ? (
           <button type="button" className={styles.login} onClick={() => setProfileOpen(true)}>
@@ -79,7 +89,10 @@ export default function HomePage() {
             <Image src={(myCharacter ?? CHARACTERS[1]).img} alt="" unoptimized className={styles.avatarImg} />
           </button>
         )}
+        </div>
       </header>
+
+      {feedback && <InquiryDialog onClose={() => setFeedback(false)} />}
 
       {s.ended && (
         <Link href="/budget" className={styles.ended}>
