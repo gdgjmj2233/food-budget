@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   IoCheckbox,
   IoChevronDown,
@@ -63,8 +63,6 @@ export default function RecommendPage() {
   const ratings = useRatings();
   const { pos: me, status: locStatus } = useLocation();
   const { positions } = usePlacePositions();
-  const cardRef = useRef<HTMLDivElement>(null);
-  const groupRef = useRef<HTMLDivElement>(null);
 
   const q = query.trim();
   const base = PLACES.filter(
@@ -144,19 +142,6 @@ export default function RecommendPage() {
       : locStatus === 'locating'
         ? '내 위치를 찾는 중이에요…'
         : locationProblem(locStatus) && `${locationProblem(locStatus)}. 지금은 학교에서 가까운 순으로 보여 줘요.`;
-
-  // 식당 카드는 지도 아래 화면 밖에 생기므로, 핀을 누르면 카드가 보이게 내린다
-  useEffect(() => {
-    if (selectedId) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [selectedId]);
-
-  // N곳 핀의 목록은 길 수 있어서 첫 카드가 보일 만큼만 내린다 (지도는 최대한 남긴다)
-  useEffect(() => {
-    const top = groupRef.current?.getBoundingClientRect().top;
-    if (top === undefined) return;
-    const visibleBottom = window.innerHeight - 72 - 150; // 하단 탭 + 첫 카드 높이 정도
-    if (top > visibleBottom) window.scrollBy({ top: top - visibleBottom, behavior: 'smooth' });
-  }, [groupIds]);
 
   return (
     <Screen>
@@ -262,15 +247,15 @@ export default function RecommendPage() {
             onSelect={selectOne}
             onSelectGroup={selectGroup}
           />
-          <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
+          <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀리고, 그래도 겹치는 곳은 🍽️ 핀 하나로 합쳐져요. 파란 점과 종류별 색 핀은 메뉴를 볼 수 있는 식당, 회색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
           {(selected || selectedExtra) && (
-            <div ref={cardRef}>
+            <div>
               {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} defaultOpen />}
               {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
             </div>
           )}
           {groupCount > 0 && (
-            <div ref={groupRef} className={styles.list}>
+            <div className={styles.list}>
               <Sub>누른 핀에 모인 {groupCount}곳</Sub>
               {groupPlaces.map((p) => (
                 <PlaceItem key={p.id} place={p} limit={s.todayLeft} />

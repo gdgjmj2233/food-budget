@@ -38,7 +38,15 @@
   white-space: nowrap;
 }
 
-/* 지도 위 이름·묶음 핀 (카카오맵 CustomOverlay 안에 들어감) */
+/* 카카오가 핀에 씌우는 틀은 터치를 끄므로(place-map.tsx 의 add), 핀 자체에서 다시 켠다 */
+.pin,
+.place,
+.placeName,
+.dot {
+  pointer-events: auto;
+}
+
+/* 지도 위 묶음 핀 (카카오맵 CustomOverlay 안에 들어감) */
 .pin {
   position: relative;
   margin-bottom: 8px;
@@ -63,14 +71,77 @@
   border-top-color: var(--pin-color, var(--primary));
 }
 
-/* 선택한 핀은 검은색 */
-.pin.pinOn {
-  --pin-color: var(--ink);
+/* 확대하면 보이는 식당 핀: 음식 종류 아이콘 + 내 별점(준 곳만). 식당 이름은 아래에 따로 깐다 (.placeName) */
+.place {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 음식 종류 이모지 (추천 탭 종류 버튼과 같은 이모지). 바탕색은 종류별 색을 place-map.tsx 에서 넣는다 */
+.placeIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.placeStar {
+  padding-right: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* 앱 데이터에 없는 주변 음식점은 회색 바탕 */
+.placeExtra .placeIcon {
+  background: var(--divider);
+}
+
+/* 선택한 식당은 조금 크게, 진한 바탕 */
+.place.placeOn {
+  scale: 1.15;
   background: var(--ink);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* 핀 아래 식당 이름: 바탕 없이 흰 테두리 글씨. 놓이는 자리는 place-map.tsx 의 LABEL_GAP 이 정한다
+   (여백을 CSS 로 주면 그 빈 자리가 다른 핀의 터치를 가로챈다) */
+.placeName {
+  display: block;
+  padding: 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0 3px #fff;
+}
+
+.placeNameExtra {
+  color: var(--muted);
+}
+
+.placeName.placeNameOn {
   font-size: 13px;
-  padding: 6px 10px;
+  color: var(--primary);
 }
 
 .inha {
@@ -80,15 +151,6 @@
   border: 2px solid var(--ink);
   font-size: 12px;
   font-weight: 700;
-}
-
-/* 최대 확대에서 풀어 놓은 이름 핀: 실제 위치는 점이 알려 주므로 꼬리표(화살표)를 뗀다 */
-.pin.pinSpread {
-  margin-bottom: 0;
-}
-
-.pin.pinSpread::after {
-  display: none;
 }
 
 /* 멀리서 보면 식당 위치만 알려 주는 작은 점 (30m 축척까지 확대하면 이름 핀) */
@@ -106,14 +168,6 @@
 
 .dot.dotExtra {
   background: var(--muted);
-}
-
-/* 앱 데이터에 없는 주변 음식점은 흰 핀 */
-.pin.pinExtra:not(.pinOn) {
-  --pin-color: #fff;
-  background: #fff;
-  color: var(--ink);
-  box-shadow: inset 0 0 0 1.5px var(--line), 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
 /* "내 위치" 버튼 (지도 오른쪽 위) */
@@ -172,14 +226,4 @@
 
 .count {
   font-size: 12px;
-}
-
-/* 이름 옆 내 별점 */
-.pinStar {
-  margin-left: 4px;
-  color: #ffd24d;
-}
-
-.pinExtra .pinStar {
-  color: #f5a400;
 }
