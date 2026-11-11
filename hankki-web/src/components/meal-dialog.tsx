@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import React, { useState } from 'react';
 import { IoClose, IoListOutline } from 'react-icons/io5';
 
@@ -11,7 +10,7 @@ import { PlaceMap } from '@/components/place-map';
 import { RoulettePanel } from '@/components/roulette';
 import { GhostButton } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
-import { bestMenu, cheapestPrice, mainMenu, PLACES, type Place } from '@/data/places';
+import { bestMenu, cheapestPrice, mainMenu, PLACES, type Menu, type Place } from '@/data/places';
 import { won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { matchesTheme, suggestToday } from '@/lib/suggest';
@@ -23,6 +22,8 @@ import ui from './ui.module.css';
 
 /** 추천 창에 보여줄 식당 수 */
 const MAX_PLACES = 5;
+/** 식당 전체 보기에서 한 번에 보여 주는 식당 수 */
+const ALL_MAX = 30;
 /** 식당 이름으로 찾을 때 보여줄 결과 수 */
 const MAX_RESULTS = 4;
 /** 지도에서 N곳 핀을 눌렀을 때 목록으로 보여줄 식당 수 */
@@ -228,6 +229,15 @@ function Recommend({ limit, onEat }: { limit: number; onEat: (menu: string, pric
         )
       : [...PLACES].sort((a, b) => cheapestPrice(a) - cheapestPrice(b))
   ).slice(0, fits.length ? MAX_PLACES : 3);
+  // 식당 전체 보기: 이 창 안에서 가까운 순으로 펼치고, 이름으로 찾을 수 있다
+  const [all, setAll] = useState(false);
+  const [query, setQuery] = useState('');
+  const q = query.trim();
+  const found = [...PLACES].filter((p) => !q || p.name.includes(q)).sort((a, b) => a.walk - b.walk);
+  const eat = (p: Place) => (m: Menu) =>
+    confirm('먹은 걸로 기록', `${p.name} ${m.name} ${won(m.price)}원을 오늘 먹은 걸로 기록할까요?`, () =>
+      onEat(m.name, m.price, p),
+    );
   const showTip = tip && list.some((p) => matchesTheme(mainMenu(p), tip));
   const character = profile ? characterOf(profile.character) : CHARACTERS[1];
 
@@ -242,20 +252,36 @@ function Recommend({ limit, onEat }: { limit: number; onEat: (menu: string, pric
         </div>
       )}
       {list.map((p) => (
-        <PlaceItem
-          key={p.id}
-          place={p}
-          limit={limit}
-          onEat={(m) =>
-            confirm('먹은 걸로 기록', `${p.name} ${m.name} ${won(m.price)}원을 오늘 먹은 걸로 기록할까요?`, () =>
-              onEat(m.name, m.price, p),
-            )
-          }
-        />
+        <PlaceItem key={p.id} place={p} limit={limit} onEat={eat(p)} />
       ))}
-      <Link href="/recommend" className={styles.more}>
-        식당 전체 보기
-      </Link>
+      {all ? (
+        <>
+          <input
+            type="search"
+            className={styles.input}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="식당 이름으로 찾기"
+            aria-label="식당 이름으로 찾기"
+          />
+          {found.slice(0, ALL_MAX).map((p) => (
+            <PlaceItem key={p.id} place={p} limit={limit} onEat={eat(p)} />
+          ))}
+          {found.length === 0 && <p className={styles.quickLabel}>이름이 맞는 식당이 없어요</p>}
+          {found.length > ALL_MAX && (
+            <p className={styles.quickLabel}>
+              {found.length}곳 중 {ALL_MAX}곳만 보여요. 이름으로 찾아 주세요
+            </p>
+          )}
+          <button type="button" className={styles.more} onClick={() => setAll(false)}>
+            접기
+          </button>
+        </>
+      ) : (
+        <button type="button" className={styles.more} onClick={() => setAll(true)}>
+          식당 전체 보기 ({PLACES.length}곳)
+        </button>
+      )}
     </div>
   );
 }
