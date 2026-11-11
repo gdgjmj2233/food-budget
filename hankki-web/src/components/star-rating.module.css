@@ -1,0 +1,17 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  padding: 4px 1px;
+  color: #f5a400;
+  line-height: 0;
+}
+
+.label {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}

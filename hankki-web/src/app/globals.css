@@ -1,20 +1,27 @@
 /* 색상은 src/theme.ts 의 C 와 같은 값 */
 :root {
-  --ground: #f2f4f6;
+  --ground: #f3f6fb;
   --card: #ffffff;
-  --ink: #191f28;
-  --muted: #6b7684;
-  --line: #e5e8eb;
-  --divider: #f2f4f6;
-  --primary: #3182f6;
-  --primary-dark: #1b64da;
-  --primary-soft: #e8f3ff;
+  --ink: #12213f;
+  --muted: #5b6577;
+  --line: #e3e8f0;
+  --line-strong: #d3dae5;
+  --divider: #eef2f7;
+  --primary: #0b3d91;
+  --primary-dark: #072b66;
+  --primary-soft: #e4effc;
+  --accent: #ffc93c;
+  --accent-dark: #e0a800;
+  --accent-soft: #fff6db;
   --over: #e5303f;
   --orange-soft: #fff0e0;
 
+  /* 제목·큰 숫자용 글꼴. --font-jua, --font-plex 는 layout.tsx 에서 넣어 준다 */
+  --font-display: var(--font-jua), var(--font-plex), sans-serif;
+
   /* 휴대폰 화면 폭 기준으로 가운데 정렬 */
   --app-width: 560px;
-  --tab-height: 60px;
+  --tab-height: 72px;
 
   color-scheme: light;
 }
@@ -30,7 +37,7 @@ body {
   background: var(--ground);
   color: var(--ink);
   font-family:
-    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", Pretendard, "Malgun Gothic", "맑은 고딕", system-ui,
+    var(--font-plex), -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", Pretendard, "Malgun Gothic", "맑은 고딕", system-ui,
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;

@@ -12,7 +12,7 @@
 .seg {
   display: flex;
   gap: 4px;
-  background: #e7e9e1;
+  background: #e3e9f2;
   padding: 4px;
   border-radius: 14px;
 }
@@ -63,35 +63,9 @@
   min-height: 60px;
 }
 
-.divider {
-  border-top: 1px solid var(--divider);
-}
-
 .setLabel {
   font-size: 15px;
   font-weight: 500;
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.stepBtn {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  border: 1px solid var(--line);
-  background: #fff;
-  font-size: 20px;
-}
-
-.stepVal {
-  font-size: 17px;
-  font-weight: 700;
-  min-width: 32px;
-  text-align: center;
 }
 
 .tog {
@@ -149,4 +123,12 @@
 .center {
   display: flex;
   justify-content: center;
+}
+
+/* 이미 쓴 금액이 예산보다 많을 때 알리는 문구 */
+.warn {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--over);
 }

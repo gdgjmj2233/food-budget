@@ -1,29 +1,24 @@
 import { useToast } from '@/components/toast';
-import { PLACES, type Menu, type Place } from '@/data/places';
-import { won } from '@/lib/budget';
+import type { Place } from '@/data/places';
+import { won, type MissingDay } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
 const ENDED = '예산 기간이 끝났어요. 예산 탭에서 새 기간을 시작하세요.';
 
-const change = (d: Delta) => `한 끼 권장 ${won(d.after)}원으로 ${d.after >= d.before ? '늘었어요' : '줄었어요'}`;
+const change = (d: Delta) => `오늘 남은 금액 ${won(d.after)}원`;
 
-/** 메뉴 선택(기록) + 직접 입력 + 스킵 + 자동 선택. 결과를 토스트로 알려준다. */
+/** 직접 입력 + 어제 기록 채우기. 결과를 토스트로 알려준다. */
 export function useEat() {
-  const { eat, record, summary } = useBudget();
+  const { record } = useBudget();
   const toast = useToast();
 
-  const pick = (place: Place, menu: Menu) => {
-    const delta = eat(place, menu);
-    if (!delta) {
-      toast(ENDED);
-      return;
-    }
-    toast(`${place.name} ${menu.name} ${won(menu.price)}원 차감 · ${change(delta)}`);
-  };
+  // 식당을 골랐으면 가게 이름·메뉴로, 안 골랐으면 적은 메뉴를 이름으로 남긴다
+  const save = (menu: string, price: number, place?: Place, at?: number) =>
+    place ? record(place.name, menu, price, { placeId: place.id, at }) : record(menu || '식사', '', price, { at });
 
-  /** 목록에 없는 메뉴를 이름·가격 직접 입력으로 기록한다 */
-  const eatCustom = (menu: string, price: number) => {
-    const delta = record(menu || '식사', '직접 입력', price);
+  /** 먹은 것을 기록한다. place 는 지도에서 고른 식당 */
+  const eatCustom = (menu: string, price: number, place?: Place) => {
+    const delta = save(menu, price, place);
     if (!delta) {
       toast(ENDED);
       return;
@@ -31,29 +26,25 @@ export function useEat() {
     toast(`${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
   };
 
-  /** 이번 끼니를 0원으로 기록해 건너뛴다. 남은 끼니가 줄어서 한 끼 권장 금액이 올라간다 */
-  const skip = () => {
-    if (summary.ended) {
+  /** 가게 이름과 메뉴 이름을 나눠서 기록한다 (예: 학생식당 · 한상한담) */
+  const eatAt = (name: string, menu: string, price: number) => {
+    const delta = record(name, menu, price);
+    if (!delta) {
       toast(ENDED);
       return;
     }
-    if (summary.mealsLeftToday === 0) {
-      toast('오늘은 건너뛸 끼니가 남아 있지 않아요');
+    toast(`${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
+  };
+
+  /** 어제 비어 있던 기록을 채운다 */
+  const fillMissing = (day: MissingDay, menu: string, price: number, place?: Place) => {
+    const delta = save(menu, price, place, day.at);
+    if (!delta) {
+      toast(ENDED);
       return;
     }
-    const delta = record('스킵', '끼니 건너뜀', 0);
-    if (delta) toast(`이번 끼니를 건너뛰었어요 · ${change(delta)}`);
+    toast(`어제 기록을 채웠어요 · ${change(delta)}`);
   };
 
-  /** 지금 한 끼 권장 금액 이하 메뉴 중에서 무작위로 고른다. 없으면 가장 싼 메뉴. */
-  const pickRandom = (places: Place[] = PLACES) => {
-    const pairs = places.flatMap((p) => p.menus.map((m) => ({ p, m })));
-    if (!pairs.length) return;
-    const pool = pairs.filter((x) => x.m.price <= summary.perMeal);
-    const choices = pool.length ? pool : [pairs.reduce((a, b) => (b.m.price < a.m.price ? b : a))];
-    const { p, m } = choices[Math.floor(Math.random() * choices.length)];
-    pick(p, m);
-  };
-
-  return { pick, eatCustom, skip, pickRandom };
+  return { eatCustom, eatAt, fillMissing };
 }

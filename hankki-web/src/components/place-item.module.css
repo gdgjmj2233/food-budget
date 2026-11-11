@@ -1,17 +1,29 @@
 .card {
-  border: 1px solid;
-  border-radius: 16px;
+  flex: none;
+  border: 1px solid transparent;
+  border-radius: 18px;
   background: var(--card);
   overflow: hidden;
 }
 
-.head {
-  width: 100%;
-  min-height: 68px;
-  padding: 12px 14px;
+.cardOver {
+  border-color: #fad4d8;
+}
+
+.top {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding-right: 14px;
+}
+
+.head {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 0 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-align: left;
 }
 
@@ -21,14 +33,14 @@
 
 .icon {
   flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
 }
 
 .body {
@@ -40,7 +52,7 @@
 }
 
 .name,
-.meta,
+.where,
 .menuName,
 .menuRowName {
   overflow: hidden;
@@ -53,32 +65,27 @@
   font-weight: 700;
 }
 
+.menuName {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.tag {
+  font-size: 12px;
+  color: var(--over);
+}
+
 .meta {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   font-size: 12px;
   color: var(--muted);
 }
 
-.right {
-  max-width: 130px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-}
-
-.menuName {
-  max-width: 100%;
-  font-size: 11px;
-  color: var(--muted);
-}
-
 .price {
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.tag {
-  font-size: 11px;
+  flex: none;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -101,18 +108,11 @@
 }
 
 .menuRow {
-  width: 100%;
-  min-height: 48px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border-radius: 10px;
   padding: 0 4px;
-  text-align: left;
-}
-
-.menuRow:active {
-  background: var(--divider);
 }
 
 .menuRowName {
@@ -125,10 +125,44 @@
   font-weight: 700;
 }
 
-.eatBtn {
-  border-radius: 8px;
-  padding: 7px 12px;
-  color: #fff;
+.myStar {
+  color: #c98a00;
+  font-weight: 700;
+}
+
+.rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0 8px;
+}
+
+.rateLabel {
   font-size: 13px;
   font-weight: 700;
+  margin-right: 6px;
+}
+
+.starBtn {
+  display: flex;
+  padding: 4px;
+}
+
+.rateHint {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mainBadge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: 1px;
 }

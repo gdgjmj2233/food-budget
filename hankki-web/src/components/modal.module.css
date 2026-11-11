@@ -12,5 +12,45 @@
 }
 
 .dialog::backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(18, 33, 63, 0.5);
+}
+
+/* 아래에서 올라오는 창. 닫힌 dialog 가 보이지 않게 [open] 일 때만 flex 로 바꾼다 */
+.sheet {
+  margin: auto auto 0;
+  width: min(100vw, var(--app-width));
+  max-width: none;
+  height: calc(100dvh - 56px);
+  max-height: none;
+  border-radius: 28px 28px 0 0;
+  background: var(--ground);
+  animation: rise 220ms ease-out;
+}
+
+.sheet[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.handle {
+  flex: none;
+  align-self: center;
+  width: 40px;
+  height: 5px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: #cbd3df;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
 }

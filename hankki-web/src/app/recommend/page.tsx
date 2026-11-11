@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   IoCheckbox,
+  IoChevronDown,
   IoCloseCircle,
   IoDiceOutline,
   IoListOutline,
@@ -10,37 +11,59 @@ import {
   IoMapOutline,
   IoSearch,
   IoSquareOutline,
-  IoSwapVertical,
 } from 'react-icons/io5';
 
+import { ExtraPlaceCard } from '@/components/extra-place-card';
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
 import { Roulette } from '@/components/roulette';
-import { PrimaryButton, Screen, Sub, Title } from '@/components/ui';
+import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { bestMenu, CATEGORIES, cheapestPrice, DATA_SOURCE, PLACES, type Area } from '@/data/places';
-import { useEat } from '@/hooks/use-eat';
+import { bestMenu, CATEGORIES, DATA_SOURCE, mainMenu, PLACES, type Area, type Place } from '@/data/places';
+import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
+import { distanceM, formatDistance } from '@/lib/geo';
+import { INHA, type ExtraPlace } from '@/lib/kakao-map';
 import { useBudget } from '@/store/budget-store';
-import { C } from '@/theme';
+import { locationProblem, startLocating, useLocation } from '@/store/location-store';
+import { ensurePlacePositions, usePlacePositions } from '@/store/place-positions';
+import { useRatings } from '@/store/rating-store';
+import { C, CAT_EMOJI } from '@/theme';
 import styles from './page.module.css';
 
-type SortKey = 'price' | 'walk';
+type SortKey = 'priceAsc' | 'priceDesc' | 'near' | 'walk' | 'rating';
+/** 목록 보기에서 지도 버튼 옆 선택 상자로 골라 쓰는 정렬 방식 */
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'priceAsc', label: '가격 낮은 순' },
+  { key: 'priceDesc', label: '가격 높은 순' },
+  { key: 'near', label: '내 위치에서 가까운 순' },
+  { key: 'walk', label: '학교에서 가까운 순' },
+  { key: 'rating', label: '내 별점 높은 순' },
+];
+/** 목록에 한 번에 보여 주는 식당 수. 주변 음식점까지 합치면 수백 곳이라 나눠서 보여 준다 */
+const PAGE_SIZE = 40;
+
+/** 목록 한 줄: 앱 데이터의 식당(메뉴·가격이 있음) 또는 카카오에서 찾은 주변 음식점 */
+type Row = { id: string; place?: Place; extra?: ExtraPlace; dist?: number };
 const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
 export default function RecommendPage() {
   const { summary: s } = useBudget();
-  const { pick, eatCustom } = useEat();
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
-  const [sort, setSort] = useState<SortKey>('price');
+  const [sort, setSort] = useState<SortKey>('priceAsc');
   const [onlyFits, setOnlyFits] = useState(true);
   const [query, setQuery] = useState('');
   const [showMap, setShowMap] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [roulette, setRoulette] = useState(false);
   const [groupIds, setGroupIds] = useState<string[]>([]);
-  const [groupSameSpot, setGroupSameSpot] = useState(false);
+  const [roulette, setRoulette] = useState(false);
+  const [more, setMore] = useState({ key: '', n: PAGE_SIZE });
+  const extras = useExtraPlaces();
+  const ratings = useRatings();
+  const { pos: me, status: locStatus } = useLocation();
+  const { positions } = usePlacePositions();
+  const cardRef = useRef<HTMLDivElement>(null);
   const groupRef = useRef<HTMLDivElement>(null);
 
   const q = query.trim();
@@ -50,28 +73,88 @@ export default function RecommendPage() {
       (area === '전체' || p.area === area) &&
       (!q || p.name.includes(q) || p.menus.some((m) => m.name.includes(q))),
   );
-  const inBudget = base.filter((p) => bestMenu(p, s.perMeal).fits);
-  const list = (onlyFits ? inBudget : base).sort((a, b) =>
-    sort === 'price' ? cheapestPrice(a) - cheapestPrice(b) || a.walk - b.walk : a.walk - b.walk || cheapestPrice(a) - cheapestPrice(b),
-  );
+  const inBudget = base.filter((p) => bestMenu(p, s.todayLeft).fits);
+  const list = onlyFits ? inBudget : base;
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
+  // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다).
+  // 예산을 알 수 없어서 "예산 안만"과 상관없이 보여 준다
+  const extraList = extras.filter(
+    (e) => (cat === '전체' || e.cat === cat) && area === '전체' && (!q || e.name.includes(q)),
+  );
   const selected = list.find((p) => p.id === selectedId);
-  const group = list.filter((p) => groupIds.includes(p.id));
+  const selectedExtra = extraList.find((e) => e.id === selectedId);
+
+  const groupPlaces = list.filter((p) => groupIds.includes(p.id));
+  const groupExtras = extraList.filter((e) => groupIds.includes(e.id));
+  const groupCount = groupPlaces.length + groupExtras.length;
+
   const selectOne = (id: string) => {
     setSelectedId(id);
     setGroupIds([]);
   };
-  const selectGroup = (ids: string[], sameSpot: boolean) => {
+  const selectGroup = (ids: string[]) => {
     setGroupIds(ids);
-    setGroupSameSpot(sameSpot);
     setSelectedId(null);
   };
 
-  // 묶음 핀을 누르면 아래 가게 목록이 화면 밖에 있을 수 있어서, 첫 카드가 보일 만큼만 내린다 (지도는 최대한 남긴다)
+  // 내 위치를 아직 모르면 "내 위치에서 가까운 순"은 학교에서 가까운 순으로 대신 보여 준다
+  const effectiveSort: SortKey = sort === 'near' && !me ? 'walk' : sort;
+  const rows: Row[] = [
+    ...list.map((p) => ({ id: p.id, place: p, dist: me && positions[p.id] ? distanceM(me, positions[p.id]) : undefined })),
+    ...extraList.map((e) => ({ id: e.id, extra: e, dist: me ? distanceM(me, e) : undefined })),
+  ];
+  const nameOf = (r: Row) => r.place?.name ?? r.extra!.name;
+  const byName = (a: Row, b: Row) => nameOf(a).localeCompare(nameOf(b), 'ko');
+  // 가격은 카드에 보이는 대표 메뉴 값 기준(오늘 예산 안에서 가장 비싼 메뉴)이고, 같으면 가까운 곳이 먼저다
+  // 카드에 보이는 가격 = 가게 대표 메뉴 가격
+  const shownPrice = (p: Place) => mainMenu(p).price;
+  const stars = (r: Row) => ratings[r.id] ?? 0;
+  rows.sort((a, b) => {
+    const mixed = effectiveSort === 'near' || effectiveSort === 'rating'; // 이 둘만 주변 음식점을 섞어서 줄 세운다
+    if (!mixed && !a.place !== !b.place) return a.place ? -1 : 1; // 나머지는 메뉴·가격이 있는 식당이 먼저
+    const ap = a.place;
+    const bp = b.place;
+    switch (effectiveSort) {
+      case 'near':
+        return (a.dist ?? Infinity) - (b.dist ?? Infinity) || byName(a, b);
+      case 'rating':
+        return stars(b) - stars(a) || (!ap !== !bp ? (ap ? -1 : 1) : ap && bp ? ap.walk - bp.walk : byName(a, b));
+      case 'priceAsc':
+        return ap && bp ? shownPrice(ap) - shownPrice(bp) || ap.walk - bp.walk : byName(a, b);
+      case 'priceDesc':
+        return ap && bp ? shownPrice(bp) - shownPrice(ap) || ap.walk - bp.walk : byName(a, b);
+      default:
+        return ap && bp
+          ? ap.walk - bp.walk || shownPrice(ap) - shownPrice(bp)
+          : distanceM(INHA, a.extra ?? INHA) - distanceM(INHA, b.extra ?? INHA) || byName(a, b);
+    }
+  });
+  const filterKey = [cat, area, q, onlyFits, sort].join('|');
+  const shownCount = more.key === filterKey ? more.n : PAGE_SIZE;
+  const pickSort = (key: SortKey) => {
+    setSort(key);
+    if (key === 'near') {
+      ensurePlacePositions();
+      startLocating();
+    }
+  };
+  const nearHint =
+    sort !== 'near'
+      ? null
+      : locStatus === 'locating'
+        ? '내 위치를 찾는 중이에요…'
+        : locationProblem(locStatus) && `${locationProblem(locStatus)}. 지금은 학교에서 가까운 순으로 보여 줘요.`;
+
+  // 식당 카드는 지도 아래 화면 밖에 생기므로, 핀을 누르면 카드가 보이게 내린다
+  useEffect(() => {
+    if (selectedId) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [selectedId]);
+
+  // N곳 핀의 목록은 길 수 있어서 첫 카드가 보일 만큼만 내린다 (지도는 최대한 남긴다)
   useEffect(() => {
     const top = groupRef.current?.getBoundingClientRect().top;
     if (top === undefined) return;
-    const visibleBottom = window.innerHeight - 60 - 150; // 하단 탭 + 첫 카드 높이 정도
+    const visibleBottom = window.innerHeight - 72 - 150; // 하단 탭 + 첫 카드 높이 정도
     if (top > visibleBottom) window.scrollBy({ top: top - visibleBottom, behavior: 'smooth' });
   }, [groupIds]);
 
@@ -82,7 +165,7 @@ export default function RecommendPage() {
       <div className={styles.loc}>
         <IoLocationOutline size={20} color={C.primary} aria-hidden />
         <span className={styles.locText}>인하대 주변 {PLACES.length}곳</span>
-        <span className={styles.locLimit}>한 끼 {won(s.perMeal)}원 이하</span>
+        <span className={styles.locLimit}>오늘 {won(s.todayLeft)}원 이하</span>
       </div>
 
       <div className={styles.search}>
@@ -102,9 +185,23 @@ export default function RecommendPage() {
         )}
       </div>
 
-      <div className={styles.chips}>
+      <div className={styles.cats} role="group" aria-label="음식 종류">
         {CATEGORIES.map((k) => (
-          <Chip key={k} label={k} on={k === cat} onPress={() => setCat(k)} />
+          <button
+            type="button"
+            key={k}
+            onClick={() => setCat(k)}
+            aria-pressed={k === cat}
+            aria-label={k}
+            title={k}
+            className={`${styles.cat} ${k === cat ? styles.catOn : ''}`}>
+            <span className={styles.catEmoji} aria-hidden>
+              {CAT_EMOJI[k]}
+            </span>
+            <span className={styles.catName} aria-hidden>
+              {k}
+            </span>
+          </button>
         ))}
       </div>
       <div className={styles.chips}>
@@ -127,10 +224,17 @@ export default function RecommendPage() {
         </button>
         <div className={styles.tools}>
           {!showMap && (
-            <button type="button" onClick={() => setSort(sort === 'price' ? 'walk' : 'price')} className={styles.check}>
-              <IoSwapVertical size={16} color={C.ink} aria-hidden />
-              <span className={styles.sortText}>{sort === 'price' ? '가격 낮은 순' : '가까운 순'}</span>
-            </button>
+            <label className={styles.sortPick}>
+              <span className={styles.srOnly}>정렬</span>
+              <select value={sort} onChange={(e) => pickSort(e.target.value as SortKey)} className={styles.sortSelect}>
+                {SORTS.map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <IoChevronDown size={14} aria-hidden />
+            </label>
           )}
           <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
             {showMap ? <IoListOutline size={16} aria-hidden /> : <IoMapOutline size={16} aria-hidden />}
@@ -139,27 +243,40 @@ export default function RecommendPage() {
         </div>
       </div>
 
-      <Sub>
-        {showMap
-          ? '핀의 숫자는 예산 안에서 먹을 수 있는 메뉴 가격, 흰 핀은 예산 초과예요. "N곳" 핀을 누르면 그 구역이 확대되고 아래에 가게 목록이 나와요.'
-          : '식당을 누르면 메뉴가 펼쳐져요. 먹은 메뉴의 "먹기"를 누르면 예산에서 빠집니다.'}
-      </Sub>
+      {!showMap && (
+        <>
+          <Sub>
+            식당을 누르면 메뉴가 펼쳐져요.
+            {extraList.length > 0 && ' 메뉴 정보가 없는 주변 음식점은 이름과 별점만 보여요.'}
+          </Sub>
+          {nearHint && <Sub>{nearHint}</Sub>}
+        </>
+      )}
 
       {showMap && (
         <>
           <PlaceMap
             places={list}
-            perMeal={s.perMeal}
-            selectedId={selected?.id ?? null}
+            extras={extraList}
+            selectedId={selected?.id ?? selectedExtra?.id ?? null}
             onSelect={selectOne}
             onSelectGroup={selectGroup}
           />
-          {selected && <PlaceItem key={selected.id} place={selected} perMeal={s.perMeal} onPick={(m) => pick(selected, m)} />}
-          {group.length > 0 && (
+          <Sub>가까운 식당은 &quot;N곳&quot; 핀으로 합쳐져 있어요. 핀을 누르거나 20m 축척까지 확대하면 식당 이름으로 풀려요. 파란색은 메뉴를 볼 수 있는 식당, 회색·흰색은 카카오 지도에서 찾은 다른 음식점이에요.</Sub>
+          {(selected || selectedExtra) && (
+            <div ref={cardRef}>
+              {selected && <PlaceItem key={selected.id} place={selected} limit={s.todayLeft} defaultOpen />}
+              {selectedExtra && <ExtraPlaceCard key={selectedExtra.id} place={selectedExtra} />}
+            </div>
+          )}
+          {groupCount > 0 && (
             <div ref={groupRef} className={styles.list}>
-              <Sub>{groupSameSpot ? `같은 건물에 있는 ${group.length}곳` : `누른 핀에 모인 ${group.length}곳`}</Sub>
-              {group.map((p) => (
-                <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />
+              <Sub>누른 핀에 모인 {groupCount}곳</Sub>
+              {groupPlaces.map((p) => (
+                <PlaceItem key={p.id} place={p} limit={s.todayLeft} />
+              ))}
+              {groupExtras.map((e) => (
+                <ExtraPlaceCard key={e.id} place={e} />
               ))}
             </div>
           )}
@@ -168,8 +285,22 @@ export default function RecommendPage() {
 
       {!showMap && (
         <div className={styles.list}>
-          {list.length ? (
-            list.map((p) => <PlaceItem key={p.id} place={p} perMeal={s.perMeal} onPick={(m) => pick(p, m)} />)
+          {rows.length ? (
+            <>
+              {rows.slice(0, shownCount).map((r) => (
+                <div key={r.id}>
+                  {effectiveSort === 'near' && r.dist !== undefined && (
+                    <p className={styles.dist}>내 위치에서 {formatDistance(r.dist)}</p>
+                  )}
+                  {r.place ? <PlaceItem place={r.place} limit={s.todayLeft} /> : <ExtraPlaceCard place={r.extra!} />}
+                </div>
+              ))}
+              {rows.length > shownCount && (
+                <button type="button" className={styles.moreBtn} onClick={() => setMore({ key: filterKey, n: shownCount + PAGE_SIZE })}>
+                  더 보기 ({rows.length - shownCount}곳 남음)
+                </button>
+              )}
+            </>
           ) : (
             <p className={styles.empty}>
               {onlyFits ? '조건에 맞으면서 예산 안인 곳이 없어요.\n"예산 안만" 체크를 풀어 보세요.' : '조건에 맞는 곳이 없어요.'}
@@ -178,21 +309,10 @@ export default function RecommendPage() {
         </div>
       )}
 
-      <PrimaryButton label="못 고르겠으면 룰렛 돌리기" icon={IoDiceOutline} color={C.primary} onPress={() => setRoulette(true)} />
+      <AccentButton label="못 고르겠으면 룰렛" icon={IoDiceOutline} onPress={() => setRoulette(true)} />
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
-      {/* 식당 추천은 지금 고른 카테고리·위치·검색 조건 안에서 받는다 */}
-      {roulette && (
-        <Roulette
-          places={base}
-          perMeal={s.perMeal}
-          onClose={() => setRoulette(false)}
-          onEat={(name, price) => {
-            eatCustom(name, price);
-            setRoulette(false);
-          }}
-        />
-      )}
+      {roulette && <Roulette limit={s.todayLeft} onClose={() => setRoulette(false)} />}
     </Screen>
   );
 }

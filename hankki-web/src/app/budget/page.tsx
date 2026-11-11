@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 
+import { InquiryDialog } from '@/components/inquiry-dialog';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub, Title } from '@/components/ui';
 import { DEFAULT_AMOUNT, formatShort, won, type Period } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
+import { inquiryReady } from '@/lib/inquiry';
 import { useBudget } from '@/store/budget-store';
 import styles from './page.module.css';
 
@@ -16,11 +18,23 @@ export default function BudgetPage() {
   const toast = useToast();
   const [text, setText] = useState(won(settings.amount));
   const [editing, setEditing] = useState(false);
+  const [inquiring, setInquiring] = useState(false);
   const shown = editing ? text : won(settings.amount);
 
   const setPeriod = (period: Period) => {
     if (period === settings.period) return;
-    updateSettings({ period, amount: DEFAULT_AMOUNT[period] });
+    const next = DEFAULT_AMOUNT[period];
+    const apply = () => updateSettings({ period, amount: next });
+    // 기간을 바꾸면 금액이 기본값으로 덮어써져서, 직접 정해 둔 금액이 있으면 먼저 물어본다
+    if (settings.amount === DEFAULT_AMOUNT[settings.period]) {
+      apply();
+      return;
+    }
+    confirm(
+      '예산 기간 바꾸기',
+      `${won(settings.amount)}원으로 정해 둔 예산이 ${won(next)}원(기본값)으로 바뀌어요. 바꿀까요?`,
+      apply,
+    );
   };
 
   const onAmount = (t: string) => {
@@ -86,30 +100,15 @@ export default function BudgetPage() {
           />
           <span className={styles.amountUnit}>원</span>
         </div>
+        {s.spent > settings.amount && (
+          <p className={styles.warn} role="status">
+            이번 기간에 이미 쓴 {won(s.spent)}원이 예산보다 많아요. 남은 예산이 마이너스로 계산돼요.
+          </p>
+        )}
       </div>
 
       <Card style={{ paddingTop: 6, paddingBottom: 6 }}>
         <div className={styles.setRow}>
-          <span className={styles.setLabel}>하루 식사 횟수</span>
-          <div className={styles.step}>
-            <button
-              type="button"
-              className={styles.stepBtn}
-              aria-label="식사 횟수 줄이기"
-              onClick={() => updateSettings({ mealsPerDay: Math.max(1, settings.mealsPerDay - 1) })}>
-              −
-            </button>
-            <span className={styles.stepVal}>{settings.mealsPerDay}끼</span>
-            <button
-              type="button"
-              className={styles.stepBtn}
-              aria-label="식사 횟수 늘리기"
-              onClick={() => updateSettings({ mealsPerDay: Math.min(3, settings.mealsPerDay + 1) })}>
-              +
-            </button>
-          </div>
-        </div>
-        <div className={`${styles.setRow} ${styles.divider}`}>
           <span className={styles.setLabel}>주말은 예산에서 제외</span>
           <button
             type="button"
@@ -128,11 +127,11 @@ export default function BudgetPage() {
           자동 계산 결과 · {formatShort(s.start)} ~ {formatShort(endDay)}
         </span>
         <div className={styles.resultRow}>
-          <span className={styles.resultLabel}>한 끼 기준</span>
+          <span className={styles.resultLabel}>하루 기준</span>
           <span className={styles.resultBig}>{won(s.base)}원</span>
         </div>
         <span className={styles.resultSmall}>
-          {s.totalDays}일 × 하루 {settings.mealsPerDay}끼 = 총 {s.totalDays * settings.mealsPerDay}끼 기준
+          {won(settings.amount)}원 ÷ {s.totalDays}일
         </span>
       </div>
 
@@ -141,6 +140,17 @@ export default function BudgetPage() {
       <div className={styles.center}>
         <GhostButton label="오늘부터 새 기간 시작" onPress={onNewPeriod} />
       </div>
+
+      {/* 스프레드시트 주소(lib/inquiry)가 연결되기 전에는 문의 버튼을 보여 주지 않는다 */}
+      {inquiryReady() && (
+        <>
+          <Sub style={{ textAlign: 'center' }}>불편한 점이나 바라는 점이 있나요?</Sub>
+          <div className={styles.center}>
+            <GhostButton label="문의하기" onPress={() => setInquiring(true)} />
+          </div>
+          {inquiring && <InquiryDialog onClose={() => setInquiring(false)} />}
+        </>
+      )}
     </Screen>
   );
 }

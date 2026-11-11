@@ -1,4 +1,4 @@
-/* 맨 위: 날짜·제목 + 로그인 / 내 정보 */
+/* 맨 위: 날짜·제목 + 내 캐릭터 */
 .top {
   display: flex;
   align-items: center;
@@ -6,47 +6,31 @@
   gap: 12px;
 }
 
-.login {
-  flex: none;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: var(--ink);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.me {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 4px 4px 4px 12px;
-  border-radius: 999px;
-  background: var(--card);
-  border: 1px solid var(--line);
-}
-
-.meName {
-  max-width: 110px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 13px;
-  font-weight: 700;
-}
-
 /* 전신 캐릭터 그림에서 얼굴 쪽만 보이게 */
 .avatar {
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
   border-radius: 50%;
+  border: 2px solid #fff;
   background: var(--primary-soft);
+  box-shadow: 0 2px 6px rgba(11, 61, 145, 0.15);
+}
+
+.login {
+  flex: none;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 20px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .avatarImg {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -65,75 +49,80 @@
   font-weight: 700;
 }
 
-/* 마스코트(1) : 예산 카드(3) */
-.heroRow {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 8px;
-}
-
-/* 줄 높이는 카드가 정하고, 마스코트는 그 높이에 맞춘다 */
-.mascots {
-  position: relative;
-  min-width: 0;
+/* 마스코트 + 말풍선 */
+.tipRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
 }
 
 .mascot {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  flex: none;
+  width: 92px;
+  height: 110px;
   object-fit: contain;
 }
 
-.hero {
+.bubble {
+  flex: 1;
   min-width: 0;
-  border-radius: 24px;
-  padding: 22px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
+  border-radius: 18px 18px 18px 4px;
+  background: var(--card);
+  box-shadow: 0 2px 10px rgba(11, 61, 145, 0.08);
+}
+
+.bubbleLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.bubbleText {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+/* 예산 카드. 누르면 자세히 보기가 열린다 */
+.hero {
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 24px;
+  background: var(--primary);
   color: #fff;
+  text-align: left;
+}
+
+.hero:active {
+  background: var(--primary-dark);
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .heroLabel {
   font-size: 14px;
   font-weight: 500;
-}
-
-.heroSmall {
-  font-size: 12px;
-}
-
-.heroSub {
-  margin-top: 4px;
-  font-size: 13px;
-  opacity: 0.85;
-}
-
-.more {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin: -6px -4px -6px 0;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.more:active {
-  background: rgba(255, 255, 255, 0.3);
+  color: #cfe0f8;
 }
 
 .pill {
+  padding: 3px 9px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
-  background: #fff;
-  padding: 3px 10px;
-  border-radius: 999px;
 }
 
 .bigRow {
@@ -143,32 +132,75 @@
 }
 
 .bigNum {
-  font-size: 46px;
-  font-weight: 900;
-  letter-spacing: -1px;
-  line-height: 1.1;
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 48px;
 }
 
 .bigUnit {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .bar {
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.3);
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.18);
   overflow: hidden;
 }
 
 .barFill {
-  height: 8px;
-  border-radius: 4px;
-  background: #fff;
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--accent);
 }
 
-.actions {
+.stats {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.stat {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #cfe0f8;
+}
+
+.statVal {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.heroNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #cfe0f8;
+}
+
+/* 어제 기록을 먼저 채우도록 밥먹기를 한 단계 낮춘 모양 */
+.eatOutline {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 2px solid var(--primary);
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 20px;
 }
