@@ -60,6 +60,8 @@ export function PlaceMap({
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [level, setLevel] = useState(4);
+  /** 마지막으로 누른 🍽️ 합친 핀의 식당 id 들. 그 핀을 선택한 모양으로 보여 준다 (다른 핀을 누르면 지운다) */
+  const [pickedPile, setPickedPile] = useState<string[] | null>(null);
   const { positions, located } = usePlacePositions();
   const { pos: me, status: locStatus } = useLocation();
   const locError = locationProblem(locStatus);
@@ -117,7 +119,10 @@ export function PlaceMap({
       dot.type = 'button';
       dot.className = `${styles.dot} ${p.extra ? styles.dotExtra : ''}`;
       dot.setAttribute('aria-label', p.name);
-      dot.onclick = () => onSelectRef.current(p.id);
+      dot.onclick = () => {
+        setPickedPile(null);
+        onSelectRef.current(p.id);
+      };
       return dot;
     };
 
@@ -171,7 +176,10 @@ export function PlaceMap({
         stars,
         name: p.name,
         ariaLabel: stars ? `${p.name}, 내 별점 ${stars}점` : p.name,
-        onPick: () => onSelectRef.current(p.id),
+        onPick: () => {
+          setPickedPile(null);
+          onSelectRef.current(p.id);
+        },
       });
     };
 
@@ -216,23 +224,30 @@ export function PlaceMap({
       add(label, below(p, p.id === selectedId ? LABEL_GAP_ON : LABEL_GAP), 0, LABEL_Z);
     };
 
+    // 누른 합친 핀. 그 안의 식당 하나를 따로 고르면(selectedId) 그 식당이 선택된 것으로 보고 합친 핀은 풀어 준다
+    const activePile = pickedPile && !(selectedId && pickedPile.includes(selectedId)) ? new Set(pickedPile) : null;
+
     // 겹친 식당들을 합친 핀: 합친 식당들의 가운데에 '전체' 이모지(🍽️) 배지와 "대표 식당 외 N곳".
-    // 대표는 메뉴가 있는 식당(없으면 첫 식당)이고, 누르면 합친 식당 목록을 보여 준다
+    // 대표는 메뉴가 있는 식당(없으면 첫 식당)이고, 누르면 선택한 모양이 되면서 합친 식당 목록을 보여 준다
     const addMerged = (g: Pin[]) => {
       const lead = g.find((p) => !p.extra) ?? g[0];
       const allExtra = g.every((p) => p.extra);
       const ids = g.map((p) => p.id);
+      const on = !!activePile && g.some((p) => activePile.has(p.id));
       const at = { lat: g.reduce((s, p) => s + p.lat, 0) / g.length, lng: g.reduce((s, p) => s + p.lng, 0) / g.length };
       const { pin, label } = badgeOf({
         emoji: CAT_EMOJI['전체'],
         extra: allExtra,
-        on: false,
+        on,
         name: `${lead.name} 외 ${g.length - 1}곳`,
         ariaLabel: `식당 ${g.length}곳: ${g.map((p) => p.name).join(', ')}. 눌러서 목록 보기`,
-        onPick: () => onSelectGroupRef.current(ids),
+        onPick: () => {
+          setPickedPile(ids);
+          onSelectGroupRef.current(ids);
+        },
       });
-      add(pin, at, 0.5, allExtra ? 2 : 3);
-      add(label, below(at, LABEL_GAP), 0, LABEL_Z);
+      add(pin, at, 0.5, on ? 4 : allExtra ? 2 : 3);
+      add(label, below(at, on ? LABEL_GAP_ON : LABEL_GAP), 0, LABEL_Z);
     };
 
     if (named) {
@@ -281,6 +296,7 @@ export function PlaceMap({
       pin.append(count);
       pin.setAttribute('aria-label', `식당 ${g.length}곳. 눌러서 확대`);
       pin.onclick = () => {
+        setPickedPile(null);
         onSelectGroupRef.current(g.map((p) => p.id));
         const bounds = new kakao.maps.LatLngBounds();
         g.forEach((p) => bounds.extend(new kakao.maps.LatLng(p.lat, p.lng)));
@@ -291,7 +307,7 @@ export function PlaceMap({
     });
 
     return () => overlays.forEach((o) => o.setMap(null));
-  }, [map, places, extras, positions, ratings, selectedId, level]);
+  }, [map, places, extras, positions, ratings, selectedId, level, pickedPile]);
 
   // 내 위치 점 (위치가 바뀔 때마다 다시 그린다)
   useEffect(() => {
