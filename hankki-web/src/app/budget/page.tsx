@@ -7,14 +7,11 @@ import { Card, GhostButton, Screen, Sub, Title } from '@/components/ui';
 import {
   addDays,
   DEFAULT_AMOUNT,
-  DEFAULT_MEAL_AMOUNTS,
   formatShort,
   fromDateKey,
   periodName,
-  SLOT_LABEL,
   toDateKey,
   won,
-  type MealSlot,
   type Period,
 } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
@@ -22,7 +19,6 @@ import { useBudget } from '@/store/budget-store';
 import styles from './page.module.css';
 
 const MAX_AMOUNT = 10_000_000;
-const MAX_MEAL = 100_000;
 /** 직접 설정을 처음 고를 때의 기간 길이 (일) */
 const CUSTOM_DAYS = 14;
 
@@ -57,7 +53,6 @@ function AmountInput({ id, value, max, min, onChange }: { id: string; value: num
 export default function BudgetPage() {
   const { settings, summary: s, updateSettings, startNewPeriod } = useBudget();
   const toast = useToast();
-  const meals = settings.mealAmounts;
 
   const setPeriod = (period: Period) => {
     if (period === settings.period) return;
@@ -66,11 +61,6 @@ export default function BudgetPage() {
       period === 'custom'
         ? { startDate: settings.startDate, endDate: toDateKey(addDays(fromDateKey(settings.startDate), CUSTOM_DAYS - 1)) }
         : {};
-    // 끼니별 금액을 쓰면 기간 예산은 저절로 계산되니 금액은 그대로 둔다
-    if (meals) {
-      updateSettings({ period, ...range });
-      return;
-    }
     const next = DEFAULT_AMOUNT[period];
     const apply = () => updateSettings({ period, amount: next, ...range });
     // 기간을 바꾸면 금액이 기본값으로 덮어써져서, 직접 정해 둔 금액이 있으면 먼저 물어본다
@@ -90,17 +80,6 @@ export default function BudgetPage() {
     // 시작일이 마지막 날보다 늦어지면 마지막 날도 같이 옮긴다
     const endDate = settings.endDate && settings.endDate >= startDate ? settings.endDate : startDate;
     updateSettings({ startDate, endDate });
-  };
-
-  const setMeal = (slot: MealSlot, n: number) => updateSettings({ mealAmounts: { ...meals!, [slot]: n } });
-
-  const toggleMeals = () => {
-    if (meals) {
-      // 끄면 지금까지 계산된 기간 예산을 그대로 기간 금액으로 남긴다
-      updateSettings({ mealAmounts: null, amount: s.amount });
-      return;
-    }
-    updateSettings({ mealAmounts: DEFAULT_MEAL_AMOUNTS });
   };
 
   const onNewPeriod = () => {
@@ -155,40 +134,12 @@ export default function BudgetPage() {
         )}
       </div>
 
-      <Card style={{ paddingTop: 6, paddingBottom: 6 }}>
-        <div className={styles.setRow}>
-          <span className={styles.setLabel}>점심·저녁 따로 관리</span>
-          <button
-            type="button"
-            onClick={toggleMeals}
-            role="switch"
-            aria-checked={!!meals}
-            aria-label="점심·저녁 따로 관리"
-            className={`${styles.tog} ${meals ? styles.togOn : ''}`}>
-            <span className={styles.knob} />
-          </button>
-        </div>
-      </Card>
-
-      {meals ? (
-        <div className={styles.mealGrid}>
-          {(['lunch', 'dinner'] as const).map((slot) => (
-            <div key={slot} className={styles.field}>
-              <label className={styles.label} htmlFor={`meal-${slot}`}>
-                {SLOT_LABEL[slot]} 한 끼
-              </label>
-              <AmountInput id={`meal-${slot}`} value={meals[slot]} max={MAX_MEAL} min={0} onChange={(n) => setMeal(slot, n)} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="amount">
-            {amountLabel} 식비 예산
-          </label>
-          <AmountInput id="amount" value={settings.amount} max={MAX_AMOUNT} min={1000} onChange={(n) => updateSettings({ amount: n })} />
-        </div>
-      )}
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="amount">
+          {amountLabel} 식비 예산
+        </label>
+        <AmountInput id="amount" value={settings.amount} max={MAX_AMOUNT} min={1000} onChange={(n) => updateSettings({ amount: n })} />
+      </div>
 
       {s.spent > s.amount && (
         <p className={styles.warn} role="status">
@@ -220,9 +171,7 @@ export default function BudgetPage() {
           <span className={styles.resultBig}>{won(s.base)}원</span>
         </div>
         <span className={styles.resultSmall}>
-          {meals
-            ? `점심 ${won(meals.lunch)}원 + 저녁 ${won(meals.dinner)}원 · ${s.totalDays}일 합계 ${won(s.amount)}원`
-            : `${won(s.amount)}원 ÷ ${s.totalDays}일`}
+          {won(s.amount)}원 ÷ {s.totalDays}일
         </span>
       </div>
 

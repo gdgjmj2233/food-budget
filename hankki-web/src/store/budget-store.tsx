@@ -27,7 +27,7 @@ export interface Delta {
 }
 
 /** 기록에서 고칠 수 있는 내용 */
-export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'> & Partial<Pick<Meal, 'slot'>>;
+export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'>;
 
 /** 계정에 저장했다가 불러오는 내용 */
 export type SavedData = Pick<State, 'settings' | 'meals' | 'dismissedDate'>;

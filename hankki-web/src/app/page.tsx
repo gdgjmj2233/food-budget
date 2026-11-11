@@ -17,7 +17,7 @@ import { useToast } from '@/components/toast';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { formatDate, periodThis, SLOT_LABEL, won, type Meal } from '@/lib/budget';
+import { formatDate, periodThis, won, type Meal } from '@/lib/budget';
 import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
@@ -156,17 +156,6 @@ export default function HomePage() {
           <span className={styles.heroNote}>
             <IoInformationCircleOutline size={15} aria-hidden />
             어제 기록이 없어서 실제보다 많아 보일 수 있어요
-          </span>
-        ) : s.slots ? (
-          <span className={styles.stats}>
-            {(['lunch', 'dinner'] as const).map((slot) => (
-              <span key={slot} className={styles.stat}>
-                <span className={styles.statLabel}>
-                  {SLOT_LABEL[slot]} 남은 금액 · {won(s.slots![slot].limit)}원 중
-                </span>
-                <span className={styles.statVal}>{won(s.slots![slot].left)}원</span>
-              </span>
-            ))}
           </span>
         ) : (
           <span className={styles.stats}>
