@@ -197,7 +197,7 @@ function Choose({
       </div>
 
       {tab === 'list' && <QuickAgain onPick={onQuick} />}
-      {tab === 'list' && <Recommend limit={limit} />}
+      {tab === 'list' && <Recommend limit={limit} onEat={onQuick} />}
       {tab === 'roulette' && <RoulettePanel limit={limit} entries={entries} onEntries={onEntries} />}
 
       {/* 룰렛은 메뉴를 정하는 데만 쓴다. 먹은 건 추천 탭의 "먹은 곳 기록하기"로 기록한다 */}
@@ -213,7 +213,7 @@ function Choose({
 }
 
 /** 예산 안 메뉴가 있는 식당을 가까운 순으로(어제와 다른 메뉴가 있는 곳이 먼저). 하나도 없으면 가장 싼 곳들. */
-function Recommend({ limit }: { limit: number }) {
+function Recommend({ limit, onEat }: { limit: number; onEat: (menu: string, price: number, place?: Place) => void }) {
   const { meals } = useBudget();
   const profile = useProfile();
   const tip = suggestToday(meals);
@@ -242,7 +242,16 @@ function Recommend({ limit }: { limit: number }) {
         </div>
       )}
       {list.map((p) => (
-        <PlaceItem key={p.id} place={p} limit={limit} />
+        <PlaceItem
+          key={p.id}
+          place={p}
+          limit={limit}
+          onEat={(m) =>
+            confirm('먹은 걸로 기록', `${p.name} ${m.name} ${won(m.price)}원을 오늘 먹은 걸로 기록할까요?`, () =>
+              onEat(m.name, m.price, p),
+            )
+          }
+        />
       ))}
       <Link href="/recommend" className={styles.more}>
         식당 전체 보기
