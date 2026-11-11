@@ -12,7 +12,8 @@ import { RoulettePanel } from '@/components/roulette';
 import { GhostButton } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { bestMenu, cheapestPrice, mainMenu, PLACES, type Place } from '@/data/places';
-import { won } from '@/lib/budget';
+import { won, type Meal } from '@/lib/budget';
+import { confirm } from '@/lib/confirm';
 import { matchesTheme, suggestToday } from '@/lib/suggest';
 import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
@@ -70,9 +71,64 @@ export function MealDialog({
           onInput={() => setInputting(true)}
           onEntries={setEntries}
           onClose={onClose}
+          onQuick={onSubmit}
         />
       )}
     </Modal>
+  );
+}
+
+/** 같은 가게·메뉴·가격으로 먹은 기록을 묶어서 많이 먹은 순(같으면 최근 순)으로. 0원 기록은 뺀다 */
+function frequentMeals(meals: Meal[], limit: number): Meal[] {
+  const groups = new Map<string, { meal: Meal; count: number }>();
+  for (const m of meals) {
+    if (m.price <= 0) continue;
+    const key = `${m.name}|${m.menu}|${m.price}`;
+    const g = groups.get(key);
+    groups.set(key, { meal: !g || m.at > g.meal.at ? m : g.meal, count: (g?.count ?? 0) + 1 });
+  }
+  return [...groups.values()]
+    .sort((a, b) => b.count - a.count || b.meal.at - a.meal.at)
+    .slice(0, limit)
+    .map((g) => g.meal);
+}
+
+/** 최근에 먹은 것을 한 번 눌러 다시 기록한다. 식당을 찾고 메뉴를 고르는 단계를 건너뛰려는 것 */
+function QuickAgain({ onPick }: { onPick: (menu: string, price: number, place?: Place) => void }) {
+  const { meals } = useBudget();
+  // 식당을 골라 기록한 것(식당 이름·메뉴를 되살릴 수 있음)과 메뉴만 적어 기록한 것만 다시 기록할 수 있다
+  const items = frequentMeals(meals, 6)
+    .flatMap((m) => {
+      const place = m.placeId ? PLACES.find((p) => p.id === m.placeId) : undefined;
+      if (m.placeId && !place) return [];
+      if (!m.placeId && m.menu) return []; // 학식처럼 가게 이름이 따로 있는 기록은 학식 탭에서 기록한다
+      return [{ m, place }];
+    })
+    .slice(0, 3);
+  if (!items.length) return null;
+
+  return (
+    <div className={styles.quick}>
+      <p className={styles.quickLabel}>자주 먹은 것 · 눌러서 바로 기록</p>
+      <div className={styles.chips}>
+        {items.map(({ m, place }) => {
+          const label = place ? `${place.name} ${m.menu}` : m.name;
+          return (
+            <button
+              type="button"
+              key={m.id}
+              className={styles.chip}
+              onClick={() =>
+                confirm('먹은 걸로 기록', `${label} ${won(m.price)}원을 오늘 먹은 걸로 기록할까요?`, () =>
+                  onPick(place ? m.menu : m.name, m.price, place),
+                )
+              }>
+              {label} {won(m.price)}원
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -84,6 +140,7 @@ function Choose({
   onInput,
   onEntries,
   onClose,
+  onQuick,
 }: {
   tab: Tab;
   limit: number;
@@ -92,6 +149,7 @@ function Choose({
   onInput: () => void;
   onEntries: (entries: string[]) => void;
   onClose: () => void;
+  onQuick: (menu: string, price: number, place?: Place) => void;
 }) {
   const hasFits = PLACES.some((p) => bestMenu(p, limit).fits);
   const tabs = [
@@ -138,14 +196,15 @@ function Choose({
         ))}
       </div>
 
+      {tab === 'list' && <QuickAgain onPick={onQuick} />}
       {tab === 'list' && <Recommend limit={limit} />}
       {tab === 'roulette' && <RoulettePanel limit={limit} entries={entries} onEntries={onEntries} />}
 
-      {/* 룰렛은 메뉴를 정하는 데만 쓴다. 먹은 건 추천 탭의 "입력"으로 기록한다 */}
+      {/* 룰렛은 메뉴를 정하는 데만 쓴다. 먹은 건 추천 탭의 "먹은 곳 기록하기"로 기록한다 */}
       {tab === 'list' && (
         <div className={styles.foot}>
           <button type="button" className={`${ui.primary} ${ui.secondary} ${styles.footBtn}`} onClick={onInput}>
-            입력
+            먹은 곳 기록하기
           </button>
         </div>
       )}
@@ -232,10 +291,15 @@ function PlacePicker({
   onBack: () => void;
   onPick: (place: Place | null) => void;
 }) {
+  const { meals } = useBudget();
   const [query, setQuery] = useState('');
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const q = query.trim();
+  // 최근에 기록한 식당 3곳 (눌러서 바로 메뉴·가격 입력으로 넘어간다)
+  const recent = [...new Set([...meals].sort((a, b) => b.at - a.at).map((m) => m.placeId))]
+    .flatMap((id) => PLACES.filter((p) => p.id === id))
+    .slice(0, 3);
   const found = q ? PLACES.filter((p) => p.name.includes(q)) : PLACES;
   const picked = PLACES.find((p) => p.id === pickedId);
   // 지도 아래 목록: 검색어가 있으면 이름이 맞는 식당, 없으면 지도에서 누른 N곳 핀 안의 식당
@@ -257,6 +321,19 @@ function PlacePicker({
         placeholder="식당 이름으로 찾기"
         aria-label="식당 이름으로 찾기"
       />
+
+      {recent.length > 0 && !q && (
+        <div className={styles.quick}>
+          <p className={styles.quickLabel}>최근 간 곳</p>
+          <div className={styles.chips}>
+            {recent.map((p) => (
+              <button type="button" key={p.id} className={styles.chip} onClick={() => onPick(p)}>
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <PlaceMap
         places={found}
