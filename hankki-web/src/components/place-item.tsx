@@ -100,7 +100,7 @@ export function PlaceItem({
             })}
             <span className={styles.rateHint}>4점 이상이면 지도 핀에 ★이 붙어요</span>
           </div>
-          {onEat && <p className={styles.rateHint}>먹은 메뉴를 누르면 바로 기록해요</p>}
+          {onEat && <p className={styles.rateHint}>먹은 메뉴를 누르면 가격을 확인하고 기록해요</p>}
           {menus.map((m) => {
             const row = (
               <>

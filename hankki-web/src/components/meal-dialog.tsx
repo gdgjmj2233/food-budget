@@ -46,6 +46,12 @@ function WheelIcon({ size }: { size: number }) {
  * 밥먹기 창. 추천·룰렛 탭으로 뭘 먹을지 정하고, 먹은 건 식당을 고른 뒤 메뉴·가격을 입력해서 기록한다.
  * 열 때마다 새로 그려서 입력값이 비어 있다.
  */
+interface Prefill {
+  place: Place;
+  menu: string;
+  price: number;
+}
+
 export function MealDialog({
   limit,
   onClose,
@@ -57,11 +63,15 @@ export function MealDialog({
 }) {
   const [tab, setTab] = useState<Tab>('list');
   const [inputting, setInputting] = useState(false);
+  // 목록에서 고른 식당·메뉴. 가격을 확인하고 고칠 수 있게 입력 창에 미리 채워서 연다
+  const [prefill, setPrefill] = useState<Prefill | null>(null);
   const [entries, setEntries] = useState<string[]>([]);
 
   return (
     <Modal sheet onClose={onClose}>
-      {inputting ? (
+      {prefill ? (
+        <MealInput title="먹은 것 기록" limit={limit} initial={prefill} onBack={() => setPrefill(null)} onSubmit={onSubmit} />
+      ) : inputting ? (
         <MealInput title="직접 입력" limit={limit} onBack={() => setInputting(false)} onSubmit={onSubmit} />
       ) : (
         <Choose
@@ -73,6 +83,7 @@ export function MealDialog({
           onEntries={setEntries}
           onClose={onClose}
           onQuick={onSubmit}
+          onPrefill={(place, menu) => setPrefill({ place, menu: menu.name, price: menu.price })}
         />
       )}
     </Modal>
@@ -142,6 +153,7 @@ function Choose({
   onEntries,
   onClose,
   onQuick,
+  onPrefill,
 }: {
   tab: Tab;
   limit: number;
@@ -151,6 +163,7 @@ function Choose({
   onEntries: (entries: string[]) => void;
   onClose: () => void;
   onQuick: (menu: string, price: number, place?: Place) => void;
+  onPrefill: (place: Place, menu: Menu) => void;
 }) {
   const hasFits = PLACES.some((p) => bestMenu(p, limit).fits);
   const tabs = [
@@ -198,7 +211,7 @@ function Choose({
       </div>
 
       {tab === 'list' && <QuickAgain onPick={onQuick} />}
-      {tab === 'list' && <Recommend limit={limit} onEat={onQuick} />}
+      {tab === 'list' && <Recommend limit={limit} onEat={onPrefill} />}
       {tab === 'roulette' && <RoulettePanel limit={limit} entries={entries} onEntries={onEntries} />}
 
       {/* 룰렛은 메뉴를 정하는 데만 쓴다. 먹은 건 추천 탭의 "먹은 곳 기록하기"로 기록한다 */}
@@ -214,7 +227,7 @@ function Choose({
 }
 
 /** 예산 안 메뉴가 있는 식당을 가까운 순으로(어제와 다른 메뉴가 있는 곳이 먼저). 하나도 없으면 가장 싼 곳들. */
-function Recommend({ limit, onEat }: { limit: number; onEat: (menu: string, price: number, place?: Place) => void }) {
+function Recommend({ limit, onEat }: { limit: number; onEat: (place: Place, menu: Menu) => void }) {
   const { meals } = useBudget();
   const profile = useProfile();
   const tip = suggestToday(meals);
@@ -234,10 +247,7 @@ function Recommend({ limit, onEat }: { limit: number; onEat: (menu: string, pric
   const [query, setQuery] = useState('');
   const q = query.trim();
   const found = [...PLACES].filter((p) => !q || p.name.includes(q)).sort((a, b) => a.walk - b.walk);
-  const eat = (p: Place) => (m: Menu) =>
-    confirm('먹은 걸로 기록', `${p.name} ${m.name} ${won(m.price)}원을 오늘 먹은 걸로 기록할까요?`, () =>
-      onEat(m.name, m.price, p),
-    );
+  const eat = (p: Place) => (m: Menu) => onEat(p, m);
   const showTip = tip && list.some((p) => matchesTheme(mainMenu(p), tip));
   const character = profile ? characterOf(profile.character) : CHARACTERS[1];
 
@@ -295,22 +305,39 @@ export function MealInput({
   limit,
   onBack,
   onSubmit,
+  initial,
 }: {
   title: string;
   limit?: number;
   onBack: () => void;
   onSubmit: (menu: string, price: number, place?: Place) => void;
+  /** 식당·메뉴·가격을 미리 채워서 연다 (목록에서 메뉴를 눌렀을 때) */
+  initial?: Prefill;
 }) {
   // undefined: 아직 식당을 고르는 중, null: 지도에 없는 곳
-  const [place, setPlace] = useState<Place | null>();
+  const [place, setPlace] = useState<Place | null | undefined>(initial?.place);
+  // 목록에 없는 곳은 찾던 이름을 메뉴 칸에 미리 적어 둔다 (가격을 모르는 곳도 이름·가격만 적으면 된다)
+  const [typed, setTyped] = useState('');
 
-  if (place === undefined) return <PlacePicker title={title} onBack={onBack} onPick={setPlace} />;
+  if (place === undefined)
+    return (
+      <PlacePicker
+        title={title}
+        onBack={onBack}
+        onPick={(p, name) => {
+          setTyped(name ?? '');
+          setPlace(p);
+        }}
+      />
+    );
   return (
     <MenuForm
       title={title}
       limit={limit}
       place={place}
-      onBack={() => setPlace(undefined)}
+      initialMenu={initial?.menu ?? typed}
+      initialPrice={initial?.price}
+      onBack={() => (initial ? onBack() : setPlace(undefined))}
       onSubmit={(menu, price) => onSubmit(menu, price, place ?? undefined)}
     />
   );
@@ -324,7 +351,7 @@ function PlacePicker({
 }: {
   title: string;
   onBack: () => void;
-  onPick: (place: Place | null) => void;
+  onPick: (place: Place | null, typedName?: string) => void;
 }) {
   const { meals } = useBudget();
   const [query, setQuery] = useState('');
@@ -403,6 +430,9 @@ function PlacePicker({
         </div>
       )}
 
+      {q && !found.some((p) => p.name === q) && (
+        <GhostButton label={`'${q}' 가격 직접 입력해서 기록`} onPress={() => onPick(null, q)} />
+      )}
       <GhostButton label="지도에 없는 곳이에요" onPress={() => onPick(null)} />
 
       <div className={styles.actions}>
@@ -427,17 +457,21 @@ function MenuForm({
   title,
   limit,
   place,
+  initialMenu = '',
+  initialPrice,
   onBack,
   onSubmit,
 }: {
   title: string;
   limit?: number;
   place: Place | null;
+  initialMenu?: string;
+  initialPrice?: number;
   onBack: () => void;
   onSubmit: (menu: string, price: number) => void;
 }) {
-  const [menu, setMenu] = useState('');
-  const [digits, setDigits] = useState('');
+  const [menu, setMenu] = useState(initialMenu);
+  const [digits, setDigits] = useState(initialPrice ? String(initialPrice) : '');
   const price = Number(digits);
   const over = limit === undefined ? 0 : price - limit;
   const menus = place ? [...place.menus].sort((a, b) => a.price - b.price) : [];
@@ -495,6 +529,8 @@ function MenuForm({
           autoFocus={!place}
         />
       </label>
+
+      {place && <p className={styles.hint}>가격이 달라졌으면 고쳐서 기록하세요</p>}
 
       <label className={styles.field}>
         가격
