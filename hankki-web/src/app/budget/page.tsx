@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 
+import { InquiryDialog } from '@/components/inquiry-dialog';
 import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub, Title } from '@/components/ui';
 import { DEFAULT_AMOUNT, formatShort, won, type Period } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
+import { inquiryReady } from '@/lib/inquiry';
 import { useBudget } from '@/store/budget-store';
 import styles from './page.module.css';
 
@@ -16,6 +18,7 @@ export default function BudgetPage() {
   const toast = useToast();
   const [text, setText] = useState(won(settings.amount));
   const [editing, setEditing] = useState(false);
+  const [inquiring, setInquiring] = useState(false);
   const shown = editing ? text : won(settings.amount);
 
   const setPeriod = (period: Period) => {
@@ -137,6 +140,17 @@ export default function BudgetPage() {
       <div className={styles.center}>
         <GhostButton label="오늘부터 새 기간 시작" onPress={onNewPeriod} />
       </div>
+
+      {/* 스프레드시트 주소(lib/inquiry)가 연결되기 전에는 문의 버튼을 보여 주지 않는다 */}
+      {inquiryReady() && (
+        <>
+          <Sub style={{ textAlign: 'center' }}>불편한 점이나 바라는 점이 있나요?</Sub>
+          <div className={styles.center}>
+            <GhostButton label="문의하기" onPress={() => setInquiring(true)} />
+          </div>
+          {inquiring && <InquiryDialog onClose={() => setInquiring(false)} />}
+        </>
+      )}
     </Screen>
   );
 }
