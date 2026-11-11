@@ -20,11 +20,14 @@ export function PlaceItem({
   limit,
   menu: shownMenu,
   defaultOpen = false,
+  onEat,
 }: {
   place: Place;
   limit: number;
   menu?: Menu;
   defaultOpen?: boolean;
+  /** 주면 펼친 메뉴를 눌러 바로 먹은 것으로 기록할 수 있다 */
+  onEat?: (menu: Menu) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const menu = shownMenu ?? mainMenu(place);
@@ -97,17 +100,34 @@ export function PlaceItem({
             })}
             <span className={styles.rateHint}>4점 이상이면 지도 핀에 ★이 붙어요</span>
           </div>
-          {menus.map((m) => (
-            <div key={m.name} className={styles.menuRow}>
-              <span className={styles.menuRowName}>
-                {m.name === menu.name && !shownMenu && <span className={styles.mainBadge}>대표</span>}
-                {m.name}
-              </span>
-              <span className={styles.menuRowPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
-                {won(m.price)}원
-              </span>
-            </div>
-          ))}
+          {onEat && <p className={styles.rateHint}>먹은 메뉴를 누르면 가격을 확인하고 기록해요</p>}
+          {menus.map((m) => {
+            const row = (
+              <>
+                <span className={styles.menuRowName}>
+                  {m.name === menu.name && !shownMenu && <span className={styles.mainBadge}>대표</span>}
+                  {m.name}
+                </span>
+                <span className={styles.menuRowPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
+                  {won(m.price)}원
+                </span>
+              </>
+            );
+            return onEat ? (
+              <button
+                type="button"
+                key={m.name}
+                className={styles.menuRow}
+                style={{ width: '100%', background: 'none', border: 0, font: 'inherit', cursor: 'pointer', textAlign: 'left' }}
+                onClick={() => onEat(m)}>
+                {row}
+              </button>
+            ) : (
+              <div key={m.name} className={styles.menuRow}>
+                {row}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
