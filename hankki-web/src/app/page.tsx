@@ -157,6 +157,8 @@ export default function HomePage() {
                 </>
               )}
             </span>
+            {/* 한마디가 무엇이든 늘 아래에 작게 붙이는 문의 안내 */}
+            <span className={styles.bubbleNote}>문의를 통한 여러분의 의견은 저희에게 큰 힘이 됩니다.</span>
           </div>
         </div>
       )}
