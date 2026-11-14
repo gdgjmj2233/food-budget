@@ -122,6 +122,38 @@
   color: var(--line);
 }
 
+/* 내 별점 관리 / 완료 */
+.manageRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.manageBtn {
+  min-height: 32px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* 관리 중일 때 별 대신 나오는 삭제 버튼 */
+.removeBtn {
+  flex: none;
+  margin-left: auto;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  border: 1px solid #f3c4c8;
+  border-radius: 16px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--over);
+}
+
 .empty {
   padding: 16px 0 8px;
   font-size: 13px;

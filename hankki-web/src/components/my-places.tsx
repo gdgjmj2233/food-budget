@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { IoStar } from 'react-icons/io5';
+import { IoStar, IoTrashOutline } from 'react-icons/io5';
 
 import { PLACES } from '@/data/places';
 import { formatShort, fromDateKey, KIND_LABEL, won, type Meal } from '@/lib/budget';
+import { confirm } from '@/lib/confirm';
 import { cachedNearbyNames } from '@/lib/kakao-map';
 import { setRating, useRatings } from '@/store/rating-store';
 import { CAT_EMOJI } from '@/theme';
@@ -31,6 +32,8 @@ type Visit = { key: string; name: string; emoji: string; count: number; total: n
  */
 export function MyPlaces({ meals }: { meals: Meal[] }) {
   const [tab, setTab] = useState<Tab>('frequent');
+  // 내 별점 관리(삭제) 중인지
+  const [managing, setManaging] = useState(false);
   const ratings = useRatings();
 
   const frequent = useMemo(() => {
@@ -79,7 +82,10 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
               key={t.key}
               role="tab"
               aria-selected={tab === t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                setManaging(false);
+              }}
               className={`${styles.tab} ${tab === t.key ? styles.tabOn : ''}`}>
               {t.label}
             </button>
@@ -110,32 +116,51 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
           <p className={styles.empty}>아직 기록이 없어요. 먹은 걸 기록하면 자주 간 곳이 여기 쌓여요.</p>
         )
       ) : rated.length ? (
-        <ul className={styles.list}>
-          {rated.map((r) => (
-            <li key={r.id} className={`${styles.row} ${styles.rowWrap}`}>
-              <span className={styles.emoji} aria-hidden>
-                {r.emoji}
-              </span>
-              <span className={styles.body}>
-                <span className={`${styles.name} ${styles.nameWrap}`}>{r.name}</span>
-              </span>
-              {/* 눌러서 별점을 고친다. 같은 별을 다시 누르면 지워져서 목록에서 빠진다 (다른 별점 칸과 같은 동작) */}
-              <span className={styles.stars} role="group" aria-label={`${r.name} 내 별점 ${r.stars}점`}>
-                {[1, 2, 3, 4, 5].map((n) => (
+        <>
+          {/* 관리를 누르면 별 대신 삭제 버튼이 나와서 별점을 지울 수 있다 */}
+          <div className={styles.manageRow}>
+            <button type="button" className={styles.manageBtn} onClick={() => setManaging(!managing)} aria-pressed={managing}>
+              {managing ? '완료' : '관리'}
+            </button>
+          </div>
+          <ul className={styles.list}>
+            {rated.map((r) => (
+              <li key={r.id} className={`${styles.row} ${styles.rowWrap}`}>
+                <span className={styles.emoji} aria-hidden>
+                  {r.emoji}
+                </span>
+                <span className={styles.body}>
+                  <span className={`${styles.name} ${styles.nameWrap}`}>{r.name}</span>
+                </span>
+                {managing ? (
                   <button
                     type="button"
-                    key={n}
-                    onClick={() => setRating(r.id, n === r.stars ? 0 : n)}
-                    aria-label={n === r.stars ? `별점 ${n}점 지우기` : `별점 ${n}점으로 바꾸기`}
-                    aria-pressed={n <= r.stars}
-                    className={styles.starBtn}>
-                    <IoStar size={17} className={n <= r.stars ? styles.starOn : styles.starOff} aria-hidden />
+                    className={styles.removeBtn}
+                    onClick={() => confirm('별점 지우기', `${r.name} 별점을 지울까요?`, () => setRating(r.id, 0))}
+                    aria-label={`${r.name} 별점 지우기`}>
+                    <IoTrashOutline size={15} aria-hidden />
+                    삭제
                   </button>
-                ))}
-              </span>
-            </li>
-          ))}
-        </ul>
+                ) : (
+                  // 눌러서 별점을 고친다. 같은 별을 다시 누르면 지워져서 목록에서 빠진다 (다른 별점 칸과 같은 동작)
+                  <span className={styles.stars} role="group" aria-label={`${r.name} 내 별점 ${r.stars}점`}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        type="button"
+                        key={n}
+                        onClick={() => setRating(r.id, n === r.stars ? 0 : n)}
+                        aria-label={n === r.stars ? `별점 ${n}점 지우기` : `별점 ${n}점으로 바꾸기`}
+                        aria-pressed={n <= r.stars}
+                        className={styles.starBtn}>
+                        <IoStar size={17} className={n <= r.stars ? styles.starOn : styles.starOff} aria-hidden />
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
       ) : (
         <p className={styles.empty}>아직 별점을 준 식당이 없어요. 주변 식당 탭에서 식당을 눌러 별점을 남겨 보세요.</p>
       )}
