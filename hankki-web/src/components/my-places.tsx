@@ -32,7 +32,7 @@ type Visit = { key: string; name: string; emoji: string; count: number; total: n
  */
 export function MyPlaces({ meals }: { meals: Meal[] }) {
   const [tab, setTab] = useState<Tab>('frequent');
-  // 내 별점 관리(삭제) 중인지
+  // 내 별점 편집(삭제) 중인지
   const [managing, setManaging] = useState(false);
   const ratings = useRatings();
 
@@ -117,10 +117,10 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
         )
       ) : rated.length ? (
         <>
-          {/* 관리를 누르면 별 대신 삭제 버튼이 나와서 별점을 지울 수 있다 */}
+          {/* 편집을 누르면 별 대신 삭제 버튼이 나와서 별점을 지울 수 있다 */}
           <div className={styles.manageRow}>
             <button type="button" className={styles.manageBtn} onClick={() => setManaging(!managing)} aria-pressed={managing}>
-              {managing ? '완료' : '관리'}
+              {managing ? '완료' : '편집'}
             </button>
           </div>
           <ul className={styles.list}>
