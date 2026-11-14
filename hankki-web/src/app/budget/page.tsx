@@ -170,6 +170,43 @@ export default function BudgetPage() {
         </div>
       </Card>
 
+      <Card style={{ paddingTop: 6, paddingBottom: draft.lunchPct ? 14 : 6 }}>
+        <div className={styles.setRow}>
+          <span className={styles.setLabel}>점심·저녁 나눠서 관리</span>
+          <button
+            type="button"
+            onClick={() => edit({ lunchPct: draft.lunchPct ? undefined : 50 })}
+            role="switch"
+            aria-checked={!!draft.lunchPct}
+            aria-label="점심 저녁 나누기"
+            className={`${styles.tog} ${draft.lunchPct ? styles.togOn : ''}`}>
+            <span className={styles.knob} />
+          </button>
+        </div>
+        {!!draft.lunchPct && (
+          <>
+            <p className={styles.splitNote}>하루 예산 중 점심 비율</p>
+            <div className={styles.seg} role="radiogroup" aria-label="점심 비율">
+              {[30, 40, 50, 60, 70].map((p) => (
+                <button
+                  type="button"
+                  key={p}
+                  role="radio"
+                  aria-checked={draft.lunchPct === p}
+                  onClick={() => edit({ lunchPct: p })}
+                  className={`${styles.segBtn} ${draft.lunchPct === p ? styles.segOn : ''}`}>
+                  {p}%
+                </button>
+              ))}
+            </div>
+            <p className={styles.splitNote}>
+              하루 기준 점심 {won(Math.floor(((s.base * draft.lunchPct) / 100) / 100) * 100)}원 · 저녁{' '}
+              {won(s.base - Math.floor(((s.base * draft.lunchPct) / 100) / 100) * 100)}원. 점심에 더 쓰면 저녁 금액에서 빠져요. 15시 전에 기록한 건 점심, 그 뒤는 저녁으로 봐요.
+            </p>
+          </>
+        )}
+      </Card>
+
       <div className={styles.result}>
         <span className={styles.resultSmall}>
           {dirty ? '적용하면' : '자동 계산 결과'} · {formatShort(s.start)} ~ {formatShort(endDay)}
