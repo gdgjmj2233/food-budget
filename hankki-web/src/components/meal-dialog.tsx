@@ -31,15 +31,18 @@ const MAX_RESULTS = 4;
  * 밥먹기 창. 항목(아침·점심·저녁, 기타 > 야식·간식·음료·이외)을 고르고, 가게 이름과 가격을 적어서 기록한다.
  * 목록에 있는 식당을 고르면 메뉴를 눌러 담아 기록한다. 열 때마다 새로 그려서 입력값이 비어 있다.
  * limit 은 오늘 남은 금액이고, 예산 편성 요일이 아니라(예: 주말) 오늘 편성된 예산이 없는 날은 주지 않는다.
+ * onPast 를 주면 기록하기 옆에 "지난 날 기록" 버튼이 생긴다 (누르면 지난 날 기록 창으로 바꿔 연다).
  */
 export function MealDialog({
   limit,
   onClose,
   onSubmit,
+  onPast,
 }: {
   limit?: number;
   onClose: () => void;
   onSubmit: (menu: string, price: number, place: Place | undefined, kind: MealKind) => void;
+  onPast?: () => void;
 }) {
   const { settings } = useBudget();
   // 처음에는 지금 시각에 맞는 항목을 골라 둔다
@@ -56,6 +59,7 @@ export function MealDialog({
         kind={kind}
         onKind={setKind}
         onClose={onClose}
+        alt={onPast && { label: '지난 날 기록', onPress: onPast }}
         onSubmit={(menu, price, place) => onSubmit(menu, price, place, kind)}
       />
     </Modal>
@@ -91,7 +95,7 @@ export function PastMealDialog({
           kind={kind}
           onKind={setKind}
           onClose={onClose}
-          onBack={() => setStep('date')}
+          alt={{ label: '날짜 바꾸기', onPress: () => setStep('date') }}
           onSubmit={(menu, price, place) => onSubmit(date, menu, price, place, kind)}
         />
       )}
@@ -206,7 +210,8 @@ function DatePicker({
 /**
  * 가게·가격을 적는 양식. 밥먹기 창과 지난 날 기록 창이 같이 쓴다.
  * 목록에 있는 식당을 고르면 메뉴를 눌러 추가하는 칸(EatHere)으로 바뀌고, 아니면 가게 이름과 가격만 적는다.
- * limit(오늘 남은 금액)을 주면 넘을 때 알려 주고, onBack 을 주면 "날짜 바꾸기" 버튼이 생긴다.
+ * limit(오늘 남은 금액)을 주면 넘을 때 알려 준다.
+ * alt 를 주면 기록하기 왼쪽에 보조 버튼이 생긴다 (밥먹기 창: "지난 날 기록", 지난 날 기록 창: "날짜 바꾸기").
  * 맨 위에서 항목(아침·점심·저녁, 기타 > 야식·간식·음료·이외)을 고른다. 기타를 고르면 금액만 적는다.
  */
 function DirectInput({
@@ -215,7 +220,7 @@ function DirectInput({
   kind,
   onKind,
   onClose,
-  onBack,
+  alt,
   onSubmit,
 }: {
   sub: string;
@@ -223,7 +228,7 @@ function DirectInput({
   kind: MealKind;
   onKind: (kind: MealKind) => void;
   onClose: () => void;
-  onBack?: () => void;
+  alt?: { label: string; onPress: () => void };
   onSubmit: (menu: string, price: number, place?: Place) => void;
 }) {
   const [name, setName] = useState('');
@@ -274,9 +279,9 @@ function DirectInput({
   );
   const actions = (
     <div className={styles.actions}>
-      {onBack && (
-        <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={onBack}>
-          날짜 바꾸기
+      {alt && (
+        <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={alt.onPress}>
+          {alt.label}
         </button>
       )}
       <button type="submit" className={ui.primary} style={{ backgroundColor: C.primary, flex: 1 }} disabled={price <= 0}>
@@ -323,8 +328,8 @@ function DirectInput({
           menus={menus}
           mainName={main.name}
           limit={limit}
-          onClose={onBack}
-          cancelLabel="날짜 바꾸기"
+          onClose={alt?.onPress}
+          cancelLabel={alt?.label}
           onSubmit={(m, p) => onSubmit(m, p, place)}
         />
       </div>

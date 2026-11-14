@@ -64,11 +64,27 @@
   color: var(--muted);
 }
 
-/* 항목 옆 날짜: 항목과 같은 크기, 색만 흐리게 */
-.day {
-  margin-left: 2px;
-  font-weight: 500;
-  color: var(--muted);
+/* 날짜 묶음: 날짜를 맨 앞에 쓰고 그 날 기록을 아래에 나눠 보여 준다. 묶음 사이에도 구분선 */
+.group {
+  border-top: 1px solid var(--divider);
+}
+
+.group:first-child {
+  border-top: none;
+}
+
+.dateHead {
+  margin: 0;
+  padding-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .when {
@@ -90,6 +106,8 @@
   color: var(--primary);
 }
 
+/* 연필(고치기)·휴지통(지우기) 버튼. 둘이 붙어 있어서 바깥 여백을 줄인다 */
+.edit,
 .remove {
   flex: none;
   display: flex;
@@ -97,9 +115,21 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin: 0 -8px 0 -6px;
   border-radius: 50%;
   color: #8790a0;
+}
+
+.edit {
+  margin: 0 -4px 0 -6px;
+}
+
+.remove {
+  margin: 0 -8px 0 -6px;
+}
+
+.edit:hover {
+  color: var(--primary);
+  background: var(--divider);
 }
 
 .remove:hover {
@@ -107,6 +137,7 @@
   background: var(--divider);
 }
 
+.edit:active,
 .remove:active {
   background: var(--line);
 }

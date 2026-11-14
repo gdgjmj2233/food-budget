@@ -9,6 +9,7 @@ import { LuSoup } from 'react-icons/lu';
 import { BudgetDetail } from '@/components/budget-detail';
 import { InquiryDialog } from '@/components/inquiry-dialog';
 import { MealDialog, PastMealDialog } from '@/components/meal-dialog';
+import { MealEdit } from '@/components/meal-edit';
 import { MissingDayCard } from '@/components/missing-day';
 import { ProfileDialog } from '@/components/profile-dialog';
 import { RecentMeals } from '@/components/recent-meals';
@@ -16,7 +17,7 @@ import { useToast } from '@/components/toast';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { formatDate, offDayName, periodThis, won, type Meal } from '@/lib/budget';
+import { addDays, formatDate, offDayName, periodThis, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
 import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
@@ -27,7 +28,7 @@ import { STATUS } from '@/theme';
 import styles from './page.module.css';
 
 export default function HomePage() {
-  const { summary: s, settings, meals, missing, removeMeal } = useBudget();
+  const { summary: s, settings, meals, missing, removeMeal, updateMeal } = useBudget();
   const profile = useProfile();
   const account = useAccount();
   const { eatCustom, fillDay } = useEat();
@@ -36,7 +37,10 @@ export default function HomePage() {
   const [detail, setDetail] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [feedback, setFeedback] = useState(false);
-  const [filling, setFilling] = useState(false);
+  // 지난 날 기록 창에서 처음 골라 둘 날짜. 열려 있지 않으면 null (어제 기록 카드나 밥먹기 창의 "지난 날 기록"으로 연다)
+  const [pastDate, setPastDate] = useState<string | null>(null);
+  // 최근 기록에서 연필을 눌러 고치는 중인 기록
+  const [editing, setEditing] = useState<Meal | null>(null);
   const askRef = useRef<HTMLDivElement>(null);
   const myCharacter = profile && characterOf(profile.character);
   const mascot = myCharacter ?? CHARACTERS[0];
@@ -56,6 +60,7 @@ export default function HomePage() {
   const onRemove = (m: Meal) => {
     confirm('기록 지우기', `${m.name} ${won(m.price)}원 기록을 지울까요?`, () => {
       removeMeal(m.id);
+      setEditing(null);
       toast(`${m.name} 기록을 지웠어요`);
     });
   };
@@ -101,7 +106,7 @@ export default function HomePage() {
 
       {missing ? (
         <div ref={askRef}>
-          <MissingDayCard missing={missing} onInput={() => setFilling(true)} />
+          <MissingDayCard missing={missing} onInput={() => setPastDate(missing.date)} />
         </div>
       ) : (
         // 정적 내보내기(GitHub Pages)에서도 되도록 unoptimized
@@ -190,8 +195,23 @@ export default function HomePage() {
         meals={meals}
         missing={missing}
         onFill={() => askRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+        onEdit={setEditing}
         onRemove={onRemove}
       />
+
+      {/* 기록 탭과 같은 기록 고치기 창 (금액·항목·가게·메뉴) */}
+      {editing && (
+        <MealEdit
+          meal={editing}
+          onClose={() => setEditing(null)}
+          onRemove={() => onRemove(editing)}
+          onSave={(patch) => {
+            updateMeal(editing.id, patch);
+            setEditing(null);
+            toast('기록을 고쳤어요');
+          }}
+        />
+      )}
 
       {eating && (
         <MealDialog
@@ -201,16 +221,21 @@ export default function HomePage() {
             eatCustom(menu, price, place, kind);
             setEating(false);
           }}
+          // 지난 날 기록: 밥먹기 창을 닫고 어제를 골라 둔 날짜 고르기부터 연다
+          onPast={() => {
+            setEating(false);
+            setPastDate(toDateKey(addDays(startOfDay(new Date()), -1)));
+          }}
         />
       )}
 
-      {filling && missing && (
+      {pastDate && (
         <PastMealDialog
-          initialDate={missing.date}
-          onClose={() => setFilling(false)}
+          initialDate={pastDate}
+          onClose={() => setPastDate(null)}
           onSubmit={(date, menu, price, place, kind) => {
             fillDay(date, menu, price, place, kind);
-            setFilling(false);
+            setPastDate(null);
           }}
         />
       )}
