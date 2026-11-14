@@ -167,3 +167,18 @@
   line-height: 1.4;
   color: var(--over);
 }
+
+/* 적용 안 한 변경이 있을 때 알리는 문구 */
+.pending {
+  margin-bottom: -6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* 되돌리기 · 적용 */
+.applyRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+}
