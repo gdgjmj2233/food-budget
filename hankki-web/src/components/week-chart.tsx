@@ -58,7 +58,14 @@ const showMonthLabel = (day: number, last: number) => day === 1 || day === last 
  * 날마다 쓴 금액을 막대로 보여준다. 위쪽 버튼으로 주간(오늘이 든 일~토)과 월간(이번 달 1일~말일)을 바꾼다.
  * 막대는 항목별로 색을 나눠 쌓고, 고른 날의 항목별 금액을 그래프 아래에 글자로 보여 준다.
  */
-export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) {
+export function WeekChart({
+  meals,
+  daily,
+}: {
+  meals: Meal[];
+  /** 점선으로 그릴 하루 기준 금액. 설정의 예산 ÷ 편성 일수라서 돈을 써도 바뀌지 않는다 */
+  daily: number;
+}) {
   const today = startOfDay(new Date());
   const [mode, setMode] = useState<Mode>('week');
 
@@ -86,7 +93,7 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
   const sum = days.reduce((s, d) => s + d.total, 0);
 
   // 눈금이 3칸 이하가 되는 가장 작은 간격을 고른다
-  const peak = Math.max(perDay, ...days.map((d) => d.total), 1000);
+  const peak = Math.max(daily,...days.map((d) => d.total), 1000);
   const step = STEPS.find((s) => peak / s <= 3) ?? STEPS[STEPS.length - 1];
   const top = Math.ceil(peak / step) * step;
   const ticks = Array.from({ length: top / step + 1 }, (_, i) => i * step);
@@ -122,10 +129,10 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
           {formatShort(start)} – {formatShort(addDays(start, count - 1))}
         </span>
       </p>
-      {perDay > 0 && (
+      {daily > 0 && (
         <p className={styles.key}>
           <span className={styles.keyLine} aria-hidden />
-          <span className={styles.keyText}>하루 권장 {won(perDay)}원</span>
+          <span className={styles.keyText}>하루 기준 {won(daily)}원</span>
         </p>
       )}
       {/* 막대 색 범례 */}
@@ -152,7 +159,7 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
           {ticks.map((t) => (
             <span key={t} className={styles.grid} style={{ bottom: pct(t) }} aria-hidden />
           ))}
-          {perDay > 0 && <span className={styles.ref} style={{ bottom: pct(perDay) }} aria-hidden />}
+          {daily > 0 && <span className={styles.ref} style={{ bottom: pct(daily) }} aria-hidden />}
 
           {days.map((d, i) => (
             <button

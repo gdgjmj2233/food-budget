@@ -9,7 +9,7 @@ import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { WeekChart } from '@/components/week-chart';
-import { formatDate, fromDateKey, KIND_LABEL, kindOf, menuOf, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
+import { formatDate, fromDateKey, KIND_LABEL, kindOf, menuOf, placeNameOf, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { useBudget } from '@/store/budget-store';
 import { C, KIND_COLORS, mealColor } from '@/theme';
@@ -169,8 +169,8 @@ export default function HistoryPage() {
                     <span className={styles.kind} style={{ backgroundColor: KIND_COLORS[kindOf(m)].bg, color: KIND_COLORS[kindOf(m)].fg }}>
                       {KIND_LABEL[kindOf(m)]}
                     </span>
-                    {/* 금액만 적은 기타 기록은 이름이 곧 항목이라 이름을 또 쓰지 않는다 */}
-                    {KIND_LABEL[kindOf(m)] !== m.name && ` ${m.name}`}
+                    {/* 가게 이름을 안 적은 기록(이름이 "식사"나 항목 이름)은 항목만 보여 준다 */}
+                    {placeNameOf(m) && ` ${placeNameOf(m)}`}
                   </span>
                   {menuOf(m) && <span className={styles.menu}>{menuOf(m)}</span>}
                 </div>
@@ -193,7 +193,7 @@ export default function HistoryPage() {
         </div>
       )}
 
-      <WeekChart meals={meals} perDay={s.perDay} />
+      <WeekChart meals={meals} daily={s.base} />
 
       <MyPlaces meals={meals} />
 

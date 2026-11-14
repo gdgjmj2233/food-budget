@@ -11,6 +11,7 @@ import {
   formatShort,
   fromDateKey,
   menuOf,
+  placeNameOf,
   startOfDay,
   toDateKey,
   won,
@@ -23,7 +24,6 @@ import ui from './ui.module.css';
 
 /** 보여줄 최근 기록 수 */
 const MAX_ROWS = 5;
-
 /** 오늘·어제는 말로, 그 전은 날짜로 */
 const dayName = (date: string) => {
   const today = startOfDay(new Date());
@@ -70,37 +70,35 @@ export function RecentMeals({
               </button>
             </li>
           )}
-          {recent.map((m) => (
-            <li key={m.id} className={styles.row}>
-              <span className={styles.body}>
-                <span className={styles.name}>
-                  {m.name}
-                  {menuOf(m) && ` · ${menuOf(m)}`}
+          {recent.map((m) => {
+            // 윗줄은 언제나 항목(아침·야식 …), 아랫줄은 언제나 날짜 + 가게(· 메뉴). 가게 이름을 안 적었으면 날짜만
+            const title = [placeNameOf(m), menuOf(m)].filter(Boolean).join(' · ');
+            const kind = kindOf(m);
+            return (
+              <li key={m.id} className={styles.row}>
+                <span className={styles.body}>
+                  <span className={styles.name} style={{ color: KIND_COLORS[kind].fg }}>
+                    {KIND_LABEL[kind]}
+                  </span>
+                  <span className={styles.when}>
+                    {dayName(m.date)}
+                    {title && ` ${title}`}
+                  </span>
                 </span>
-                <span className={styles.when}>
-                  {dayName(m.date)}
-                  {/* 금액만 적은 기타 기록은 이름이 곧 항목이라 또 쓰지 않는다 */}
-                  {KIND_LABEL[kindOf(m)] !== m.name && (
-                    <>
-                      {' '}
-                      <b style={{ color: KIND_COLORS[kindOf(m)].fg }}>{KIND_LABEL[kindOf(m)]}</b>
-                    </>
-                  )}
+                <span className={styles.price}>
+                  {m.price > 0 && '−'}
+                  {won(m.price)}원
                 </span>
-              </span>
-              <span className={styles.price}>
-                {m.price > 0 && '−'}
-                {won(m.price)}원
-              </span>
-              <button
-                type="button"
-                className={styles.remove}
-                onClick={() => onRemove(m)}
-                aria-label={`${m.name} ${won(m.price)}원 기록 지우기`}>
-                <IoTrashOutline size={16} aria-hidden />
-              </button>
-            </li>
-          ))}
+                <button
+                  type="button"
+                  className={styles.remove}
+                  onClick={() => onRemove(m)}
+                  aria-label={`${dayName(m.date)} ${KIND_LABEL[kind]}${title ? ` ${title}` : ''} ${won(m.price)}원 기록 지우기`}>
+                  <IoTrashOutline size={16} aria-hidden />
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
