@@ -70,7 +70,36 @@ export function kindOfTime(at: number): MealKind {
   return 'etc';
 }
 
-export const kindOf = (m: Pick<Meal, 'kind' | 'at'>): MealKind => m.kind ?? kindOfTime(m.at);
+/** 잠깐 한글 값(아침·점심 …)으로 저장하던 때가 있어서, 그 기록도 읽을 수 있게 바꿔 준다 */
+const KOREAN_KIND: Record<string, MealKind> = {
+  아침: 'breakfast',
+  점심: 'lunch',
+  저녁: 'dinner',
+  야식: 'latenight',
+  간식: 'snack',
+  음료: 'drink',
+  이외: 'other',
+  기타: 'etc',
+};
+
+/** 저장된 항목 값을 지금 쓰는 값으로. 한글 값은 바꿔 주고, 모르는 값이면 undefined (기록 시각으로 정하게) */
+export function normalizeKind(kind: unknown): MealKind | undefined {
+  if (typeof kind !== 'string') return undefined;
+  if (Object.hasOwn(KIND_LABEL, kind)) return kind as MealKind;
+  return KOREAN_KIND[kind];
+}
+
+/** 저장된 기록의 항목 값을 정리한다 (불러올 때 한 번). 모르는 값은 지워서 기록 시각으로 정하게 한다 */
+export function normalizeMeal(m: Meal): Meal {
+  const kind = normalizeKind(m.kind);
+  if (kind === m.kind) return m;
+  const next: Meal = { ...m };
+  if (kind) next.kind = kind;
+  else delete next.kind;
+  return next;
+}
+
+export const kindOf = (m: Pick<Meal, 'kind' | 'at'>): MealKind => normalizeKind(m.kind) ?? kindOfTime(m.at);
 
 /** 기록할 때 처음 골라 둘 항목: 시각 기준이고, 밤 9시 이후·새벽 5시 전은 기타 > 야식 */
 export const kindNow = (now: Date = new Date()): MealKind => {
@@ -93,7 +122,7 @@ export const slotOfKind = (kind?: MealKind): MealSlot | null =>
  * 끼니가 아니거나 고르지 않은 기록은 15시 전이면 점심, 그 뒤는 저녁으로 본다.
  */
 export const mealSlot = (m: Pick<Meal, 'at' | 'kind'>): MealSlot =>
-  slotOfKind(m.kind) ?? (new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner');
+  slotOfKind(normalizeKind(m.kind)) ?? (new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner');
 
 /** 지금 시각에 맞는 끼니 */
 export const currentSlot = (now: Date = new Date()): MealSlot => (now.getHours() < 15 ? 'lunch' : 'dinner');

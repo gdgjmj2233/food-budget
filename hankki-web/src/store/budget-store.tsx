@@ -10,6 +10,7 @@ import {
   DEFAULT_AMOUNT,
   findMissingDay,
   fromDateKey,
+  normalizeMeal,
   rollPeriod,
   toDateKey,
   type BudgetSummary,
@@ -75,7 +76,8 @@ function loadState(): State {
     return {
       // 지난번에 연 뒤로 기간이 끝났으면 같은 예산으로 다음 기간을 이어 간다
       settings: saved.settings ? rollPeriod(saved.settings) : fresh.settings,
-      meals: saved.meals ?? [],
+      // 예전 형식(한글 항목 값)으로 저장된 기록도 지금 형식으로 바꿔서 불러온다
+      meals: (saved.meals ?? []).map(normalizeMeal),
       lastDelta: null,
       dismissedDate: saved.dismissedDate ?? null,
     };
@@ -115,7 +117,12 @@ function reducer(state: State, action: Action): State {
     case 'dismissMissing':
       return { ...state, dismissedDate: action.date };
     case 'replaceData':
-      return { settings: rollPeriod(action.data.settings), meals: action.data.meals, dismissedDate: action.data.dismissedDate, lastDelta: null };
+      return {
+        settings: rollPeriod(action.data.settings),
+        meals: action.data.meals.map(normalizeMeal),
+        dismissedDate: action.data.dismissedDate,
+        lastDelta: null,
+      };
   }
 }
 
