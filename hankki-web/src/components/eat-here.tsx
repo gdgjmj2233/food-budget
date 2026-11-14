@@ -1,14 +1,57 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { IoAdd, IoRemove } from 'react-icons/io5';
 
 import type { Menu } from '@/data/places';
 import { useEat } from '@/hooks/use-eat';
-import { won } from '@/lib/budget';
-import { C } from '@/theme';
+import { useBudget } from '@/store/budget-store';
+import { EXTRA_KINDS, isExtraKind, KIND_LABEL, kindNow, MAIN_KINDS, won, type MealKind } from '@/lib/budget';
+import { C, KIND_COLORS } from '@/theme';
 import styles from './eat-here.module.css';
 import ui from './ui.module.css';
+
+/**
+ * 기록 항목 고르기. 첫 줄은 아침·점심·저녁·기타이고, 기타를 누르면 둘째 줄에서 야식·간식·음료·이외 중 하나를 고른다.
+ * 고른 칸은 기록 탭의 항목 표시와 같은 색(KIND_COLORS)으로 보여 준다.
+ * 밥먹기 창, 기록 고치기, 식당 카드의 "여기서 밥먹기", 학식 탭이 같이 쓴다.
+ */
+export function KindPicker({ value, onChange }: { value: MealKind; onChange: (kind: MealKind) => void }) {
+  const labelId = useId();
+  const extra = isExtraKind(value);
+  const chip = (key: string, label: string, color: MealKind, on: boolean, onPress: () => void, sub = false) => (
+    <button
+      type="button"
+      key={key}
+      role="radio"
+      aria-checked={on}
+      onClick={onPress}
+      className={`${sub ? styles.subKind : styles.kind} ${on ? styles.kindOn : ''}`}
+      style={on ? { borderColor: KIND_COLORS[color].fg, backgroundColor: KIND_COLORS[color].bg, color: KIND_COLORS[color].fg } : undefined}>
+      {label}
+    </button>
+  );
+  return (
+    <div className={styles.kindField}>
+      <span className={styles.kindLabel} id={labelId}>
+        항목
+      </span>
+      <div className={styles.kinds} role="radiogroup" aria-labelledby={labelId}>
+        {MAIN_KINDS.map((k) => chip(k, KIND_LABEL[k], k, k === value, () => onChange(k)))}
+        {/* 기타를 처음 누르면 둘째 줄 첫 항목(야식)을 골라 둔다 */}
+        {chip('extra', '기타', 'etc', extra, () => !extra && onChange(EXTRA_KINDS[0]))}
+      </div>
+      {extra && (
+        <div className={styles.subKinds} role="radiogroup" aria-label="기타 항목">
+          {EXTRA_KINDS.map((k) => chip(k, KIND_LABEL[k], k, k === value, () => onChange(k), true))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 지금 시각에 맞는 항목 (10시 반 전 아침, 15시 전 점심, 21시 전 저녁, 그 밖은 기타 > 야식) */
+export const defaultKind = (): MealKind => kindNow();
 
 /** 담은 메뉴 한 줄. 같은 이름·가격을 다시 담으면 개수만 늘어난다 */
 export type TrayItem = { name: string; price: number; count: number };
@@ -101,6 +144,7 @@ export function keepCardInView(card: HTMLElement | null) {
  * menus 가 비어 있으면(메뉴 정보가 없는 주변 음식점) 직접 입력만 보여 준다.
  * onSubmit 을 주면 직접 기록하지 않고 (메뉴 이름, 합계)를 넘긴다. 없으면 오늘 날짜로 바로 기록하고 onClose 를 부른다.
  * onClose 를 주면 왼쪽에 취소 버튼(cancelLabel)이 생긴다.
+ * pickKind 를 주면 맨 위에서 항목(아침·점심·저녁·기타)을 골라 같이 기록한다. 밥먹기 창처럼 바깥에서 항목을 고르면 주지 않는다.
  */
 export function EatHere({
   name,
@@ -111,6 +155,7 @@ export function EatHere({
   onClose,
   cancelLabel = '취소',
   onSubmit,
+  pickKind = false,
 }: {
   name: string;
   placeId?: string;
@@ -122,12 +167,16 @@ export function EatHere({
   onClose?: () => void;
   cancelLabel?: string;
   onSubmit?: (menu: string, price: number) => void;
+  pickKind?: boolean;
 }) {
   const { eatAt } = useEat();
+  const { restDay } = useBudget().summary;
   const { items, change, countOf, total } = useTray();
+  const [kind, setKind] = useState<MealKind>(defaultKind);
   const [digits, setDigits] = useState('');
   const customPrice = Number(digits);
-  const over = limit === undefined ? 0 : total - limit;
+  // 주말이라 오늘 편성된 예산이 없는 날은 "오늘 남은 금액보다 많아요"를 보여 주지 않는다
+  const over = limit === undefined || restDay ? 0 : total - limit;
 
   const addCustom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,11 +188,12 @@ export function EatHere({
   const submit = () => {
     if (!items.length) return;
     if (onSubmit) onSubmit(menuText(items), total);
-    else if (eatAt(name, menuText(items), total, placeId)) onClose?.();
+    else if (eatAt(name, menuText(items), total, placeId, pickKind ? kind : undefined)) onClose?.();
   };
 
   return (
     <div className={styles.panel}>
+      {pickKind && <KindPicker value={kind} onChange={setKind} />}
       {menus.length > 0 && (
         <>
           <p className={styles.label}>메뉴를 누르면 추가돼요</p>
@@ -161,7 +211,7 @@ export function EatHere({
                     {m.name === mainName && <span className={styles.mainBadge}>대표</span>}
                     {m.name}
                   </span>
-                  <span className={styles.menuPrice} style={{ color: limit === undefined || m.price <= limit ? C.ink : C.over }}>
+                  <span className={styles.menuPrice}>
                     {won(m.price)}원
                   </span>
                   <span className={styles.plus} aria-hidden>

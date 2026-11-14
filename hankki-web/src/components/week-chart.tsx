@@ -2,11 +2,45 @@
 
 import React, { useState } from 'react';
 
-import { addDays, DAY_NAMES, formatDate, formatShort, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
+import {
+  addDays,
+  DAY_NAMES,
+  formatDate,
+  formatShort,
+  KIND_LABEL,
+  kindOf,
+  MAIN_KINDS,
+  startOfDay,
+  toDateKey,
+  won,
+  type Meal,
+  type MealKind,
+} from '@/lib/budget';
 import ui from './ui.module.css';
 import styles from './week-chart.module.css';
 
 const STEPS = [1000, 2000, 5000, 10000, 20000, 50000, 100000];
+
+/**
+ * 막대를 쌓는 칸 = 기록 항목. 아래부터 아침·점심·저녁 → 야식·간식·음료·이외·기타 순서.
+ * 항목을 고르지 않은 예전 기록은 기록 탭과 같이 기록 시각으로 정한다 (kindOf).
+ * 아침·점심·저녁은 같은 색이고 사이에 얇은 줄(1px)만 두고, 기타 항목은 각각 다른 색에 2px 틈을 둔다.
+ */
+const SEG_ORDER: MealKind[] = ['breakfast', 'lunch', 'dinner', 'latenight', 'snack', 'drink', 'other', 'etc'];
+const isMealSeg = (k: MealKind) => MAIN_KINDS.includes(k);
+
+/**
+ * 색 (dataviz 기본 범주 순서 1~5를 그대로, 흰 카드 위에서 검사 통과). 끼니는 한 색으로 묶는다.
+ * 간식·음료·이외 색은 흰 바탕 대비가 3:1 아래라 범례와 아래 "그날 내역" 글자로 함께 알려 준다
+ */
+const GROUPS: { key: string; label: string; color: string; segs: readonly MealKind[] }[] = [
+  { key: 'meal', label: '식사 (아침·점심·저녁)', color: '#2a78d6', segs: MAIN_KINDS },
+  { key: 'latenight', label: '야식', color: '#eb6834', segs: ['latenight'] },
+  { key: 'snack', label: '간식', color: '#1baf7a', segs: ['snack'] },
+  { key: 'drink', label: '음료', color: '#eda100', segs: ['drink'] },
+  { key: 'other', label: '이외·기타', color: '#e87ba4', segs: ['other', 'etc'] },
+];
+const colorOf = (k: MealKind) => GROUPS.find((g) => g.segs.includes(k))!.color;
 
 type Mode = 'week' | 'month';
 const MODES: { key: Mode; label: string }[] = [
@@ -22,6 +56,7 @@ const showMonthLabel = (day: number, last: number) => day === 1 || day === last 
 
 /**
  * 날마다 쓴 금액을 막대로 보여준다. 위쪽 버튼으로 주간(오늘이 든 일~토)과 월간(이번 달 1일~말일)을 바꾼다.
+ * 막대는 항목별로 색을 나눠 쌓고, 고른 날의 항목별 금액을 그래프 아래에 글자로 보여 준다.
  */
 export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) {
   const today = startOfDay(new Date());
@@ -36,10 +71,18 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
   const days = Array.from({ length: count }, (_, i) => {
     const date = addDays(start, i);
     const key = toDateKey(date);
-    const total = meals.filter((m) => m.date === key).reduce((sum, m) => sum + m.price, 0);
+    const dayMeals = meals.filter((m) => m.date === key && m.price > 0);
+    const total = dayMeals.reduce((sum, m) => sum + m.price, 0);
+    // 항목별 합계 (0원인 칸은 빼고, 아래에서부터 쌓을 순서대로)
+    const segs = SEG_ORDER.map((seg) => ({
+      seg,
+      value: dayMeals.filter((m) => kindOf(m) === seg).reduce((sum, m) => sum + m.price, 0),
+    })).filter((s) => s.value > 0);
     const label = mode === 'week' ? DAY_NAMES[i] : showMonthLabel(i + 1, count) ? String(i + 1) : '';
-    return { key, date, total, label, future: i > todayIdx };
+    return { key, date, total, segs, label, future: i > todayIdx };
   });
+  const selDay = days[Math.min(selIdx, days.length - 1)];
+  const breakdown = (d: (typeof days)[number]) => d.segs.map((s) => `${KIND_LABEL[s.seg]} ${won(s.value)}원`).join(', ');
   const sum = days.reduce((s, d) => s + d.total, 0);
 
   // 눈금이 3칸 이하가 되는 가장 작은 간격을 고른다
@@ -85,6 +128,15 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
           <span className={styles.keyText}>하루 권장 {won(perDay)}원</span>
         </p>
       )}
+      {/* 막대 색 범례 */}
+      <ul className={styles.legend} aria-label="막대 색">
+        {GROUPS.map((g) => (
+          <li key={g.key} className={styles.legendItem}>
+            <span className={styles.swatch} style={{ backgroundColor: g.color }} aria-hidden />
+            {g.label}
+          </li>
+        ))}
+      </ul>
 
       <div className={styles.chart}>
         <div className={styles.yAxis} aria-hidden>
@@ -110,17 +162,33 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
               onPointerEnter={() => setSel(i)}
               onFocus={() => setSel(i)}
               onClick={() => setSel(i)}
-              aria-label={`${formatDate(d.date)} ${won(d.total)}원`}>
+              aria-label={`${formatDate(d.date)} ${won(d.total)}원${d.segs.length ? ` (${breakdown(d)})` : ''}`}>
               <span
-                className={`${styles.bar} ${mode === 'month' ? styles.barThin : ''} ${i === selIdx ? styles.barOn : ''}`}
+                className={`${styles.bar} ${mode === 'month' ? styles.barThin : ''}`}
                 style={{ height: d.total > 0 ? `max(${pct(d.total)}, 4px)` : 0 }}>
-                {i === selIdx && !d.future && (
-                  <span className={styles.value}>
-                    {mode === 'month' && `${d.date.getDate()}일 `}
-                    {won(d.total)}
-                  </span>
-                )}
+                {d.segs.map((s, j) => {
+                  // 바로 아래 칸과의 틈: 식사끼리는 얇은 줄 1px, 그 밖에는 2px
+                  const below = d.segs[j - 1];
+                  const gap = !below ? 0 : isMealSeg(s.seg) && isMealSeg(below.seg) ? 1 : 2;
+                  return (
+                    <span
+                      key={s.seg}
+                      className={styles.seg}
+                      style={{
+                        height: `${(s.value / d.total) * 100}%`,
+                        backgroundColor: colorOf(s.seg),
+                        borderBottom: gap ? `${gap}px solid var(--card)` : undefined,
+                      }}
+                    />
+                  );
+                })}
               </span>
+              {i === selIdx && !d.future && (
+                <span className={styles.value} style={{ bottom: `calc(max(${pct(d.total)}, ${d.total > 0 ? 4 : 0}px) + 4px)` }}>
+                  {mode === 'month' && `${d.date.getDate()}일 `}
+                  {won(d.total)}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -133,6 +201,23 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
           </span>
         ))}
       </div>
+
+      {/* 고른 날의 항목별 금액 (색만으로 구분하지 않도록 글자로도 보여 준다) */}
+      {selDay && !selDay.future && (
+        <p className={styles.detail}>
+          <span className={styles.detailDate}>{formatDate(selDay.date)}</span>
+          {selDay.segs.length ? (
+            selDay.segs.map((s) => (
+              <span key={s.seg} className={styles.detailItem}>
+                <span className={styles.swatch} style={{ backgroundColor: colorOf(s.seg) }} aria-hidden />
+                {KIND_LABEL[s.seg]} {won(s.value)}원
+              </span>
+            ))
+          ) : (
+            <span className={styles.detailItem}>기록 없음</span>
+          )}
+        </p>
+      )}
     </section>
   );
 }

@@ -15,6 +15,68 @@
   font-size: 14px;
 }
 
+/* 항목 고르기 (아침·점심·저녁·야식 …) */
+.kindField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kindLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kind {
+  min-width: 52px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: var(--card);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  touch-action: manipulation;
+}
+
+/* 고른 칸: 색은 항목마다 KIND_COLORS 로 컴포넌트에서 넣는다 */
+.kindOn {
+  border-width: 2px;
+  font-weight: 700;
+}
+
+/* 기타를 누르면 나오는 둘째 줄 (야식·간식·음료·이외) */
+.subKinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+}
+
+.subKind {
+  min-width: 52px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  touch-action: manipulation;
+}
+
+
 .panel {
   display: flex;
   flex-direction: column;

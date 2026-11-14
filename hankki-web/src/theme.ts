@@ -27,15 +27,22 @@ export const STATUS: Record<BudgetStatus, { label: string; bg: string; fg: strin
   over: { label: '초과', bg: C.over, fg: '#FFFFFF' },
 };
 
+/** 기타 묶음(야식·간식·음료·이외, 예전 기타) 색 */
+const ETC_COLOR = { bg: '#EFEBFA', fg: '#5B4B8A' };
+
 /**
- * 끼니 색. 하루 흐름대로 아침은 앱의 노란색, 점심은 청록, 저녁은 앱의 남색, 기타(야식·간식)는 보라.
- * fg 는 bg·흰 바탕 모두에서 글자가 잘 읽히는 진한 색(대비 4.5 이상)
+ * 끼니 색 (기록 탭·최근 기록의 항목 표시). 하루 흐름대로 아침은 앱의 노란색, 점심은 청록, 저녁은 앱의 남색,
+ * 기타로 묶인 야식·간식·음료·이외는 모두 보라. fg 는 bg·흰 바탕 모두에서 글자가 잘 읽히는 진한 색(대비 4.5 이상)
  */
 export const KIND_COLORS: Record<MealKind, { bg: string; fg: string }> = {
   breakfast: { bg: C.accentSoft, fg: '#8A5F00' },
   lunch: { bg: '#DDF4EF', fg: '#0F766E' },
   dinner: { bg: C.primarySoft, fg: C.primary },
-  etc: { bg: '#EFEBFA', fg: '#5B4B8A' },
+  latenight: ETC_COLOR,
+  snack: ETC_COLOR,
+  drink: ETC_COLOR,
+  other: ETC_COLOR,
+  etc: ETC_COLOR,
 };
 
 export const CAT_COLORS: Record<Category, { bg: string; fg: string }> = {

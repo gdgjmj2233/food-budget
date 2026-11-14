@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 
+import { KindPicker } from '@/components/eat-here';
 import { Modal } from '@/components/modal';
 import { GhostButton } from '@/components/ui';
-import { KIND_LABEL, kindOf, MEAL_KINDS, menuOf, won, type Meal, type MealKind } from '@/lib/budget';
-import { C, KIND_COLORS } from '@/theme';
+import { kindOf, menuOf, won, type Meal, type MealKind } from '@/lib/budget';
+import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
 import ui from './ui.module.css';
 
@@ -37,23 +38,8 @@ export function MealEdit({
       <form className={styles.body} onSubmit={submit}>
         <h2 className={styles.title}>기록 고치기</h2>
 
-        <div className={styles.field}>
-          끼니
-          <div className={styles.chips} role="radiogroup" aria-label="끼니">
-            {MEAL_KINDS.map((k) => (
-              <button
-                type="button"
-                key={k}
-                role="radio"
-                aria-checked={kind === k}
-                className={`${styles.chip} ${kind === k ? styles.chipOn : ''}`}
-                style={kind === k ? { borderColor: KIND_COLORS[k].fg, backgroundColor: KIND_COLORS[k].bg, color: KIND_COLORS[k].fg } : undefined}
-                onClick={() => setKind(k)}>
-                {KIND_LABEL[k]}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 밥먹기와 같은 항목 고르기 (아침·점심·저녁, 기타 > 야식·간식·음료·이외) */}
+        <KindPicker value={kind} onChange={setKind} />
 
         <label className={styles.field}>
           가게

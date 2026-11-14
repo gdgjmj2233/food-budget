@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { IoStar } from 'react-icons/io5';
 
 import { PLACES } from '@/data/places';
-import { formatShort, fromDateKey, won, type Meal } from '@/lib/budget';
+import { formatShort, fromDateKey, KIND_LABEL, won, type Meal } from '@/lib/budget';
 import { cachedNearbyNames } from '@/lib/kakao-map';
 import { setRating, useRatings } from '@/store/rating-store';
 import { CAT_EMOJI } from '@/theme';
@@ -36,7 +36,8 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
   const frequent = useMemo(() => {
     const byKey = new Map<string, Visit>();
     for (const m of meals) {
-      if (m.price <= 0) continue;
+      // 금액만 적은 기타 기록(이름이 곧 항목: 간식·음료·이외 …)은 가게가 아니라서 뺀다
+      if (m.price <= 0 || (m.kind && m.name === KIND_LABEL[m.kind])) continue;
       const place = (m.placeId && PLACE_BY_ID.get(m.placeId)) || PLACE_BY_NAME.get(m.name.replace(/\s/g, ''));
       const key = place ? place.id : `name:${m.name}`;
       const cur = byKey.get(key) ?? {
@@ -136,7 +137,7 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
           ))}
         </ul>
       ) : (
-        <p className={styles.empty}>아직 별점을 준 식당이 없어요. 추천 탭에서 식당을 눌러 별점을 남겨 보세요.</p>
+        <p className={styles.empty}>아직 별점을 준 식당이 없어요. 주변 식당 탭에서 식당을 눌러 별점을 남겨 보세요.</p>
       )}
     </section>
   );

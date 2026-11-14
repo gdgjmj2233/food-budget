@@ -26,6 +26,10 @@ export interface Delta {
   price: number;
   /** 기록한 뒤 오늘 남은 금액 */
   after: number;
+  /** 오늘이 예산이 편성되지 않은 주말이면 true (알림에 오늘 남은 금액 대신 남은 예산을 보여 준다) */
+  restDay: boolean;
+  /** 기록한 뒤 이번 기간 남은 예산 */
+  remain: number;
 }
 
 /** 기록에서 고칠 수 있는 내용 */
@@ -202,7 +206,7 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
     const when = at === undefined ? now : new Date(at);
     const meal: Meal = { id: newId(), ...fields, date: toDateKey(when), at: when.getTime() };
     const after = calcBudget(settings, [...state.meals, meal], now);
-    const delta: Delta = { name: meal.name, price: meal.price, after: after.todayLeft };
+    const delta: Delta = { name: meal.name, price: meal.price, after: after.todayLeft, restDay: after.restDay, remain: after.remain };
     dispatch({ type: 'addMeal', meal, delta });
     return delta;
   };

@@ -27,15 +27,38 @@ export interface Meal {
   date: string;
   /** 기록 시각 (ms) */
   at: number;
-  /** 아침·점심·저녁·기타. 기록할 때 고르고, 없으면 기록 시각으로 정한다 */
+  /** 아침·점심·저녁, 또는 기타(야식·간식·음료·이외). 기록할 때 고르고, 없으면 기록 시각으로 정한다 (kindOf) */
   kind?: MealKind;
 }
 
-export type MealKind = 'breakfast' | 'lunch' | 'dinner' | 'etc';
+/**
+ * 기록 항목. 첫 줄 끼니는 아침·점심·저녁이고, "기타"를 누르면 야식·간식·음료·이외 중에서 고른다.
+ * etc 는 하위 항목이 생기기 전의 "기타" 값이라 예전 기록 읽기용으로 남겨 둔다 (시각으로 정할 때 21시 이후도 etc)
+ */
+export type MealKind = 'breakfast' | 'lunch' | 'dinner' | 'latenight' | 'snack' | 'drink' | 'other' | 'etc';
 
-export const MEAL_KINDS: MealKind[] = ['breakfast', 'lunch', 'dinner', 'etc'];
+/** 항목 첫 줄: 끼니 */
+export const MAIN_KINDS: readonly MealKind[] = ['breakfast', 'lunch', 'dinner'];
 
-export const KIND_LABEL: Record<MealKind, string> = { breakfast: '아침', lunch: '점심', dinner: '저녁', etc: '기타' };
+/** "기타"를 누르면 나오는 둘째 줄. 이외는 야식·간식·음료 어디에도 안 맞는 지출 */
+export const EXTRA_KINDS: readonly MealKind[] = ['latenight', 'snack', 'drink', 'other'];
+
+/** 고를 수 있는 모든 항목 (첫 줄 + 기타의 둘째 줄) */
+export const MEAL_KINDS: MealKind[] = [...MAIN_KINDS, ...EXTRA_KINDS];
+
+export const KIND_LABEL: Record<MealKind, string> = {
+  breakfast: '아침',
+  lunch: '점심',
+  dinner: '저녁',
+  latenight: '야식',
+  snack: '간식',
+  drink: '음료',
+  other: '이외',
+  etc: '기타',
+};
+
+/** 기타로 묶인 항목인지 (야식·간식·음료·이외, 예전 "기타") */
+export const isExtraKind = (kind?: MealKind) => kind !== undefined && !MAIN_KINDS.includes(kind);
 
 /** 시각으로 정하는 끼니: 10시 반 전 아침, 15시 전 점심, 21시 전 저녁, 그 뒤는 기타(야식 등) */
 export function kindOfTime(at: number): MealKind {
@@ -49,17 +72,28 @@ export function kindOfTime(at: number): MealKind {
 
 export const kindOf = (m: Pick<Meal, 'kind' | 'at'>): MealKind => m.kind ?? kindOfTime(m.at);
 
+/** 기록할 때 처음 골라 둘 항목: 시각 기준이고, 밤 9시 이후·새벽 5시 전은 기타 > 야식 */
+export const kindNow = (now: Date = new Date()): MealKind => {
+  if (now.getHours() < 5) return 'latenight';
+  const k = kindOfTime(now.getTime());
+  return k === 'etc' ? 'latenight' : k;
+};
+
 export type MealSlot = 'lunch' | 'dinner';
 
 /**
- * 점심·저녁 나눔에서 어느 쪽 예산을 쓸지. 고른 끼니가 있으면 그걸 따르고(아침은 점심 쪽),
- * 기타나 고르지 않은 기록은 15시 전이면 점심, 그 뒤는 저녁으로 본다.
+ * 항목이 끼니면 점심·저녁 나눔에서 어느 쪽인지: 아침·점심은 점심 쪽, 저녁·야식은 저녁 쪽.
+ * 간식·음료·이외·기타처럼 끼니가 아니면 null
  */
-export function mealSlot(m: Pick<Meal, 'at' | 'kind'>): MealSlot {
-  if (m.kind === 'breakfast' || m.kind === 'lunch') return 'lunch';
-  if (m.kind === 'dinner') return 'dinner';
-  return new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner';
-}
+export const slotOfKind = (kind?: MealKind): MealSlot | null =>
+  kind === 'breakfast' || kind === 'lunch' ? 'lunch' : kind === 'dinner' || kind === 'latenight' ? 'dinner' : null;
+
+/**
+ * 점심·저녁 나눔에서 어느 쪽 예산을 쓸지. 고른 항목이 끼니면 그걸 따르고(slotOfKind),
+ * 끼니가 아니거나 고르지 않은 기록은 15시 전이면 점심, 그 뒤는 저녁으로 본다.
+ */
+export const mealSlot = (m: Pick<Meal, 'at' | 'kind'>): MealSlot =>
+  slotOfKind(m.kind) ?? (new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner');
 
 /** 지금 시각에 맞는 끼니 */
 export const currentSlot = (now: Date = new Date()): MealSlot => (now.getHours() < 15 ? 'lunch' : 'dinner');
@@ -85,8 +119,10 @@ export interface BudgetSummary {
   remain: number;
   /** 하루 권장 금액. 오늘 쓰기 전 예산으로 계산해서 오늘 안에서는 그대로다 */
   perDay: number;
-  /** 하루 권장 금액에서 오늘 쓴 만큼 뺀 금액 */
+  /** 하루 권장 금액에서 오늘 쓴 만큼 뺀 금액. restDay 면 남은 평일 하루 금액(화면에는 "-"로 보여 준다) */
   todayLeft: number;
+  /** "주말 제외하여 하루 예산 편성"이 켜져 있고 오늘이 주말이라 오늘 편성된 예산이 없는 날 */
+  restDay: boolean;
   /** 처음 설정 기준 하루 금액 */
   base: number;
   status: BudgetStatus;
@@ -212,7 +248,8 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const daysLeft = ended ? 0 : countDays(from, end, settings.skipWeekend);
 
   const spentToday = periodMeals.filter((m) => m.date === todayKey).reduce((sum, m) => sum + m.price, 0);
-  const todayCounts = !ended && today >= start && !(settings.skipWeekend && isWeekend(today));
+  const restDay = !ended && today >= start && settings.skipWeekend && isWeekend(today);
+  const todayCounts = !ended && today >= start && !restDay;
 
   // 남은 날이 없는데 기간은 남은 경우(예: 주말 제외 + 마지막 주말)는 남은 예산 전체를 쓸 수 있는 금액으로 본다.
   const leftover = ended ? 0 : Math.max(0, floor100(remain));
@@ -234,7 +271,7 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
 
   return {
     start, end, ended, totalDays, daysLeft,
-    spent, spentToday, remain, perDay, todayLeft, base, status, periodMeals, amount, split,
+    spent, spentToday, remain, perDay, todayLeft, restDay, base, status, periodMeals, amount, split,
   };
 }
 

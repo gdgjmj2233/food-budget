@@ -48,7 +48,7 @@ export function PlaceItem({
   const visits = useBudget().meals.filter((m) => m.placeId === place.id).length;
 
   return (
-    <div ref={cardRef} className={`${styles.card} ${fits || otherFits ? '' : styles.cardOver}`}>
+    <div ref={cardRef} className={styles.card}>
       <div className={styles.top}>
         <button
           type="button"
@@ -57,7 +57,7 @@ export function PlaceItem({
             setEating(false);
           }}
           aria-expanded={open}
-          aria-label={`${place.cat} ${place.name}, ${shownMenu ? '' : '대표 메뉴 '}${menu.name} ${won(menu.price)}원, ${fits ? '예산 안' : otherFits ? '예산 안 메뉴 있음' : '예산 초과'}. 눌러서 메뉴 보기`}
+          aria-label={`${place.cat} ${place.name}, ${shownMenu ? '' : '대표 메뉴 '}${menu.name} ${won(menu.price)}원${otherFits ? ', 예산 안 메뉴 있음' : ''}. 눌러서 메뉴 보기`}
           className={styles.head}>
           <span className={styles.icon} style={{ backgroundColor: cat.bg, color: cat.fg }} title={place.cat} aria-hidden>
             {CAT_EMOJI[place.cat]}
@@ -66,9 +66,10 @@ export function PlaceItem({
             <span className={styles.name}>{place.name}</span>
             <span className={styles.menuName}>
               {menu.name}
-              {!fits && (
-                <b className={styles.tag} style={otherFits ? { color: C.primary } : undefined}>
-                  {otherFits ? ' · 예산 안 메뉴 있음' : ` +${won(menu.price - limit)}원 초과`}
+              {/* 대표 메뉴는 비싸도 예산 안에서 먹을 수 있는 다른 메뉴가 있으면 알려 준다 (얼마 초과인지는 보여 주지 않는다) */}
+              {otherFits && (
+                <b className={styles.tag} style={{ color: C.primary }}>
+                  {' · 예산 안 메뉴 있음'}
                 </b>
               )}
             </span>
@@ -114,6 +115,7 @@ export function PlaceItem({
               mainName={shownMenu ? undefined : menu.name}
               limit={limit}
               onClose={closeEat}
+              pickKind
             />
           ) : (
             <>
@@ -123,7 +125,7 @@ export function PlaceItem({
                     {m.name === menu.name && !shownMenu && <span className={styles.mainBadge}>대표</span>}
                     {m.name}
                   </span>
-                  <span className={styles.menuRowPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
+                  <span className={styles.menuRowPrice}>
                     {won(m.price)}원
                   </span>
                 </div>

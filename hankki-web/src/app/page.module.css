@@ -86,6 +86,8 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 22px;
+  /* 좁은 화면에서도 낱말 가운데서 줄이 바뀌지 않게 */
+  word-break: keep-all;
 }
 
 /* 예산 카드. 누르면 자세히 보기가 열린다 */

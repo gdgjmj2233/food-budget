@@ -36,7 +36,8 @@ export function BudgetDetail({ onClose }: { onClose: () => void }) {
 
         <div className={styles.today}>
           <span className={styles.todayLabel}>오늘 남은 금액</span>
-          <span className={styles.todayVal}>{won(s.todayLeft)}원</span>
+          {/* 주말 제외로 오늘 편성된 예산이 없는 날은 "-" */}
+          <span className={styles.todayVal}>{s.restDay ? '-' : `${won(s.todayLeft)}원`}</span>
         </div>
 
         <dl className={styles.grid}>
@@ -50,7 +51,7 @@ export function BudgetDetail({ onClose }: { onClose: () => void }) {
 
         {lastDelta && (
           <p className={styles.delta}>
-            {`${lastDelta.name} ${won(lastDelta.price)}원 차감 → 오늘 남은 금액 ${won(lastDelta.after)}원`}
+            {`${lastDelta.name} ${won(lastDelta.price)}원 차감 → ${lastDelta.restDay ? `남은 예산 ${won(lastDelta.remain)}원` : `오늘 남은 금액 ${won(lastDelta.after)}원`}`}
           </p>
         )}
 

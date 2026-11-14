@@ -35,7 +35,7 @@ function monthGrid(year: number, month: number): Date[][] {
 }
 
 export default function HistoryPage() {
-  const { summary: s, meals, undo, clearPeriod, removeMeal, updateMeal } = useBudget();
+  const { summary: s, meals, clearPeriod, removeMeal, updateMeal } = useBudget();
   const toast = useToast();
 
   const today = startOfDay(new Date());
@@ -59,11 +59,6 @@ export default function HistoryPage() {
   const move = (n: number) => {
     const d = new Date(cursor.y, cursor.m + n, 1);
     setCursor({ y: d.getFullYear(), m: d.getMonth() });
-  };
-
-  const onUndo = () => {
-    const last = undo();
-    toast(last ? `${last.name} 기록을 취소했어요` : '되돌릴 기록이 없어요');
   };
 
   const onReset = () => {
@@ -96,7 +91,6 @@ export default function HistoryPage() {
             <IoChevronForward size={20} color={C.muted} aria-hidden />
           </button>
         </div>
-        <GhostButton label="되돌리기" onPress={onUndo} />
       </div>
 
       <div className={styles.summary}>
@@ -174,7 +168,9 @@ export default function HistoryPage() {
                   <span className={styles.name}>
                     <span className={styles.kind} style={{ backgroundColor: KIND_COLORS[kindOf(m)].bg, color: KIND_COLORS[kindOf(m)].fg }}>
                       {KIND_LABEL[kindOf(m)]}
-                    </span> {m.name}
+                    </span>
+                    {/* 금액만 적은 기타 기록은 이름이 곧 항목이라 이름을 또 쓰지 않는다 */}
+                    {KIND_LABEL[kindOf(m)] !== m.name && ` ${m.name}`}
                   </span>
                   {menuOf(m) && <span className={styles.menu}>{menuOf(m)}</span>}
                 </div>

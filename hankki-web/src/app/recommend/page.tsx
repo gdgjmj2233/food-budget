@@ -150,7 +150,10 @@ export default function RecommendPage() {
       <div className={styles.loc}>
         <IoLocationOutline size={20} color={C.primary} aria-hidden />
         <span className={styles.locText}>인하대 주변 {PLACES.length}곳</span>
-        <span className={styles.locLimit}>오늘 {won(s.todayLeft)}원 이하</span>
+        {/* 주말 제외로 오늘 편성된 예산이 없는 날은 남은 평일 하루 금액을 기준으로 거른다 */}
+        <span className={styles.locLimit}>
+          {s.restDay ? '평일 하루' : '오늘'} {won(s.todayLeft)}원 이하
+        </span>
       </div>
 
       <div className={styles.search}>

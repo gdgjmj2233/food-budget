@@ -38,9 +38,9 @@ src/
   app/                    화면 (폴더 하나 = 주소 하나)
     layout.tsx            공통 틀 (html, 메타데이터)
     page.tsx              홈 /           : 오늘 남은 금액, 오늘 쓴 금액, 최근 기록
-    recommend/page.tsx    추천 /recommend : 카테고리/위치/검색/정렬
+    recommend/page.tsx    주변 식당 /recommend : 카테고리/위치/검색/정렬
     cafeteria/page.tsx    학식 /cafeteria : 학생식당 요일별 메뉴·가격·운영 시간, 오늘 메뉴를 눌러 담고 한 번에 기록
-    history/page.tsx      기록 /history   : 월간 달력, 되돌리기
+    history/page.tsx      기록 /history   : 월간 달력, 날짜별 기록 고치기·지우기
     budget/page.tsx       예산 /budget    : 기간·금액·주말 제외
   components/
     app-shell.tsx         상태 저장소 + 토스트 + 하단 탭

@@ -1,30 +1,34 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import { useEat } from '@/hooks/use-eat';
-import { won } from '@/lib/budget';
+import { won, type MealKind } from '@/lib/budget';
 import { C } from '@/theme';
-import { menuText, TrayList, type Tray } from './eat-here';
+import { defaultKind, KindPicker, menuText, TrayList, type Tray } from './eat-here';
 import trayStyles from './eat-here.module.css';
 import styles from './cafeteria-tray.module.css';
 import ui from './ui.module.css';
 
 /**
  * 학식 탭의 "추가한 메뉴" 칸. 메뉴를 눌러 담으면 화면 아래에 붙어서 나타나고, 한 번에 (오늘 날짜로) 기록한다.
- * 식당 카드의 "여기서 밥먹기"와 같은 모양이고, 학식은 메뉴·가격이 정해져 있어서 직접 입력은 없다.
+ * 식당 카드의 "여기서 밥먹기"와 같은 모양이고, 항목(아침·점심·저녁·기타)을 골라 같이 기록한다.
+ * 학식은 메뉴·가격이 정해져 있어서 직접 입력은 없다.
  */
-export function CafeteriaTray({ name, tray, limit }: { name: string; tray: Tray; limit: number }) {
+export function CafeteriaTray({ name, tray, limit }: { name: string; tray: Tray; limit?: number }) {
   const { eatAt } = useEat();
+  const [kind, setKind] = useState<MealKind>(defaultKind);
   if (!tray.items.length) return null;
 
-  const over = tray.total - limit;
+  // limit 이 없으면(주말이라 오늘 편성된 예산이 없는 날) 초과 안내를 하지 않는다
+  const over = limit === undefined ? 0 : tray.total - limit;
   const submit = () => {
-    if (eatAt(name, menuText(tray.items), tray.total)) tray.clear();
+    if (eatAt(name, menuText(tray.items), tray.total, undefined, kind)) tray.clear();
   };
 
   return (
     <section className={styles.bar} aria-label="추가한 학식 메뉴">
+      <KindPicker value={kind} onChange={setKind} />
       <p className={trayStyles.label}>추가한 메뉴</p>
       <div className={styles.list}>
         <TrayList items={tray.items} onChange={tray.change} />

@@ -35,7 +35,7 @@ export function ExtraPlaceCard({ place, limit }: { place: ExtraPlace; limit: num
       </a>
       {eating ? (
         <div className={styles.eat}>
-          <EatHere name={place.name} placeId={place.id} menus={[]} limit={limit} onClose={closeEat} />
+          <EatHere name={place.name} placeId={place.id} menus={[]} limit={limit} onClose={closeEat} pickKind />
         </div>
       ) : (
         <EatHereButton soft onPress={() => setEating(true)} />

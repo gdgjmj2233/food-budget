@@ -78,8 +78,14 @@ export function RecentMeals({
                   {menuOf(m) && ` · ${menuOf(m)}`}
                 </span>
                 <span className={styles.when}>
-                  {dayName(m.date)}{' '}
-                  <b style={{ color: KIND_COLORS[kindOf(m)].fg }}>{KIND_LABEL[kindOf(m)]}</b>
+                  {dayName(m.date)}
+                  {/* 금액만 적은 기타 기록은 이름이 곧 항목이라 또 쓰지 않는다 */}
+                  {KIND_LABEL[kindOf(m)] !== m.name && (
+                    <>
+                      {' '}
+                      <b style={{ color: KIND_COLORS[kindOf(m)].fg }}>{KIND_LABEL[kindOf(m)]}</b>
+                    </>
+                  )}
                 </span>
               </span>
               <span className={styles.price}>

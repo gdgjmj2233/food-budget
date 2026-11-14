@@ -110,7 +110,16 @@ export default function HomePage() {
           <div className={styles.bubble}>
             <span className={styles.bubbleLabel}>오늘의 한마디</span>
             <span className={styles.bubbleText}>
-              {tip ? (
+              {/* 주말 제외가 켜진 주말: 오늘은 예산이 편성되지 않은 날이라고 먼저 알려 준다 */}
+              {s.restDay ? (
+                <>
+                  설정에서 주말은 빼고 하루 예산을 편성했어.
+                  <br />
+                  그래서 오늘은 편성된 예산이 없어.
+                  <br />
+                  주말에 쓰면 남은 예산에서 빠져.
+                </>
+              ) : tip ? (
                 <>
                   어제 {tip.menu} 먹었지?
                   <br />
@@ -160,7 +169,7 @@ export default function HomePage() {
           <span className={styles.stats}>
             <span className={styles.stat}>
               <span className={styles.statLabel}>오늘 남은 금액</span>
-              <span className={styles.statVal}>{won(s.todayLeft)}원</span>
+              <span className={styles.statVal}>{s.restDay ? '-' : `${won(s.todayLeft)}원`}</span>
             </span>
             <span className={styles.stat}>
               <span className={styles.statLabel}>오늘 쓴 금액</span>
@@ -200,7 +209,7 @@ export default function HomePage() {
 
       {eating && (
         <MealDialog
-          limit={s.todayLeft}
+          limit={s.restDay ? undefined : s.todayLeft}
           onClose={() => setEating(false)}
           onSubmit={(menu, price, place, kind) => {
             eatCustom(menu, price, place, kind);

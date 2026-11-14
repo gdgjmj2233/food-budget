@@ -36,17 +36,14 @@ const ITEM_SEP = ' · ';
  */
 function Corner({
   corner,
-  limit,
   countOf,
   onAdd,
 }: {
   corner: CafeteriaCorner;
-  limit: number;
   /** 이 가격으로 담은 개수 */
   countOf?: (price: number) => number;
   onAdd?: (price: number) => void;
 }) {
-  const over = corner.prices.length ? Math.min(...corner.prices) - limit : 0;
   const canAdd = onAdd && countOf && corner.prices.length > 0;
   const single = canAdd && corner.prices.length === 1 ? corner.prices[0] : undefined;
   const singleCount = single !== undefined ? countOf!(single) : 0;
@@ -54,13 +51,8 @@ function Corner({
   const body = (
     <>
       <span className={styles.cornerHead}>
-        <span className={styles.cornerName}>
-          {corner.name}
-          {over > 0 && <b className={styles.tag}> +{won(over)}원 초과</b>}
-        </span>
-        {corner.prices.length > 0 && (
-          <span className={`${styles.price} ${over > 0 ? styles.priceOver : ''}`}>{corner.prices.map((p) => won(p)).join('/')}원</span>
-        )}
+        <span className={styles.cornerName}>{corner.name}</span>
+        {corner.prices.length > 0 && <span className={styles.price}>{corner.prices.map((p) => won(p)).join('/')}원</span>}
         {single !== undefined && <AddBadge count={singleCount} />}
       </span>
       {corner.items.length > 0 && <span className={styles.items}>{corner.items.join(ITEM_SEP)}</span>}
@@ -141,7 +133,8 @@ export default function CafeteriaPage() {
 
       <div className={styles.today}>
         <span className={styles.todayLabel}>오늘 남은 금액</span>
-        <span className={styles.todayVal}>{won(s.todayLeft)}원</span>
+        {/* 주말 제외로 오늘 편성된 예산이 없는 날은 "-" */}
+        <span className={styles.todayVal}>{s.restDay ? '-' : `${won(s.todayLeft)}원`}</span>
       </div>
 
       {stale ? (
@@ -199,7 +192,6 @@ export default function CafeteriaPage() {
                 <Corner
                   key={c.name}
                   corner={c}
-                  limit={s.todayLeft}
                   countOf={(price) => tray.countOf({ name: c.name, price })}
                   onAdd={(price) => tray.change({ name: c.name, price }, 1)}
                 />
@@ -211,7 +203,7 @@ export default function CafeteriaPage() {
 
       <Sub style={{ textAlign: 'center' }}>메뉴·가격: 인하대학교 홈페이지 · {CAFETERIA.week} 기준 · 식당 사정으로 바뀔 수 있어요</Sub>
 
-      <CafeteriaTray name={CAFETERIA_NAME} tray={tray} limit={s.todayLeft} />
+      <CafeteriaTray name={CAFETERIA_NAME} tray={tray} limit={s.restDay ? undefined : s.todayLeft} />
     </Screen>
   );
 }
