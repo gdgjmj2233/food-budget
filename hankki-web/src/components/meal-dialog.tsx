@@ -7,14 +7,13 @@ import { EatHere, KindPicker } from '@/components/eat-here';
 import { Modal } from '@/components/modal';
 import { mainMenu, PLACES, type Place } from '@/data/places';
 import {
-  currentSlot,
   DAY_NAMES,
   formatDate,
   fromDateKey,
   isExtraKind,
   KIND_LABEL,
   kindNow,
-  slotOfKind,
+  offDayName,
   startOfDay,
   toDateKey,
   won,
@@ -31,7 +30,7 @@ const MAX_RESULTS = 4;
 /**
  * 밥먹기 창. 항목(아침·점심·저녁, 기타 > 야식·간식·음료·이외)을 고르고, 가게 이름과 가격을 적어서 기록한다.
  * 목록에 있는 식당을 고르면 메뉴를 눌러 담아 기록한다. 열 때마다 새로 그려서 입력값이 비어 있다.
- * limit 은 오늘 남은 금액이고, 주말이라 오늘 편성된 예산이 없는 날은 주지 않는다.
+ * limit 은 오늘 남은 금액이고, 예산 편성 요일이 아니라(예: 주말) 오늘 편성된 예산이 없는 날은 주지 않는다.
  */
 export function MealDialog({
   limit,
@@ -42,24 +41,18 @@ export function MealDialog({
   onClose: () => void;
   onSubmit: (menu: string, price: number, place: Place | undefined, kind: MealKind) => void;
 }) {
-  const { summary } = useBudget();
+  const { settings } = useBudget();
   // 처음에는 지금 시각에 맞는 항목을 골라 둔다
   const [kind, setKind] = useState<MealKind>(() => kindNow());
-  // 점심·저녁을 나눠 관리하면 그 끼니에 남은 금액을 기준으로 보여 주고 초과를 알려 준다.
-  // 끼니는 고른 항목(점심 / 저녁·야식)을 따르고, 음료·간식·기타는 지금 시각으로 정한다
-  const split = summary.split;
-  const slot = slotOfKind(kind) ?? currentSlot();
-  const slotLeft = split ? (slot === 'lunch' ? split.lunchLeft : split.dinnerLeft) : limit;
-  const sub = split
-    ? `${slot === 'lunch' ? '점심' : '저녁'} 남은 금액 ${won(Math.max(0, slotLeft ?? 0))}원`
-    : limit === undefined
-      ? '주말이라 오늘 편성된 예산은 없어요'
+  const sub =
+    limit === undefined
+      ? `${offDayName(settings, new Date())}이라 오늘 편성된 예산은 없어요`
       : `오늘 남은 금액 ${won(limit)}원`;
   return (
     <Modal sheet onClose={onClose}>
       <DirectInput
         sub={sub}
-        limit={slotLeft}
+        limit={limit}
         kind={kind}
         onKind={setKind}
         onClose={onClose}

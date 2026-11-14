@@ -7,14 +7,14 @@ export interface Settings {
   period: Period;
   /** 기간 전체 식비 예산 (원) */
   amount: number;
-  /** 주말을 예산 일수에서 제외할지 */
+  /** 주말을 예산 일수에서 제외할지. budgetDays 가 있으면 그걸 따르고, 이 값은 예전 버전과 맞추려고 같이 저장한다 */
   skipWeekend: boolean;
+  /** 하루 예산을 편성하는 요일 (0=일 … 6=토). 없으면 skipWeekend 로 정한다 (켜짐: 월~금, 꺼짐: 매일) */
+  budgetDays?: number[];
   /** 기간 시작일 YYYY-MM-DD */
   startDate: string;
   /** 직접 설정한 기간의 마지막 날 YYYY-MM-DD (이 날 포함) */
   endDate?: string;
-  /** 하루 예산에서 점심이 차지하는 비율(%). 없으면 점심·저녁을 나누지 않는다 */
-  lunchPct?: number;
 }
 
 export interface Meal {
@@ -109,27 +109,17 @@ export const kindNow = (now: Date = new Date()): MealKind => {
   return k === 'etc' ? 'latenight' : k;
 };
 
-export type MealSlot = 'lunch' | 'dinner';
-
-/**
- * 항목이 끼니면 점심·저녁 나눔에서 어느 쪽인지: 아침·점심은 점심 쪽, 저녁·야식은 저녁 쪽.
- * 간식·음료·이외·기타처럼 끼니가 아니면 null
- */
-export const slotOfKind = (kind?: MealKind): MealSlot | null =>
-  kind === 'breakfast' || kind === 'lunch' ? 'lunch' : kind === 'dinner' || kind === 'latenight' ? 'dinner' : null;
-
-/**
- * 점심·저녁 나눔에서 어느 쪽 예산을 쓸지. 고른 항목이 끼니면 그걸 따르고(slotOfKind),
- * 끼니가 아니거나 고르지 않은 기록은 15시 전이면 점심, 그 뒤는 저녁으로 본다.
- */
-export const mealSlot = (m: Pick<Meal, 'at' | 'kind'>): MealSlot =>
-  slotOfKind(normalizeKind(m.kind)) ?? (new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner');
-
-/** 지금 시각에 맞는 끼니 */
-export const currentSlot = (now: Date = new Date()): MealSlot => (now.getHours() < 15 ? 'lunch' : 'dinner');
-
 /** 기록의 메뉴. 예전 기록은 메뉴 칸에 '직접 입력'이 들어 있어서 빈 값으로 본다 */
 export const menuOf = (m: Meal) => (m.menu === '직접 입력' ? '' : m.menu);
+
+/**
+ * 가게 이름을 안 적고 기록하면 이름 칸에 대신 들어가는 값.
+ * 아침·점심·저녁은 "식사", 금액만 적는 기타(야식·간식 …)는 항목 이름이 들어간다 (예전 "기타" 포함)
+ */
+const NO_PLACE_NAMES = new Set(['식사', '기타', ...Object.values(KIND_LABEL)]);
+
+/** 화면에 보여 줄 가게 이름. 가게 이름을 안 적은 기록은 빈 값 */
+export const placeNameOf = (m: Meal) => (!m.placeId && NO_PLACE_NAMES.has(m.name.trim()) ? '' : m.name);
 
 export type BudgetStatus = 'ok' | 'low' | 'over';
 
@@ -151,7 +141,7 @@ export interface BudgetSummary {
   perDay: number;
   /** 하루 권장 금액에서 오늘 쓴 만큼 뺀 금액. restDay 면 남은 평일 하루 금액(화면에는 "-"로 보여 준다) */
   todayLeft: number;
-  /** "주말 제외하여 하루 예산 편성"이 켜져 있고 오늘이 주말이라 오늘 편성된 예산이 없는 날 */
+  /** 오늘이 예산 편성 요일이 아니라서(예: 주말) 오늘 편성된 예산이 없는 날 */
   restDay: boolean;
   /** 처음 설정 기준 하루 금액 */
   base: number;
@@ -159,17 +149,6 @@ export interface BudgetSummary {
   periodMeals: Meal[];
   /** 기간 전체 예산 */
   amount: number;
-  /** 점심·저녁 나눔을 켰고 오늘이 예산 일수에 들면 끼니별 금액, 아니면 null */
-  split: MealSplit | null;
-}
-
-export interface MealSplit {
-  lunchBudget: number;
-  dinnerBudget: number;
-  /** 점심에 더 쓸 수 있는 금액 (넘게 썼으면 음수) */
-  lunchLeft: number;
-  /** 저녁에 쓸 수 있는 금액. 점심에 예산을 넘게 쓴 만큼은 여기서 빠진다 (넘게 썼으면 음수) */
-  dinnerLeft: number;
 }
 
 /** 기록이 하나도 없는 날. at 은 그 날로 기록할 때 쓰는 시각(ms) */
@@ -200,7 +179,26 @@ export function addDays(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 }
 
-const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
+type DaySettings = Pick<Settings, 'skipWeekend' | 'budgetDays'>;
+
+/** 하루 예산을 편성하는 요일 (0=일 … 6=토, 작은 순). 고른 요일이 없으면 예전 주말 제외 설정을 따른다 */
+export function budgetDaysOf(s: DaySettings): number[] {
+  if (s.budgetDays?.length) return [...new Set(s.budgetDays)].filter((d) => d >= 0 && d <= 6).sort((a, b) => a - b);
+  return s.skipWeekend ? [1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6];
+}
+
+/** 이 날이 하루 예산을 편성하는 요일인지 */
+export const isBudgetDay = (s: DaySettings, d: Date) => budgetDaysOf(s).includes(d.getDay());
+
+/**
+ * 예산을 편성하지 않는 날의 이름 (안내 문구용). 토·일 둘 다 빠진 주말이면 "주말", 아니면 "수요일"처럼 요일.
+ * 예: "설정에서 주말은 빼고 …", "수요일이라 오늘 편성된 예산은 없어요"
+ */
+export function offDayName(s: DaySettings, d: Date): string {
+  const days = budgetDaysOf(s);
+  const weekend = d.getDay() === 0 || d.getDay() === 6;
+  return weekend && !days.includes(0) && !days.includes(6) ? '주말' : `${DAY_NAMES[d.getDay()]}요일`;
+}
 
 /** 기간 종료일(미포함). 주간은 7일, 월간은 다음 달 같은 날, 직접 설정은 고른 마지막 날의 다음 날. */
 export function periodEnd(settings: Pick<Settings, 'period' | 'startDate' | 'endDate'>): Date {
@@ -243,11 +241,12 @@ export function rollPeriod(settings: Settings, now: Date = new Date()): Settings
   return s;
 }
 
-/** from 이상 to 미만 날짜 수 (주말 제외 옵션) */
-export function countDays(from: Date, to: Date, skipWeekend: boolean): number {
+/** from 이상 to 미만 날짜 중 하루 예산을 편성하는 요일의 수 */
+export function countDays(from: Date, to: Date, s: DaySettings): number {
+  const days = budgetDaysOf(s);
   let n = 0;
   for (let d = startOfDay(from); d < to; d = addDays(d, 1)) {
-    if (!(skipWeekend && isWeekend(d))) n++;
+    if (days.includes(d.getDay())) n++;
   }
   return n;
 }
@@ -272,36 +271,27 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const amount = settings.amount;
   const remain = amount - spent;
 
-  const totalDays = Math.max(1, countDays(start, end, settings.skipWeekend));
+  const totalDays = Math.max(1, countDays(start, end, settings));
   const ended = today >= end;
   const from = today > start ? today : start;
-  const daysLeft = ended ? 0 : countDays(from, end, settings.skipWeekend);
+  const daysLeft = ended ? 0 : countDays(from, end, settings);
 
   const spentToday = periodMeals.filter((m) => m.date === todayKey).reduce((sum, m) => sum + m.price, 0);
-  const restDay = !ended && today >= start && settings.skipWeekend && isWeekend(today);
+  const restDay = !ended && today >= start && !isBudgetDay(settings, today);
   const todayCounts = !ended && today >= start && !restDay;
 
-  // 남은 날이 없는데 기간은 남은 경우(예: 주말 제외 + 마지막 주말)는 남은 예산 전체를 쓸 수 있는 금액으로 본다.
+  // 남은 날이 없는데 기간은 남은 경우(예: 편성 요일이 다 지나고 남은 주말)는 남은 예산 전체를 쓸 수 있는 금액으로 본다.
   const leftover = ended ? 0 : Math.max(0, floor100(remain));
   const budgetForDays = todayCounts ? remain + spentToday : remain;
   const perDay = daysLeft > 0 ? Math.max(0, floor100(budgetForDays / daysLeft)) : leftover;
   const todayLeft = todayCounts ? Math.max(0, perDay - spentToday) : perDay;
   const base = floor100(amount / totalDays);
-  let split: MealSplit | null = null;
-  if (todayCounts && settings.lunchPct) {
-    const lunchBudget = floor100((perDay * settings.lunchPct) / 100);
-    const dinnerBudget = perDay - lunchBudget;
-    const todayMeals = periodMeals.filter((m) => m.date === todayKey);
-    const spentLunch = todayMeals.filter((m) => mealSlot(m) === 'lunch').reduce((sum, m) => sum + m.price, 0);
-    const lunchLeft = lunchBudget - spentLunch;
-    split = { lunchBudget, dinnerBudget, lunchLeft, dinnerLeft: dinnerBudget - (spentToday - spentLunch) - Math.max(0, -lunchLeft) };
-  }
   // 초과 > 임박(남은 예산 30% 미만) > 여유
   const status: BudgetStatus = remain < 0 ? 'over' : remain < amount * LOW_RATIO ? 'low' : 'ok';
 
   return {
     start, end, ended, totalDays, daysLeft,
-    spent, spentToday, remain, perDay, todayLeft, restDay, base, status, periodMeals, amount, split,
+    spent, spentToday, remain, perDay, todayLeft, restDay, base, status, periodMeals, amount,
   };
 }
 
@@ -311,7 +301,7 @@ export function findMissingDay(settings: Settings, meals: Meal[], now: Date = ne
   const day = addDays(startOfDay(now), -1);
   const date = toDateKey(day);
   if (date < settings.startDate || day >= periodEnd(settings)) return null;
-  if (settings.skipWeekend && isWeekend(day)) return null;
+  if (!isBudgetDay(settings, day)) return null;
   if (meals.some((m) => m.date === date)) return null;
   return { date, at: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12).getTime() };
 }

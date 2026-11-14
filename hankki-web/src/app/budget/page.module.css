@@ -91,40 +91,6 @@
   font-weight: 700;
 }
 
-.setRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 60px;
-}
-
-.setLabel {
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.tog {
-  width: 52px;
-  height: 32px;
-  border-radius: 16px;
-  background: #d1d6db;
-  padding: 3px;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.togOn {
-  background: var(--primary);
-  justify-content: flex-end;
-}
-
-.knob {
-  width: 26px;
-  height: 26px;
-  border-radius: 13px;
-  background: #fff;
-}
-
 .result {
   background: var(--primary-soft);
   border-radius: 18px;
@@ -176,14 +142,42 @@
   color: var(--primary);
 }
 
+/* 예산 편성 요일 (일~토, 누르면 켜고 끈다) */
+.weekDays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekDay {
+  height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  touch-action: manipulation;
+}
+
+.weekDayOn {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+/* 마지막 남은 요일은 끌 수 없어서 흐리게 하지 않고 그대로 둔다 */
+.weekDay:disabled {
+  cursor: default;
+}
+
+.daysNote {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 /* 적용 버튼 (한 줄을 다 쓴다) */
 .applyRow {
   display: grid;
-}
-
-.splitNote {
-  margin-top: 10px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
 }

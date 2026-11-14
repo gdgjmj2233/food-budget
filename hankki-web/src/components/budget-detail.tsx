@@ -36,7 +36,7 @@ export function BudgetDetail({ onClose }: { onClose: () => void }) {
 
         <div className={styles.today}>
           <span className={styles.todayLabel}>오늘 남은 금액</span>
-          {/* 주말 제외로 오늘 편성된 예산이 없는 날은 "-" */}
+          {/* 예산 편성 요일이 아니라(예: 주말) 오늘 편성된 예산이 없는 날은 "-" */}
           <span className={styles.todayVal}>{s.restDay ? '-' : `${won(s.todayLeft)}원`}</span>
         </div>
 

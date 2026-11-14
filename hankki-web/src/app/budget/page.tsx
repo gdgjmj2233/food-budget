@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 
 import { useToast } from '@/components/toast';
-import { Card, GhostButton, Screen, Sub, Title } from '@/components/ui';
+import { GhostButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import {
   addDays,
+  budgetDaysOf,
   calcBudget,
+  DAY_NAMES,
   DEFAULT_AMOUNT,
   formatShort,
   fromDateKey,
@@ -60,9 +62,21 @@ export default function BudgetPage() {
   // 화면에서 바꾼 값. "적용"을 눌러야 저장되고, 그 전까지는 계산 결과만 미리 보여 준다
   const [edits, setEdits] = useState<Partial<Settings>>({});
   const draft: Settings = { ...settings, ...edits };
-  const dirty = (Object.keys(edits) as (keyof Settings)[]).some((k) => edits[k] !== settings[k]);
+  const draftDays = budgetDaysOf(draft);
+  // 요일은 고른 요일 목록으로 비교한다 (예전 주말 설정과 같은 요일을 고르면 바뀐 게 없는 것으로)
+  const sameDays = draftDays.join() === budgetDaysOf(settings).join();
+  const dirty = (Object.keys(edits) as (keyof Settings)[]).some((k) =>
+    k === 'budgetDays' || k === 'skipWeekend' ? !sameDays : edits[k] !== settings[k],
+  );
   const s = calcBudget(draft, meals);
   const edit = (patch: Partial<Settings>) => setEdits((prev) => ({ ...prev, ...patch }));
+
+  /** 요일을 켜고 끈다. 하나도 안 남게 끌 수는 없다. 예전 버전과 맞추려고 주말 제외 값도 같이 맞춘다 */
+  const toggleDay = (day: number) => {
+    const next = draftDays.includes(day) ? draftDays.filter((d) => d !== day) : [...draftDays, day].sort((a, b) => a - b);
+    if (!next.length) return;
+    edit({ budgetDays: next, skipWeekend: !next.includes(0) && !next.includes(6) });
+  };
 
   const setPeriod = (period: Period) => {
     if (period === draft.period) return;
@@ -155,57 +169,31 @@ export default function BudgetPage() {
         </p>
       )}
 
-      <Card style={{ paddingTop: 6, paddingBottom: 6 }}>
-        <div className={styles.setRow}>
-          <span className={styles.setLabel}>주말 제외하여 하루 예산 편성</span>
-          <button
-            type="button"
-            onClick={() => edit({ skipWeekend: !draft.skipWeekend })}
-            role="switch"
-            aria-checked={draft.skipWeekend}
-            aria-label="주말 제외하여 하루 예산 편성"
-            className={`${styles.tog} ${draft.skipWeekend ? styles.togOn : ''}`}>
-            <span className={styles.knob} />
-          </button>
+      <div className={styles.field}>
+        <span className={styles.label} id="days-label">
+          예산 편성 요일
+        </span>
+        <div className={styles.weekDays} role="group" aria-labelledby="days-label">
+          {DAY_NAMES.map((name, day) => {
+            const on = draftDays.includes(day);
+            return (
+              <button
+                type="button"
+                key={name}
+                onClick={() => toggleDay(day)}
+                aria-pressed={on}
+                aria-label={`${name}요일 ${on ? '편성 (누르면 빼기)' : '빼기 (누르면 편성)'}`}
+                disabled={on && draftDays.length === 1}
+                className={`${styles.weekDay} ${on ? styles.weekDayOn : ''}`}>
+                {name}
+              </button>
+            );
+          })}
         </div>
-      </Card>
-
-      <Card style={{ paddingTop: 6, paddingBottom: draft.lunchPct ? 14 : 6 }}>
-        <div className={styles.setRow}>
-          <span className={styles.setLabel}>점심·저녁 나눠서 관리</span>
-          <button
-            type="button"
-            onClick={() => edit({ lunchPct: draft.lunchPct ? undefined : 50 })}
-            role="switch"
-            aria-checked={!!draft.lunchPct}
-            aria-label="점심 저녁 나누기"
-            className={`${styles.tog} ${draft.lunchPct ? styles.togOn : ''}`}>
-            <span className={styles.knob} />
-          </button>
-        </div>
-        {!!draft.lunchPct && (
-          <>
-            <p className={styles.splitNote}>하루 예산 중 점심 비율</p>
-            <div className={styles.seg} role="radiogroup" aria-label="점심 비율">
-              {[30, 40, 50, 60, 70].map((p) => (
-                <button
-                  type="button"
-                  key={p}
-                  role="radio"
-                  aria-checked={draft.lunchPct === p}
-                  onClick={() => edit({ lunchPct: p })}
-                  className={`${styles.segBtn} ${draft.lunchPct === p ? styles.segOn : ''}`}>
-                  {p}%
-                </button>
-              ))}
-            </div>
-            <p className={styles.splitNote}>
-              하루 기준 점심 {won(Math.floor(((s.base * draft.lunchPct) / 100) / 100) * 100)}원 · 저녁{' '}
-              {won(s.base - Math.floor(((s.base * draft.lunchPct) / 100) / 100) * 100)}원. 점심에 더 쓰면 저녁 금액에서 빠져요. 15시 전에 기록한 건 점심, 그 뒤는 저녁으로 봐요.
-            </p>
-          </>
-        )}
-      </Card>
+        <p className={styles.daysNote}>
+          고른 요일에만 하루 예산을 나눠요. 빼 둔 요일에 쓴 돈은 남은 예산에서 빠져요.
+        </p>
+      </div>
 
       <div className={styles.result}>
         <span className={styles.resultSmall}>
