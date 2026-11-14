@@ -27,12 +27,14 @@ const MAX_ROWS = 5;
 
 /** 가게 이름이 없을 때 아랫줄 높이를 지키는 빈칸 (일반 공백은 줄 높이가 사라진다) */
 const NBSP = String.fromCharCode(0xa0);
-/** 오늘·어제는 말로, 그 전은 날짜로 */
+
+/** 날짜는 언제나 보여 주고, 오늘·어제면 앞에 말로도 붙인다 (예: 오늘 11/14, 어제 11/13, 11/12) */
 const dayName = (date: string) => {
   const today = startOfDay(new Date());
-  if (date === toDateKey(today)) return '오늘';
-  if (date === toDateKey(addDays(today, -1))) return '어제';
-  return formatShort(fromDateKey(date));
+  const short = formatShort(fromDateKey(date));
+  if (date === toDateKey(today)) return `오늘 ${short}`;
+  if (date === toDateKey(addDays(today, -1))) return `어제 ${short}`;
+  return short;
 };
 
 /** 최근 기록. 잘못 기록한 것을 바로 지울 수 있고, 어제 기록이 하나도 없으면 맨 위에 보여준다. */
