@@ -38,7 +38,7 @@ const GROUPS: { key: string; label: string; color: string; segs: readonly MealKi
   { key: 'latenight', label: '야식', color: '#eb6834', segs: ['latenight'] },
   { key: 'snack', label: '간식', color: '#1baf7a', segs: ['snack'] },
   { key: 'drink', label: '음료', color: '#eda100', segs: ['drink'] },
-  { key: 'other', label: '이외·기타', color: '#e87ba4', segs: ['other', 'etc'] },
+  { key: 'other', label: '이외', color: '#e87ba4', segs: ['other', 'etc'] },
 ];
 const colorOf = (k: MealKind) => GROUPS.find((g) => g.segs.includes(k))!.color;
 

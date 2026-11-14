@@ -54,7 +54,8 @@ export const KIND_LABEL: Record<MealKind, string> = {
   snack: '간식',
   drink: '음료',
   other: '이외',
-  etc: '기타',
+  // 하위 항목이 생기기 전의 "기타" 기록은 이외와 같은 것으로 보여 준다
+  etc: '이외',
 };
 
 /** 기타로 묶인 항목인지 (야식·간식·음료·이외, 예전 "기타") */
