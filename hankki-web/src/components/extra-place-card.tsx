@@ -23,7 +23,7 @@ export function ExtraPlaceCard({ place, limit }: { place: ExtraPlace; limit: num
     <div ref={cardRef} className={styles.card}>
       <div className={styles.name}>{place.name}</div>
       <div className={styles.meta}>
-        {place.cat ?? '음식점'} · {place.address}
+        {place.cat ?? place.kind ?? '음식점'} · {place.address}
       </div>
       <StarRating id={place.id} name={place.name} />
       <a

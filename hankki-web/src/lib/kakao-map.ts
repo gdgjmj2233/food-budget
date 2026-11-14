@@ -109,8 +109,34 @@ export interface ExtraPlace {
   name: string;
   address: string;
   cat: Category | null;
+  /** 앱 음식 종류에 없는 분류 (예: 카페). 카드에 cat 대신 보여 준다 */
+  kind?: string;
   lat: number;
   lng: number;
+}
+
+/**
+ * 카카오 음식점 검색(FD6)에 안 걸리는 곳(카페 등)이라 팀이 직접 넣은 메뉴 없는 가게.
+ * 좌표는 이름으로 먼저 찾고, 없으면 주소(도로명 + 번지까지)로 찾는다.
+ */
+const MANUAL_EXTRAS: Omit<ExtraPlace, 'lat' | 'lng'>[] = [
+  { id: 'manual:bluepot-seoho', name: '블루포트 인하대 서호관점', address: '인천 미추홀구 인하로 100 인하대 서호관 1층', cat: null, kind: '카페' },
+];
+
+/** "인천 미추홀구 인하로 100 인하대 서호관 1층" → "인천 미추홀구 인하로 100" (주소 검색은 번지까지만 알아듣는다) */
+const roadAddress = (address: string) => address.match(/^.*?\d+(?:-\d+)?/)?.[0] ?? address;
+
+async function locateManualExtras(): Promise<ExtraPlace[]> {
+  const cache = readCache();
+  const out: ExtraPlace[] = [];
+  for (const m of MANUAL_EXTRAS) {
+    const pos = cache[m.id] ?? (await searchByName(m.name)) ?? (await searchByAddress(roadAddress(m.address)));
+    if (!pos) continue;
+    cache[m.id] = pos;
+    out.push({ ...m, ...pos });
+  }
+  writeCache(cache);
+  return out;
 }
 
 // 카카오 분류("음식점 > 한식 > 육류,고기")를 앱 카테고리로 바꾼다. 모르면 null
@@ -165,7 +191,7 @@ function readNearbyCache(): ExtraPlace[] | null {
 export function cachedNearbyNames(): Record<string, string> {
   try {
     const saved = JSON.parse(localStorage.getItem(NEARBY_KEY) ?? 'null') as { items?: ExtraPlace[] } | null;
-    return Object.fromEntries((saved?.items ?? []).map((e) => [e.id, e.name]));
+    return Object.fromEntries([...(saved?.items ?? []), ...MANUAL_EXTRAS].map((e) => [e.id, e.name]));
   } catch {
     return {};
   }
@@ -216,10 +242,14 @@ export function findNearbyRestaurants(known: Place[]): Promise<ExtraPlace[]> {
       writeNearbyCache(all);
     }
     const names = known.map((p) => squash(p.name));
-    return all.filter((e) => {
-      const n = squash(e.name);
-      return !names.some((k) => n.includes(k) || k.includes(n));
-    });
+    const isKnown = (name: string) => {
+      const n = squash(name);
+      return names.some((k) => n.includes(k) || k.includes(n));
+    };
+    const found = all.filter((e) => !isKnown(e.name));
+    // 직접 넣은 가게는 카카오 검색 결과에 같은 이름이 이미 있으면 빼고 붙인다
+    const manual = (await locateManualExtras()).filter((m) => !isKnown(m.name) && !found.some((e) => squash(e.name) === squash(m.name)));
+    return [...found, ...manual];
   })().catch((e) => {
     nearby = null;
     throw e;
