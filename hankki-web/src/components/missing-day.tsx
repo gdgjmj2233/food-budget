@@ -19,12 +19,9 @@ export function MissingDayCard({ missing, onInput }: { missing: MissingDay; onIn
     <section className={styles.card} aria-labelledby="ask-title">
       <div className={styles.head}>
         <Image src={character.img} alt="" unoptimized className={styles.mascot} />
-        <div className={styles.headText}>
-          <span className={styles.notice}>어제 기록이 비어 있어요</span>
-          <h2 id="ask-title" className={styles.title}>
-            어제 뭐 먹었어?
-          </h2>
-        </div>
+        <h2 id="ask-title" className={styles.notice}>
+          어제 기록이 비어 있어요
+        </h2>
       </div>
 
       <div className={styles.choices}>
@@ -32,7 +29,7 @@ export function MissingDayCard({ missing, onInput }: { missing: MissingDay; onIn
           직접 입력
         </button>
         <button type="button" className={styles.choice} onClick={() => dismissMissing(missing.date)}>
-          안 먹었어
+          지출 없음
         </button>
       </div>
     </section>
