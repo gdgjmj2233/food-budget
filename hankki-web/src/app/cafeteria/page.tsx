@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { IoOpenOutline } from 'react-icons/io5';
+import { IoAdd, IoOpenOutline } from 'react-icons/io5';
 
+import { CafeteriaTray } from '@/components/cafeteria-tray';
+import { useTray } from '@/components/eat-here';
 import { Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { CAFETERIA, CAFETERIA_URL, MEALS, type CafeteriaCorner } from '@/data/cafeteria';
 import { DAY_NAMES, formatDate, formatShort, fromDateKey, toDateKey, won } from '@/lib/budget';
-import { confirm } from '@/lib/confirm';
-import { useEat } from '@/hooks/use-eat';
 import { useBudget } from '@/store/budget-store';
 import styles from './page.module.css';
 
@@ -18,21 +18,42 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** 날짜(YYYY-MM-DD) 두 개 사이의 일수. 뒤가 더 늦으면 양수 */
 const daysBetween = (from: string, to: string) => Math.round((fromDateKey(to).getTime() - fromDateKey(from).getTime()) / DAY_MS);
 
-/** 오늘 메뉴일 때만 "먹었어요" 버튼을 보여 준다. 다른 날 메뉴를 오늘 먹은 것으로 기록하는 실수를 막으려는 것 */
+/** 담은 개수 배지. 아직 안 담았으면 + */
+function AddBadge({ count }: { count: number }) {
+  return (
+    <span className={styles.plus} aria-hidden>
+      {count ? `×${count}` : <IoAdd size={16} />}
+    </span>
+  );
+}
+
+/** 메뉴 사이 구분점. 줄이 바뀌어도 구분점이 줄 맨 앞에 오지 않게 앞쪽은 줄바꿈 없는 공백으로 */
+const ITEM_SEP = ' · ';
+
+/**
+ * 학식 코너 하나. 오늘 메뉴일 때만 눌러서 담을 수 있다. 다른 날 메뉴를 오늘 먹은 것으로 기록하는 실수를 막으려는 것.
+ * 가격이 하나면 코너 전체를 누르고, 여러 개면 가격 버튼을 골라 누른다.
+ */
 function Corner({
   corner,
   limit,
-  onEat,
+  countOf,
+  onAdd,
 }: {
   corner: CafeteriaCorner;
   limit: number;
-  onEat?: (price: number) => void;
+  /** 이 가격으로 담은 개수 */
+  countOf?: (price: number) => number;
+  onAdd?: (price: number) => void;
 }) {
   const over = corner.prices.length ? Math.min(...corner.prices) - limit : 0;
+  const canAdd = onAdd && countOf && corner.prices.length > 0;
+  const single = canAdd && corner.prices.length === 1 ? corner.prices[0] : undefined;
+  const singleCount = single !== undefined ? countOf!(single) : 0;
 
-  return (
-    <li className={styles.corner}>
-      <div className={styles.cornerHead}>
+  const body = (
+    <>
+      <span className={styles.cornerHead}>
         <span className={styles.cornerName}>
           {corner.name}
           {over > 0 && <b className={styles.tag}> +{won(over)}원 초과</b>}
@@ -40,22 +61,46 @@ function Corner({
         {corner.prices.length > 0 && (
           <span className={`${styles.price} ${over > 0 ? styles.priceOver : ''}`}>{corner.prices.map((p) => won(p)).join('/')}원</span>
         )}
-      </div>
-      {/* 줄이 바뀌어도 구분점이 줄 맨 앞에 오지 않게 앞쪽은 줄바꿈 없는 공백으로 */}
-      {corner.items.length > 0 && <p className={styles.items}>{corner.items.join(' · ')}</p>}
-      {onEat && corner.prices.length > 0 && (
-        <div className={styles.eatRow}>
-          {corner.prices.map((p) => (
-            <button
-              type="button"
-              key={p}
-              onClick={() => onEat(p)}
-              aria-label={`${corner.name} ${won(p)}원 먹은 걸로 기록`}
-              className={styles.eatBtn}>
-              먹었어요 · {won(p)}원
-            </button>
-          ))}
-        </div>
+        {single !== undefined && <AddBadge count={singleCount} />}
+      </span>
+      {corner.items.length > 0 && <span className={styles.items}>{corner.items.join(ITEM_SEP)}</span>}
+    </>
+  );
+
+  if (single !== undefined) {
+    return (
+      <li className={styles.cornerTap}>
+        <button
+          type="button"
+          onClick={() => onAdd!(single)}
+          aria-label={`${corner.name} ${won(single)}원 추가${singleCount ? `, ${singleCount}개 담김` : ''}`}
+          className={`${styles.cornerBtn} ${singleCount ? styles.cornerBtnOn : ''}`}>
+          {body}
+        </button>
+      </li>
+    );
+  }
+
+  return (
+    <li className={canAdd ? `${styles.cornerTap} ${styles.cornerBox}` : styles.corner}>
+      {body}
+      {canAdd && (
+        <span className={styles.priceRow}>
+          {corner.prices.map((p) => {
+            const n = countOf!(p);
+            return (
+              <button
+                type="button"
+                key={p}
+                onClick={() => onAdd!(p)}
+                aria-label={`${corner.name} ${won(p)}원 추가${n ? `, ${n}개 담김` : ''}`}
+                className={`${styles.priceBtn} ${n ? styles.priceBtnOn : ''}`}>
+                {won(p)}원
+                <AddBadge count={n} />
+              </button>
+            );
+          })}
+        </span>
       )}
     </li>
   );
@@ -64,7 +109,7 @@ function Corner({
 /** 학생식당의 요일별 메뉴와 가격 */
 export default function CafeteriaPage() {
   const { summary: s } = useBudget();
-  const { eatAt } = useEat();
+  const tray = useTray();
   const todayKey = toDateKey(new Date());
   const hasToday = CAFETERIA.days.some((d) => d.date === todayKey);
   // 오늘 메뉴가 없으면 오늘과 가장 가까운 날(예: 주말에는 금요일)을 먼저 보여 준다
@@ -79,10 +124,7 @@ export default function CafeteriaPage() {
   const staleDays = daysBetween(lastDate, todayKey);
   const stale = staleDays > 2;
 
-  const onEat = (cornerName: string, price: number) =>
-    confirm('먹은 걸로 기록', `${CAFETERIA_NAME} ${cornerName} ${won(price)}원을 오늘 먹은 걸로 기록할까요?`, () =>
-      eatAt(CAFETERIA_NAME, cornerName, price),
-    );
+  const isToday = day.date === todayKey;
 
   return (
     <Screen>
@@ -128,6 +170,8 @@ export default function CafeteriaPage() {
         })}
       </div>
 
+      {isToday && <p className={styles.addTitle}>메뉴를 누르면 추가돼요</p>}
+
       {MEALS.map((meal) => {
         const corners = day.corners.filter((c) => c.meal === meal.key);
         if (!corners.length) return null;
@@ -142,13 +186,14 @@ export default function CafeteriaPage() {
               </h2>
               <span className={styles.hours}>{CAFETERIA.hours[meal.key]}</span>
             </div>
-            <ul className={styles.corners}>
+            <ul className={`${styles.corners} ${isToday ? styles.cornersTap : ''}`}>
               {corners.map((c) => (
                 <Corner
                   key={c.name}
                   corner={c}
                   limit={s.todayLeft}
-                  onEat={day.date === todayKey ? (price) => onEat(c.name, price) : undefined}
+                  countOf={isToday ? (price) => tray.countOf({ name: c.name, price }) : undefined}
+                  onAdd={isToday ? (price) => tray.change({ name: c.name, price }, 1) : undefined}
                 />
               ))}
             </ul>
@@ -157,6 +202,8 @@ export default function CafeteriaPage() {
       })}
 
       <Sub style={{ textAlign: 'center' }}>메뉴·가격: 인하대학교 홈페이지 · {CAFETERIA.week} 기준 · 식당 사정으로 바뀔 수 있어요</Sub>
+
+      <CafeteriaTray name={CAFETERIA_NAME} tray={tray} limit={s.todayLeft} />
     </Screen>
   );
 }

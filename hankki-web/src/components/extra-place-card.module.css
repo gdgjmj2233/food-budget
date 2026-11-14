@@ -23,3 +23,10 @@
   font-size: 12px;
   color: var(--primary);
 }
+
+/* "여기서 밥먹기"를 눌렀을 때 직접 입력 칸 */
+.eat {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--divider);
+}

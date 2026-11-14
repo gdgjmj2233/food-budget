@@ -39,15 +39,17 @@ src/
     layout.tsx            공통 틀 (html, 메타데이터)
     page.tsx              홈 /           : 오늘 남은 금액, 오늘 쓴 금액, 최근 기록
     recommend/page.tsx    추천 /recommend : 카테고리/위치/검색/정렬
-    cafeteria/page.tsx    학식 /cafeteria : 학생식당 요일별 메뉴·가격·운영 시간
+    cafeteria/page.tsx    학식 /cafeteria : 학생식당 요일별 메뉴·가격·운영 시간, 오늘 메뉴를 눌러 담고 한 번에 기록
     history/page.tsx      기록 /history   : 월간 달력, 되돌리기
     budget/page.tsx       예산 /budget    : 기간·금액·주말 제외
   components/
     app-shell.tsx         상태 저장소 + 토스트 + 하단 탭
-    place-item.tsx        식당 카드 (펼치면 메뉴 + 별점)
+    place-item.tsx        식당 카드 (펼치면 메뉴 + 별점 + 여기서 밥먹기)
+    eat-here.tsx          여기서 밥먹기: 메뉴 눌러 추가 + 직접 입력 → 한 번에 기록 (담기 상태 useTray 도 여기)
+    cafeteria-tray.tsx    학식 탭 아래에 뜨는 "추가한 메뉴" 바
     toast.tsx, ui.tsx     공용 UI
   store/budget-store.tsx  설정·기록 상태와 브라우저 저장
-  hooks/use-eat.ts        직접 입력 기록 + 알림
+  hooks/use-eat.ts        직접 입력·여기서 밥먹기 기록 + 알림
   lib/budget.ts           예산 계산 (순수 함수, UI와 분리)
   data/places.ts          식당 예시 데이터
   data/cafeteria-menu.json  학생식당 주간 메뉴 (scripts/update-cafeteria.mjs 가 만듦)
