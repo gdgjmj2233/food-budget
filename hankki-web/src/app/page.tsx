@@ -8,9 +8,8 @@ import { LuSoup } from 'react-icons/lu';
 
 import { BudgetDetail } from '@/components/budget-detail';
 import { InquiryDialog } from '@/components/inquiry-dialog';
-import { MealDialog, MealInput } from '@/components/meal-dialog';
+import { MealDialog, PastMealDialog } from '@/components/meal-dialog';
 import { MissingDayCard } from '@/components/missing-day';
-import { Modal } from '@/components/modal';
 import { ProfileDialog } from '@/components/profile-dialog';
 import { RecentMeals } from '@/components/recent-meals';
 import { useToast } from '@/components/toast';
@@ -31,7 +30,7 @@ export default function HomePage() {
   const { summary: s, settings, meals, missing, removeMeal } = useBudget();
   const profile = useProfile();
   const account = useAccount();
-  const { eatCustom, fillMissing } = useEat();
+  const { eatCustom, fillDay } = useEat();
   const toast = useToast();
   const [eating, setEating] = useState(false);
   const [detail, setDetail] = useState(false);
@@ -199,16 +198,14 @@ export default function HomePage() {
       )}
 
       {filling && missing && (
-        <Modal onClose={() => setFilling(false)}>
-          <MealInput
-            title="어제 먹은 것 직접 입력"
-            onBack={() => setFilling(false)}
-            onSubmit={(menu, price, place) => {
-              fillMissing(missing, menu, price, place);
-              setFilling(false);
-            }}
-          />
-        </Modal>
+        <PastMealDialog
+          initialDate={missing.date}
+          onClose={() => setFilling(false)}
+          onSubmit={(date, menu, price, place) => {
+            fillDay(date, menu, price, place);
+            setFilling(false);
+          }}
+        />
       )}
 
       {detail && <BudgetDetail onClose={() => setDetail(false)} />}

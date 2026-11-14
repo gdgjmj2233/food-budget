@@ -186,6 +186,118 @@
   margin-top: 4px;
 }
 
+/* 버튼이 하나뿐이면 한 줄을 다 쓴다 */
+.actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+/* 지난 날 기록: 날짜 고르는 달력 */
+.cal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calMonth {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.calNav {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: var(--ink);
+}
+
+.calNav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calDow {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.calDay {
+  position: relative;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  touch-action: manipulation;
+}
+
+.calDay:disabled {
+  color: var(--line-strong);
+  cursor: default;
+}
+
+.calFaded {
+  opacity: 0.4;
+}
+
+.calToday {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.calDayOn {
+  background: var(--primary);
+  color: #fff;
+  opacity: 1;
+}
+
+/* 기록이 있는 날 표시 */
+.calDot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-dark);
+}
+
+.calDay .calDot {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.calDayOn .calDot {
+  background: #fff;
+}
+
+.calLegend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* 내용이 창보다 길면 창 안에서 스크롤 */
 .scroll {
   overflow-y: auto;

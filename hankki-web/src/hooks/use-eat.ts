@@ -1,13 +1,21 @@
 import { useToast } from '@/components/toast';
 import type { Place } from '@/data/places';
-import { won, type MissingDay } from '@/lib/budget';
+import { addDays, formatDate, fromDateKey, toDateKey, won } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
 const ENDED = '예산 기간이 끝났어요. 예산 탭에서 새 기간을 시작하세요.';
 
 const change = (d: Delta) => `오늘 남은 금액 ${won(d.after)}원`;
 
-/** 직접 입력 + 식당 카드의 "여기서 밥먹기" + 어제 기록 채우기. 결과를 토스트로 알려준다. */
+/** 토스트에 쓰는 날짜 이름: 오늘·어제는 그대로, 나머지는 "11월 12일 (목)" */
+function dayLabel(date: string) {
+  const today = new Date();
+  if (date === toDateKey(today)) return '오늘';
+  if (date === toDateKey(addDays(today, -1))) return '어제';
+  return formatDate(fromDateKey(date));
+}
+
+/** 직접 입력 + 식당 카드의 "여기서 밥먹기" + 지난 날 기록 채우기. 결과를 토스트로 알려준다. */
 export function useEat() {
   const { record } = useBudget();
   const toast = useToast();
@@ -40,15 +48,18 @@ export function useEat() {
     return true;
   };
 
-  /** 어제 비어 있던 기록을 채운다 */
-  const fillMissing = (day: MissingDay, menu: string, price: number, place?: Place) => {
-    const delta = save(menu, price, place, day.at);
+  /** 고른 날(YYYY-MM-DD)에 먹은 것으로 기록한다. 어제 기록 카드의 "직접 입력"에서 쓴다 */
+  const fillDay = (date: string, menu: string, price: number, place?: Place) => {
+    const d = fromDateKey(date);
+    // 그 날 낮 12시에 먹은 것으로 남긴다
+    const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12).getTime();
+    const delta = save(menu, price, place, at);
     if (!delta) {
       toast(ENDED);
       return;
     }
-    toast(`어제 기록을 채웠어요 · ${change(delta)}`);
+    toast(`${dayLabel(date)} 기록을 채웠어요 · ${change(delta)}`);
   };
 
-  return { eatCustom, eatAt, fillMissing };
+  return { eatCustom, eatAt, fillDay };
 }
