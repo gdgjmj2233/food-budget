@@ -9,7 +9,7 @@ import { useToast } from '@/components/toast';
 import { Card, GhostButton, Screen, Sub } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { WeekChart } from '@/components/week-chart';
-import { formatDate, fromDateKey, menuOf, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
+import { formatDate, fromDateKey, KIND_LABEL, kindOf, menuOf, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { useBudget } from '@/store/budget-store';
 import { C, mealColor } from '@/theme';
@@ -171,7 +171,9 @@ export default function HistoryPage() {
               <div key={m.id} className={styles.row}>
                 <span className={styles.bar} style={{ backgroundColor: c.fg }} />
                 <div className={styles.rowBody}>
-                  <span className={styles.name}>{m.name}</span>
+                  <span className={styles.name}>
+                    <span className={styles.kind}>{KIND_LABEL[kindOf(m)]}</span> {m.name}
+                  </span>
                   {menuOf(m) && <span className={styles.menu}>{menuOf(m)}</span>}
                 </div>
                 <span className={styles.price}>

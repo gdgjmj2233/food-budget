@@ -27,12 +27,39 @@ export interface Meal {
   date: string;
   /** 기록 시각 (ms) */
   at: number;
+  /** 아침·점심·저녁·기타. 기록할 때 고르고, 없으면 기록 시각으로 정한다 */
+  kind?: MealKind;
 }
+
+export type MealKind = 'breakfast' | 'lunch' | 'dinner' | 'etc';
+
+export const MEAL_KINDS: MealKind[] = ['breakfast', 'lunch', 'dinner', 'etc'];
+
+export const KIND_LABEL: Record<MealKind, string> = { breakfast: '아침', lunch: '점심', dinner: '저녁', etc: '기타' };
+
+/** 시각으로 정하는 끼니: 10시 반 전 아침, 15시 전 점심, 21시 전 저녁, 그 뒤는 기타(야식 등) */
+export function kindOfTime(at: number): MealKind {
+  const d = new Date(at);
+  const minutes = d.getHours() * 60 + d.getMinutes();
+  if (minutes < 10 * 60 + 30) return 'breakfast';
+  if (minutes < 15 * 60) return 'lunch';
+  if (minutes < 21 * 60) return 'dinner';
+  return 'etc';
+}
+
+export const kindOf = (m: Pick<Meal, 'kind' | 'at'>): MealKind => m.kind ?? kindOfTime(m.at);
 
 export type MealSlot = 'lunch' | 'dinner';
 
-/** 15시 전에 먹은 건 점심, 그 뒤는 저녁으로 본다 (기록한 시각 기준) */
-export const mealSlot = (m: Pick<Meal, 'at'>): MealSlot => (new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner');
+/**
+ * 점심·저녁 나눔에서 어느 쪽 예산을 쓸지. 고른 끼니가 있으면 그걸 따르고(아침은 점심 쪽),
+ * 기타나 고르지 않은 기록은 15시 전이면 점심, 그 뒤는 저녁으로 본다.
+ */
+export function mealSlot(m: Pick<Meal, 'at' | 'kind'>): MealSlot {
+  if (m.kind === 'breakfast' || m.kind === 'lunch') return 'lunch';
+  if (m.kind === 'dinner') return 'dinner';
+  return new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner';
+}
 
 /** 지금 시각에 맞는 끼니 */
 export const currentSlot = (now: Date = new Date()): MealSlot => (now.getHours() < 15 ? 'lunch' : 'dinner');

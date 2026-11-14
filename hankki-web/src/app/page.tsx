@@ -202,8 +202,8 @@ export default function HomePage() {
         <MealDialog
           limit={s.todayLeft}
           onClose={() => setEating(false)}
-          onSubmit={(menu, price, place) => {
-            eatCustom(menu, price, place);
+          onSubmit={(menu, price, place, kind) => {
+            eatCustom(menu, price, place, kind);
             setEating(false);
           }}
         />
@@ -213,8 +213,8 @@ export default function HomePage() {
         <PastMealDialog
           initialDate={missing.date}
           onClose={() => setFilling(false)}
-          onSubmit={(date, menu, price, place) => {
-            fillDay(date, menu, price, place);
+          onSubmit={(date, menu, price, place, kind) => {
+            fillDay(date, menu, price, place, kind);
             setFilling(false);
           }}
         />

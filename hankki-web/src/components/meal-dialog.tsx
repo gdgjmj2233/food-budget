@@ -6,7 +6,7 @@ import { IoChevronBack, IoChevronForward, IoClose } from 'react-icons/io5';
 import { EatHere } from '@/components/eat-here';
 import { Modal } from '@/components/modal';
 import { mainMenu, PLACES, type Place } from '@/data/places';
-import { currentSlot, DAY_NAMES, formatDate, fromDateKey, startOfDay, toDateKey, won } from '@/lib/budget';
+import { currentSlot, DAY_NAMES, formatDate, fromDateKey, KIND_LABEL, kindOfTime, MEAL_KINDS, startOfDay, toDateKey, won, type MealKind } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
@@ -26,7 +26,7 @@ export function MealDialog({
 }: {
   limit: number;
   onClose: () => void;
-  onSubmit: (menu: string, price: number, place?: Place) => void;
+  onSubmit: (menu: string, price: number, place?: Place, kind?: MealKind) => void;
 }) {
   const { summary } = useBudget();
   // 점심·저녁을 나눠 관리하면 지금 끼니에 남은 금액을 기준으로 보여 주고 초과를 알려 준다
@@ -51,7 +51,7 @@ export function PastMealDialog({
 }: {
   initialDate: string;
   onClose: () => void;
-  onSubmit: (date: string, menu: string, price: number, place?: Place) => void;
+  onSubmit: (date: string, menu: string, price: number, place?: Place, kind?: MealKind) => void;
 }) {
   const [date, setDate] = useState(initialDate);
   const [step, setStep] = useState<'date' | 'form'>('date');
@@ -65,7 +65,8 @@ export function PastMealDialog({
           sub={`${formatDate(fromDateKey(date))}에 먹은 것`}
           onClose={onClose}
           onBack={() => setStep('date')}
-          onSubmit={(menu, price, place) => onSubmit(date, menu, price, place)}
+          defaultKind="lunch"
+          onSubmit={(menu, price, place, kind) => onSubmit(date, menu, price, place, kind)}
         />
       )}
     </Modal>
@@ -181,19 +182,42 @@ function DatePicker({
  * 목록에 있는 식당을 고르면 메뉴를 눌러 추가하는 칸(EatHere)으로 바뀌고, 아니면 메뉴·가격을 직접 적는다.
  * limit(오늘 남은 금액)을 주면 넘을 때 알려 주고, onBack 을 주면 "날짜 바꾸기" 버튼이 생긴다.
  */
+/** 아침·점심·저녁·기타 고르기. 처음엔 시각에 맞는 끼니가 골라져 있어서 대부분 그대로 두면 된다 */
+function KindPicker({ value, onChange }: { value: MealKind; onChange: (kind: MealKind) => void }) {
+  return (
+    <div className={styles.chips} role="radiogroup" aria-label="끼니">
+      {MEAL_KINDS.map((k) => (
+        <button
+          type="button"
+          key={k}
+          role="radio"
+          aria-checked={value === k}
+          className={`${styles.chip} ${value === k ? styles.chipOn : ''}`}
+          onClick={() => onChange(k)}>
+          {KIND_LABEL[k]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function DirectInput({
   sub,
   limit,
+  defaultKind,
   onClose,
   onBack,
   onSubmit,
 }: {
   sub: string;
   limit?: number;
+  /** 처음 골라 둘 끼니. 없으면 창을 연 시각에 맞는 끼니 */
+  defaultKind?: MealKind;
   onClose: () => void;
   onBack?: () => void;
-  onSubmit: (menu: string, price: number, place?: Place) => void;
+  onSubmit: (menu: string, price: number, place: Place | undefined, kind: MealKind) => void;
 }) {
+  const [kind, setKind] = useState<MealKind>(() => defaultKind ?? kindOfTime(Date.now()));
   const [name, setName] = useState('');
   const [place, setPlace] = useState<Place | null>(null);
   const [menu, setMenu] = useState('');
@@ -221,6 +245,7 @@ function DirectInput({
       </button>
     </div>
   );
+  const kindPicker = <KindPicker value={kind} onChange={setKind} />;
 
   // 목록에 있는 식당을 골랐으면: 식당 카드의 "여기서 밥먹기"처럼 메뉴를 눌러 추가하고 한 번에 기록한다
   if (place) {
@@ -229,6 +254,7 @@ function DirectInput({
     return (
       <div className={`${styles.body} ${styles.scroll}`}>
         {head}
+        {kindPicker}
         <div className={styles.pickedPlace}>
           <span className={styles.resultName}>{place.name}</span>
           <button type="button" className={styles.repick} onClick={() => pick(null)}>
@@ -244,7 +270,7 @@ function DirectInput({
           limit={limit}
           onClose={onBack}
           cancelLabel="날짜 바꾸기"
-          onSubmit={(m, p) => onSubmit(m, p, place)}
+          onSubmit={(m, p) => onSubmit(m, p, place, kind)}
         />
       </div>
     );
@@ -254,12 +280,13 @@ function DirectInput({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (price <= 0) return;
-    onSubmit([q, menu.trim()].filter(Boolean).join(' ') || '식사', price);
+    onSubmit([q, menu.trim()].filter(Boolean).join(' ') || '식사', price, undefined, kind);
   };
 
   return (
     <form className={`${styles.body} ${styles.scroll}`} onSubmit={submit}>
       {head}
+      {kindPicker}
 
       <label className={styles.field}>
         가게

@@ -5,6 +5,8 @@ import React from 'react';
 import { IoTrashOutline } from 'react-icons/io5';
 
 import {
+  KIND_LABEL,
+  kindOf,
   addDays,
   formatShort,
   fromDateKey,
@@ -74,7 +76,9 @@ export function RecentMeals({
                   {m.name}
                   {menuOf(m) && ` · ${menuOf(m)}`}
                 </span>
-                <span className={styles.when}>{dayName(m.date)}</span>
+                <span className={styles.when}>
+                  {dayName(m.date)} {KIND_LABEL[kindOf(m)]}
+                </span>
               </span>
               <span className={styles.price}>
                 {m.price > 0 && '−'}

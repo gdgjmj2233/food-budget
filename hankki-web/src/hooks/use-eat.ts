@@ -1,6 +1,6 @@
 import { useToast } from '@/components/toast';
 import type { Place } from '@/data/places';
-import { addDays, formatDate, fromDateKey, toDateKey, won } from '@/lib/budget';
+import { addDays, formatDate, fromDateKey, KIND_LABEL, toDateKey, won, type MealKind } from '@/lib/budget';
 import { useBudget, type Delta } from '@/store/budget-store';
 
 const ENDED = '예산 기간이 끝났어요. 예산 탭에서 새 기간을 시작하세요.';
@@ -21,17 +21,17 @@ export function useEat() {
   const toast = useToast();
 
   // 식당을 골랐으면 가게 이름·메뉴로, 안 골랐으면 적은 메뉴를 이름으로 남긴다
-  const save = (menu: string, price: number, place?: Place, at?: number) =>
-    place ? record(place.name, menu, price, { placeId: place.id, at }) : record(menu || '식사', '', price, { at });
+  const save = (menu: string, price: number, place?: Place, at?: number, kind?: MealKind) =>
+    place ? record(place.name, menu, price, { placeId: place.id, at, kind }) : record(menu || '식사', '', price, { at, kind });
 
   /** 먹은 것을 기록한다. place 는 지도에서 고른 식당 */
-  const eatCustom = (menu: string, price: number, place?: Place) => {
-    const delta = save(menu, price, place);
+  const eatCustom = (menu: string, price: number, place?: Place, kind?: MealKind) => {
+    const delta = save(menu, price, place, undefined, kind);
     if (!delta) {
       toast(ENDED);
       return;
     }
-    toast(`${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
+    toast(`${kind ? `${KIND_LABEL[kind]} · ` : ''}${delta.name} ${won(price)}원 차감 · ${change(delta)}`);
   };
 
   /**
@@ -49,16 +49,16 @@ export function useEat() {
   };
 
   /** 고른 날(YYYY-MM-DD)에 먹은 것으로 기록한다. 어제 기록 카드의 "직접 입력"에서 쓴다 */
-  const fillDay = (date: string, menu: string, price: number, place?: Place) => {
+  const fillDay = (date: string, menu: string, price: number, place?: Place, kind?: MealKind) => {
     const d = fromDateKey(date);
     // 그 날 낮 12시에 먹은 것으로 남긴다
     const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12).getTime();
-    const delta = save(menu, price, place, at);
+    const delta = save(menu, price, place, at, kind);
     if (!delta) {
       toast(ENDED);
       return;
     }
-    toast(`${dayLabel(date)} 기록을 채웠어요 · ${change(delta)}`);
+    toast(`${dayLabel(date)}${kind ? ` ${KIND_LABEL[kind]}` : ''} 기록을 채웠어요 · ${change(delta)}`);
   };
 
   return { eatCustom, eatAt, fillDay };

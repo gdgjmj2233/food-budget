@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 
 import { Modal } from '@/components/modal';
 import { GhostButton } from '@/components/ui';
-import { menuOf, won, type Meal } from '@/lib/budget';
+import { KIND_LABEL, kindOf, MEAL_KINDS, menuOf, won, type Meal, type MealKind } from '@/lib/budget';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
 import ui from './ui.module.css';
@@ -18,23 +18,41 @@ export function MealEdit({
 }: {
   meal: Meal;
   onClose: () => void;
-  onSave: (patch: Pick<Meal, 'name' | 'menu' | 'price'>) => void;
+  onSave: (patch: Pick<Meal, 'name' | 'menu' | 'price' | 'kind'>) => void;
   onRemove: () => void;
 }) {
   const [name, setName] = useState(meal.name);
   const [menu, setMenu] = useState(menuOf(meal));
   const [digits, setDigits] = useState(meal.price ? String(meal.price) : '');
   const price = Number(digits);
+  const [kind, setKind] = useState<MealKind>(kindOf(meal));
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) onSave({ name: name.trim(), menu: menu.trim(), price });
+    if (name.trim()) onSave({ name: name.trim(), menu: menu.trim(), price, kind });
   };
 
   return (
     <Modal onClose={onClose}>
       <form className={styles.body} onSubmit={submit}>
         <h2 className={styles.title}>기록 고치기</h2>
+
+        <div className={styles.field}>
+          끼니
+          <div className={styles.chips} role="radiogroup" aria-label="끼니">
+            {MEAL_KINDS.map((k) => (
+              <button
+                type="button"
+                key={k}
+                role="radio"
+                aria-checked={kind === k}
+                className={`${styles.chip} ${kind === k ? styles.chipOn : ''}`}
+                onClick={() => setKind(k)}>
+                {KIND_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <label className={styles.field}>
           가게

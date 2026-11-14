@@ -14,6 +14,7 @@ import {
   toDateKey,
   type BudgetSummary,
   type Meal,
+  type MealKind,
   type MissingDay,
   type Settings,
 } from '@/lib/budget';
@@ -28,7 +29,7 @@ export interface Delta {
 }
 
 /** 기록에서 고칠 수 있는 내용 */
-export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'>;
+export type MealPatch = Pick<Meal, 'name' | 'menu' | 'price'> & Partial<Pick<Meal, 'kind'>>;
 
 /** 계정에 저장했다가 불러오는 내용 */
 export type SavedData = Pick<State, 'settings' | 'meals' | 'dismissedDate'>;
@@ -125,7 +126,7 @@ interface BudgetContextValue {
   /** 기록이 하나도 없는 어제. 없거나 넘어가기로 했으면 null */
   missing: MissingDay | null;
   /** 먹은 것을 기록하고, 예산 변화를 돌려준다 */
-  record: (name: string, menu: string, price: number, extra?: { placeId?: string; at?: number }) => Delta | null;
+  record: (name: string, menu: string, price: number, extra?: { placeId?: string; at?: number; kind?: MealKind }) => Delta | null;
   /** 이 금액을 먹고 나면 오늘 남는 금액 */
   todayLeftAfter: (price: number) => number;
   dismissMissing: (date: string) => void;
@@ -192,7 +193,7 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
   }, [summary.ended, state.settings, state.meals, state.dismissedDate]);
 
   // 기록 하나를 남기고(at 이 없으면 지금), 오늘 남은 금액 변화를 돌려준다
-  const addMeal = ({ at, ...fields }: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'> & { at?: number }): Delta | null => {
+  const addMeal = ({ at, ...fields }: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price' | 'kind'> & { at?: number }): Delta | null => {
     const now = new Date();
     // 켜 둔 사이 기간이 끝났으면 먼저 다음 기간으로 넘기고 기록한다
     const settings = rollPeriod(state.settings, now);
