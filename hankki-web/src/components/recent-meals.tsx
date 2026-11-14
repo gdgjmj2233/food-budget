@@ -24,6 +24,9 @@ import ui from './ui.module.css';
 
 /** 보여줄 최근 기록 수 */
 const MAX_ROWS = 5;
+
+/** 가게 이름이 없을 때 아랫줄 높이를 지키는 빈칸 (일반 공백은 줄 높이가 사라진다) */
+const NBSP = String.fromCharCode(0xa0);
 /** 오늘·어제는 말로, 그 전은 날짜로 */
 const dayName = (date: string) => {
   const today = startOfDay(new Date());
@@ -71,19 +74,17 @@ export function RecentMeals({
             </li>
           )}
           {recent.map((m) => {
-            // 윗줄은 언제나 항목(아침·야식 …), 아랫줄은 언제나 날짜 + 가게(· 메뉴). 가게 이름을 안 적었으면 날짜만
+            // 윗줄은 항목(아침·야식 …)과 날짜를 같은 크기로, 아랫줄은 가게(· 메뉴). 가게 이름을 안 적었으면 아랫줄은 비워 둔다
             const title = [placeNameOf(m), menuOf(m)].filter(Boolean).join(' · ');
             const kind = kindOf(m);
             return (
               <li key={m.id} className={styles.row}>
                 <span className={styles.body}>
-                  <span className={styles.name} style={{ color: KIND_COLORS[kind].fg }}>
-                    {KIND_LABEL[kind]}
+                  <span className={styles.name}>
+                    <span style={{ color: KIND_COLORS[kind].fg }}>{KIND_LABEL[kind]}</span>{' '}
+                    <span className={styles.day}>{dayName(m.date)}</span>
                   </span>
-                  <span className={styles.when}>
-                    {dayName(m.date)}
-                    {title && ` ${title}`}
-                  </span>
+                  <span className={styles.when}>{title || NBSP}</span>
                 </span>
                 <span className={styles.price}>
                   {m.price > 0 && '−'}
