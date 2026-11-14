@@ -96,9 +96,11 @@ export function keepCardInView(card: HTMLElement | null) {
 }
 
 /**
- * 식당 카드 안에서 먹은 것을 기록하는 칸. 메뉴를 눌러 추가하고, 메뉴판에 없는 건 가격만 직접 입력해서 추가한 뒤 한 번에 기록한다.
+ * 먹은 것을 메뉴를 눌러 추가하고, 메뉴판에 없는 건 가격만 직접 입력해서 추가한 뒤 한 번에 기록하는 칸.
+ * 식당 카드의 "여기서 밥먹기"와 홈 밥먹기 창(식당을 고른 뒤)이 같이 쓴다.
  * menus 가 비어 있으면(메뉴 정보가 없는 주변 음식점) 직접 입력만 보여 준다.
- * 기록하거나 취소하면 onClose 를 부른다.
+ * onSubmit 을 주면 직접 기록하지 않고 (메뉴 이름, 합계)를 넘긴다. 없으면 오늘 날짜로 바로 기록하고 onClose 를 부른다.
+ * onClose 를 주면 왼쪽에 취소 버튼(cancelLabel)이 생긴다.
  */
 export function EatHere({
   name,
@@ -107,21 +109,25 @@ export function EatHere({
   mainName,
   limit,
   onClose,
+  cancelLabel = '취소',
+  onSubmit,
 }: {
   name: string;
   placeId?: string;
   menus: Menu[];
   /** 대표 메뉴 이름 ("대표" 표시용) */
   mainName?: string;
-  /** 오늘 남은 금액 */
-  limit: number;
-  onClose: () => void;
+  /** 오늘 남은 금액. 지난 날을 기록할 때는 주지 않는다 */
+  limit?: number;
+  onClose?: () => void;
+  cancelLabel?: string;
+  onSubmit?: (menu: string, price: number) => void;
 }) {
   const { eatAt } = useEat();
   const { items, change, countOf, total } = useTray();
   const [digits, setDigits] = useState('');
   const customPrice = Number(digits);
-  const over = total - limit;
+  const over = limit === undefined ? 0 : total - limit;
 
   const addCustom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +137,9 @@ export function EatHere({
   };
 
   const submit = () => {
-    if (items.length && eatAt(name, menuText(items), total, placeId)) onClose();
+    if (!items.length) return;
+    if (onSubmit) onSubmit(menuText(items), total);
+    else if (eatAt(name, menuText(items), total, placeId)) onClose?.();
   };
 
   return (
@@ -153,7 +161,7 @@ export function EatHere({
                     {m.name === mainName && <span className={styles.mainBadge}>대표</span>}
                     {m.name}
                   </span>
-                  <span className={styles.menuPrice} style={{ color: m.price <= limit ? C.ink : C.over }}>
+                  <span className={styles.menuPrice} style={{ color: limit === undefined || m.price <= limit ? C.ink : C.over }}>
                     {won(m.price)}원
                   </span>
                   <span className={styles.plus} aria-hidden>
@@ -203,9 +211,11 @@ export function EatHere({
       )}
 
       <div className={styles.actions}>
-        <button type="button" className={`${ui.primary} ${ui.secondary} ${styles.actionBtn}`} onClick={onClose}>
-          취소
-        </button>
+        {onClose && (
+          <button type="button" className={`${ui.primary} ${ui.secondary} ${styles.actionBtn}`} onClick={onClose}>
+            {cancelLabel}
+          </button>
+        )}
         <button
           type="button"
           className={`${ui.primary} ${styles.actionBtn}`}

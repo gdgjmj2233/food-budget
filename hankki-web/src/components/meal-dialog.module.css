@@ -186,6 +186,13 @@
   margin-top: 4px;
 }
 
+/* 식당을 고른 뒤 가격 안내 */
+.placeHint {
+  margin-top: -8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* 버튼이 하나뿐이면 한 줄을 다 쓴다 */
 .actions > :only-child {
   grid-column: 1 / -1;

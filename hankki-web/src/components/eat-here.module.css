@@ -277,6 +277,11 @@
   gap: 8px;
 }
 
+/* 취소 버튼이 없으면 기록하기가 한 줄을 다 쓴다 */
+.actions > :only-child {
+  grid-column: 1 / -1;
+}
+
 .actionBtn {
   height: 48px;
   font-size: 15px;

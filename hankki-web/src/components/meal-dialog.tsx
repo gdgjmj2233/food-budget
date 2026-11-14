@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { IoChevronBack, IoChevronForward, IoClose } from 'react-icons/io5';
 
+import { EatHere } from '@/components/eat-here';
 import { Modal } from '@/components/modal';
-import { PLACES, type Place } from '@/data/places';
+import { mainMenu, PLACES, type Place } from '@/data/places';
 import { DAY_NAMES, formatDate, fromDateKey, startOfDay, toDateKey, won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { C } from '@/theme';
@@ -172,7 +173,8 @@ function DatePicker({
 
 /**
  * 가게·메뉴·가격을 적는 양식. 밥먹기 창과 지난 날 기록 창이 같이 쓴다.
- * limit(오늘 남은 금액)을 주면 넘을 때 알려 주고, onBack 을 주면 "뒤로" 버튼이 생긴다.
+ * 목록에 있는 식당을 고르면 메뉴를 눌러 추가하는 칸(EatHere)으로 바뀌고, 아니면 메뉴·가격을 직접 적는다.
+ * limit(오늘 남은 금액)을 주면 넘을 때 알려 주고, onBack 을 주면 "날짜 바꾸기" 버튼이 생긴다.
  */
 function DirectInput({
   sub,
@@ -194,8 +196,7 @@ function DirectInput({
   const price = Number(digits);
   const over = limit === undefined ? 0 : price - limit;
   const q = name.trim();
-  const suggestions = !place && q ? PLACES.filter((p) => p.name.includes(q)).slice(0, MAX_RESULTS) : [];
-  const menus = place ? [...place.menus].sort((a, b) => a.price - b.price) : [];
+  const suggestions = q ? PLACES.filter((p) => p.name.includes(q)).slice(0, MAX_RESULTS) : [];
 
   const pick = (p: Place | null) => {
     setPlace(p);
@@ -204,45 +205,68 @@ function DirectInput({
     setDigits('');
   };
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (price <= 0) return;
-    if (place) onSubmit(menu.trim(), price, place);
-    else onSubmit([q, menu.trim()].filter(Boolean).join(' ') || '식사', price);
-  };
-
-  return (
-    <form className={`${styles.body} ${styles.scroll}`} onSubmit={submit}>
-      <div className={styles.head}>
-        <div>
-          <h2 className={styles.title}>뭐 먹었어요?</h2>
-          <p className={styles.sub}>{sub}</p>
-        </div>
-        <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
-          <IoClose size={22} aria-hidden />
-        </button>
+  const head = (
+    <div className={styles.head}>
+      <div>
+        <h2 className={styles.title}>뭐 먹었어요?</h2>
+        <p className={styles.sub}>{sub}</p>
       </div>
+      <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
+        <IoClose size={22} aria-hidden />
+      </button>
+    </div>
+  );
 
-      {place ? (
+  // 목록에 있는 식당을 골랐으면: 식당 카드의 "여기서 밥먹기"처럼 메뉴를 눌러 추가하고 한 번에 기록한다
+  if (place) {
+    const main = mainMenu(place);
+    const menus = [main, ...place.menus.filter((m) => m.name !== main.name).sort((a, b) => a.price - b.price)];
+    return (
+      <div className={`${styles.body} ${styles.scroll}`}>
+        {head}
         <div className={styles.pickedPlace}>
           <span className={styles.resultName}>{place.name}</span>
           <button type="button" className={styles.repick} onClick={() => pick(null)}>
             다시 고르기
           </button>
         </div>
-      ) : (
-        <label className={styles.field}>
-          가게
-          <input
-            className={styles.input}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="식당 이름 (예: 신전떡볶이)"
-            maxLength={20}
-            autoFocus
-          />
-        </label>
-      )}
+        <p className={styles.placeHint}>목록 가격과 다르면 아래 직접 입력에 실제 가격을 넣어 주세요</p>
+        <EatHere
+          name={place.name}
+          placeId={place.id}
+          menus={menus}
+          mainName={main.name}
+          limit={limit}
+          onClose={onBack}
+          cancelLabel="날짜 바꾸기"
+          onSubmit={(m, p) => onSubmit(m, p, place)}
+        />
+      </div>
+    );
+  }
+
+  // 목록에 없는 곳: 가게 이름·메뉴·가격을 직접 적는다
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (price <= 0) return;
+    onSubmit([q, menu.trim()].filter(Boolean).join(' ') || '식사', price);
+  };
+
+  return (
+    <form className={`${styles.body} ${styles.scroll}`} onSubmit={submit}>
+      {head}
+
+      <label className={styles.field}>
+        가게
+        <input
+          className={styles.input}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="식당 이름 (예: 신전떡볶이)"
+          maxLength={20}
+          autoFocus
+        />
+      </label>
 
       {suggestions.length > 0 && (
         <div className={styles.chips} role="group" aria-label="이름이 맞는 식당">
@@ -251,27 +275,6 @@ function DirectInput({
               {p.name}
             </button>
           ))}
-        </div>
-      )}
-
-      {menus.length > 0 && (
-        <div className={styles.chips} role="group" aria-label={`${place?.name} 메뉴`}>
-          {menus.map((m) => {
-            const on = menu === m.name && price === m.price;
-            return (
-              <button
-                type="button"
-                key={m.name}
-                aria-pressed={on}
-                className={`${styles.chip} ${on ? styles.chipOn : ''}`}
-                onClick={() => {
-                  setMenu(m.name);
-                  setDigits(String(m.price));
-                }}>
-                {m.name} {won(m.price)}원
-              </button>
-            );
-          })}
         </div>
       )}
 
@@ -300,7 +303,6 @@ function DirectInput({
         </span>
       </label>
 
-      {place && <p className={styles.hint}>목록 가격은 바뀌었을 수 있어요. 다르면 고쳐서 기록하세요</p>}
       {price > 0 && over > 0 && (
         <p className={styles.hint} style={{ color: C.warn }}>
           오늘 남은 금액보다 {won(over)}원 많아요
