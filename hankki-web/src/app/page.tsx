@@ -16,7 +16,7 @@ import { useToast } from '@/components/toast';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { formatDate, periodThis, won, type Meal } from '@/lib/budget';
+import { formatDate, offDayName, periodThis, won, type Meal } from '@/lib/budget';
 import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
@@ -110,10 +110,10 @@ export default function HomePage() {
           <div className={styles.bubble}>
             <span className={styles.bubbleLabel}>오늘의 한마디</span>
             <span className={styles.bubbleText}>
-              {/* 주말 제외가 켜진 주말: 오늘은 예산이 편성되지 않은 날이라고 먼저 알려 준다 */}
+              {/* 예산 편성 요일이 아닌 날(예: 주말): 오늘은 예산이 편성되지 않은 날이라고 먼저 알려 준다 */}
               {s.restDay ? (
                 <>
-                  설정에서 주말은 빼고 하루 예산을 편성해서
+                  설정에서 {offDayName(settings, new Date())}은 빼고 하루 예산을 편성해서
                   <br />
                   오늘은 편성된 예산이 없어 !
                 </>
@@ -172,18 +172,6 @@ export default function HomePage() {
             <span className={styles.stat}>
               <span className={styles.statLabel}>오늘 쓴 금액</span>
               <span className={styles.statVal}>{won(s.spentToday)}원</span>
-            </span>
-          </span>
-        )}
-        {!missing && s.split && (
-          <span className={styles.stats}>
-            <span className={styles.stat}>
-              <span className={styles.statLabel}>점심 남은 금액</span>
-              <span className={styles.statVal}>{won(s.split.lunchLeft)}원</span>
-            </span>
-            <span className={styles.stat}>
-              <span className={styles.statLabel}>저녁 남은 금액</span>
-              <span className={styles.statVal}>{won(s.split.dinnerLeft)}원</span>
             </span>
           </span>
         )}
