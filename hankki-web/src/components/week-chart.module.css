@@ -30,8 +30,37 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
+/* 금액·기간 줄. 양옆에 지난 기간 / 다음 기간 화살표 */
+.period {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px -8px 0;
+}
+
+.arrow {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--ink);
+}
+
+.arrow:hover:not(:disabled) {
+  background: var(--divider);
+}
+
+.arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
 .total {
-  margin-top: 4px;
+  flex: 1;
+  min-width: 0;
   font-size: 22px;
   font-weight: 700;
 }

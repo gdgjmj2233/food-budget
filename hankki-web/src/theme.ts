@@ -1,5 +1,5 @@
-import type { BudgetStatus, Meal, MealKind } from '@/lib/budget';
-import { PLACES, type Category } from '@/data/places';
+import { kindOf, type BudgetStatus, type Meal, type MealKind } from '@/lib/budget';
+import type { Category } from '@/data/places';
 
 export const C = {
   ground: '#F3F6FB',
@@ -27,22 +27,25 @@ export const STATUS: Record<BudgetStatus, { label: string; bg: string; fg: strin
   over: { label: '초과', bg: C.over, fg: '#FFFFFF' },
 };
 
-/** 기타 묶음(야식·간식·음료·이외, 예전 기타) 색 */
-const ETC_COLOR = { bg: '#EFEBFA', fg: '#5B4B8A' };
-
 /**
- * 끼니 색 (기록 탭·최근 기록의 항목 표시). 하루 흐름대로 아침은 앱의 노란색, 점심은 청록, 저녁은 앱의 남색,
- * 기타로 묶인 야식·간식·음료·이외는 모두 보라. fg 는 bg·흰 바탕 모두에서 글자가 잘 읽히는 진한 색(대비 4.5 이상)
+ * 항목 색. 기록 탭 그래프 범례와 같은 색을 어디서나 쓴다 (그래프·달력·기록 목록·항목 고르기).
+ * 아침·점심·저녁은 "식사"로 한 색, 야식·간식·음료·이외는 각각 다른 색.
+ * base: 막대·테두리·범례 칸 색 / bg: 연한 바탕 / fg: bg·흰 바탕 모두에서 읽히는 글자색 (대비 5 이상)
  */
-export const KIND_COLORS: Record<MealKind, { bg: string; fg: string }> = {
-  breakfast: { bg: C.accentSoft, fg: '#8A5F00' },
-  lunch: { bg: '#DDF4EF', fg: '#0F766E' },
-  dinner: { bg: C.primarySoft, fg: C.primary },
-  latenight: ETC_COLOR,
-  snack: ETC_COLOR,
-  drink: ETC_COLOR,
-  other: ETC_COLOR,
-  etc: ETC_COLOR,
+export type KindColor = { base: string; bg: string; fg: string };
+const MEAL_COLOR: KindColor = { base: '#2A78D6', bg: '#E3EEFB', fg: '#1A5BB0' };
+const OTHER_COLOR: KindColor = { base: '#E87BA4', bg: '#FCE6EF', fg: '#AD3566' };
+
+export const KIND_COLORS: Record<MealKind, KindColor> = {
+  breakfast: MEAL_COLOR,
+  lunch: MEAL_COLOR,
+  dinner: MEAL_COLOR,
+  latenight: { base: '#EB6834', bg: '#FDE9E0', fg: '#AE4116' },
+  snack: { base: '#1BAF7A', bg: '#DDF4EA', fg: '#0D7049' },
+  drink: { base: '#EDA100', bg: '#FFF1D1', fg: '#865B00' },
+  other: OTHER_COLOR,
+  // 하위 항목이 생기기 전의 "기타" 기록은 이외와 같은 색
+  etc: OTHER_COLOR,
 };
 
 export const CAT_COLORS: Record<Category, { bg: string; fg: string }> = {
@@ -65,14 +68,6 @@ export const CAT_EMOJI: Record<Category | '전체', string> = {
   아시안: '🍛',
 };
 
-const CAT_OF = new Map(PLACES.map((p) => [p.id, p.cat]));
-
-/** 기록의 음식 종류. 직접 입력한 기록은 없다 */
-export const catOfMeal = (m: Meal) => (m.placeId ? CAT_OF.get(m.placeId) : undefined);
-
-export const mealColor = (m: Meal) => {
-  // 스킵(0원)은 회색
-  if (m.price === 0) return { bg: C.divider, fg: C.muted };
-  const cat = catOfMeal(m);
-  return cat ? CAT_COLORS[cat] : { bg: C.primarySoft, fg: C.primaryDark };
-};
+/** 기록 하나의 색 (기록 탭 달력·목록). 항목 색을 따르고, 0원 기록은 회색 */
+export const mealColor = (m: Meal): KindColor =>
+  m.price === 0 ? { base: C.line, bg: C.divider, fg: C.muted } : KIND_COLORS[kindOf(m)];

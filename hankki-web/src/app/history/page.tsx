@@ -135,11 +135,12 @@ export default function HistoryPage() {
                 {d.getDate()}
               </span>
 
+              {/* 칸 색은 항목 색(그래프 범례와 같음). 가게 이름을 안 적은 기록은 항목 이름을 쓴다 */}
               {list.slice(0, MAX_CHIPS).map((m) => {
                 const c = mealColor(m);
                 return (
-                  <span key={m.id} className={styles.chip} style={{ backgroundColor: c.bg, borderLeftColor: c.fg, color: c.fg }}>
-                    {m.name}
+                  <span key={m.id} className={styles.chip} style={{ backgroundColor: c.bg, borderLeftColor: c.base, color: c.fg }}>
+                    {placeNameOf(m) || KIND_LABEL[kindOf(m)]}
                   </span>
                 );
               })}
@@ -163,7 +164,7 @@ export default function HistoryPage() {
             const c = mealColor(m);
             return (
               <div key={m.id} className={styles.row}>
-                <span className={styles.bar} style={{ backgroundColor: c.fg }} />
+                <span className={styles.bar} style={{ backgroundColor: c.base }} />
                 <div className={styles.rowBody}>
                   <span className={styles.name}>
                     <span className={styles.kind} style={{ backgroundColor: KIND_COLORS[kindOf(m)].bg, color: KIND_COLORS[kindOf(m)].fg }}>

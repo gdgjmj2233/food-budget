@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 
 import {
   addDays,
@@ -16,6 +17,7 @@ import {
   type Meal,
   type MealKind,
 } from '@/lib/budget';
+import { KIND_COLORS } from '@/theme';
 import ui from './ui.module.css';
 import styles from './week-chart.module.css';
 
@@ -30,17 +32,17 @@ const SEG_ORDER: MealKind[] = ['breakfast', 'lunch', 'dinner', 'latenight', 'sna
 const isMealSeg = (k: MealKind) => MAIN_KINDS.includes(k);
 
 /**
- * 색 (dataviz 기본 범주 순서 1~5를 그대로, 흰 카드 위에서 검사 통과). 끼니는 한 색으로 묶는다.
+ * 범례. 색은 앱 전체의 항목 색(KIND_COLORS.base)을 그대로 쓰고, 끼니는 한 색으로 묶는다.
  * 간식·음료·이외 색은 흰 바탕 대비가 3:1 아래라 범례와 아래 "그날 내역" 글자로 함께 알려 준다
  */
-const GROUPS: { key: string; label: string; color: string; segs: readonly MealKind[] }[] = [
-  { key: 'meal', label: '식사 (아침·점심·저녁)', color: '#2a78d6', segs: MAIN_KINDS },
-  { key: 'latenight', label: '야식', color: '#eb6834', segs: ['latenight'] },
-  { key: 'snack', label: '간식', color: '#1baf7a', segs: ['snack'] },
-  { key: 'drink', label: '음료', color: '#eda100', segs: ['drink'] },
-  { key: 'other', label: '이외', color: '#e87ba4', segs: ['other', 'etc'] },
+const GROUPS: { key: string; label: string; color: string }[] = [
+  { key: 'meal', label: '식사 (아침·점심·저녁)', color: KIND_COLORS.lunch.base },
+  { key: 'latenight', label: '야식', color: KIND_COLORS.latenight.base },
+  { key: 'snack', label: '간식', color: KIND_COLORS.snack.base },
+  { key: 'drink', label: '음료', color: KIND_COLORS.drink.base },
+  { key: 'other', label: '이외', color: KIND_COLORS.other.base },
 ];
-const colorOf = (k: MealKind) => GROUPS.find((g) => g.segs.includes(k))!.color;
+const colorOf = (k: MealKind) => KIND_COLORS[k].base;
 
 type Mode = 'week' | 'month';
 const MODES: { key: Mode; label: string }[] = [
@@ -54,8 +56,18 @@ const compact = (v: number) => (v === 0 ? '0' : v >= 10000 ? `${+(v / 10000).toF
 /** 월간 아래쪽 날짜는 1, 5, 10, 15 … 와 마지막 날만 적는다 (30칸을 다 적으면 글씨가 겹친다) */
 const showMonthLabel = (day: number, last: number) => day === 1 || day === last || (day % 5 === 0 && last - day >= 2);
 
+/** 기간 이름. offset 0 이 지금 기간, -1 이 바로 전 기간 */
+function periodLabel(mode: Mode, offset: number, start: Date, today: Date) {
+  if (mode === 'week') return offset === 0 ? '이번 주' : offset === -1 ? '지난주' : `${-offset}주 전`;
+  if (offset === 0) return '이번 달';
+  if (offset === -1) return '지난달';
+  const month = `${start.getMonth() + 1}월`;
+  return start.getFullYear() === today.getFullYear() ? month : `${start.getFullYear()}년 ${month}`;
+}
+
 /**
- * 날마다 쓴 금액을 막대로 보여준다. 위쪽 버튼으로 주간(오늘이 든 일~토)과 월간(이번 달 1일~말일)을 바꾼다.
+ * 날마다 쓴 금액을 막대로 보여준다. 위쪽 버튼으로 주간(일~토)과 월간(1일~말일)을 바꾸고,
+ * 금액 양옆 화살표로 지난 기간을 넘겨 본다 (첫 기록이 있는 기간까지, 앞으로는 지금 기간까지).
  * 막대는 항목별로 색을 나눠 쌓고, 고른 날의 항목별 금액을 그래프 아래에 글자로 보여 준다.
  */
 export function WeekChart({
@@ -68,12 +80,26 @@ export function WeekChart({
 }) {
   const today = startOfDay(new Date());
   const [mode, setMode] = useState<Mode>('week');
+  /** 지금 기간에서 몇 칸 앞으로 넘겼는지 (0 = 이번 주·이번 달, -1 = 지난주·지난달 …) */
+  const [offset, setOffset] = useState(0);
 
-  const start = mode === 'week' ? addDays(today, -today.getDay()) : new Date(today.getFullYear(), today.getMonth(), 1);
-  const count = mode === 'week' ? 7 : new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const start =
+    mode === 'week'
+      ? addDays(today, -today.getDay() + offset * 7)
+      : new Date(today.getFullYear(), today.getMonth() + offset, 1);
+  const count = mode === 'week' ? 7 : new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
   const todayIdx = Math.round((today.getTime() - start.getTime()) / 86_400_000);
+  const hasToday = todayIdx >= 0 && todayIdx < count;
   const [sel, setSel] = useState<number | null>(null);
-  const selIdx = sel ?? todayIdx;
+  // 처음 고른 날: 지금 기간이면 오늘, 지난 기간이면 마지막 날
+  const restIdx = hasToday ? todayIdx : count - 1;
+  const selIdx = sel ?? restIdx;
+
+  // 이 기간보다 앞선 기록이 있어야 더 지난 기간으로 넘길 수 있다
+  const firstDate = meals.reduce<string | null>((min, m) => (min === null || m.date < min ? m.date : min), null);
+  const canPrev = firstDate !== null && firstDate < toDateKey(start);
+  const canNext = offset < 0;
+  const label = periodLabel(mode, offset, start, today);
 
   const days = Array.from({ length: count }, (_, i) => {
     const date = addDays(start, i);
@@ -86,14 +112,14 @@ export function WeekChart({
       value: dayMeals.filter((m) => kindOf(m) === seg).reduce((sum, m) => sum + m.price, 0),
     })).filter((s) => s.value > 0);
     const label = mode === 'week' ? DAY_NAMES[i] : showMonthLabel(i + 1, count) ? String(i + 1) : '';
-    return { key, date, total, segs, label, future: i > todayIdx };
+    return { key, date, total, segs, label, future: date > today };
   });
   const selDay = days[Math.min(selIdx, days.length - 1)];
   const breakdown = (d: (typeof days)[number]) => d.segs.map((s) => `${KIND_LABEL[s.seg]} ${won(s.value)}원`).join(', ');
   const sum = days.reduce((s, d) => s + d.total, 0);
 
   // 눈금이 3칸 이하가 되는 가장 작은 간격을 고른다
-  const peak = Math.max(daily,...days.map((d) => d.total), 1000);
+  const peak = Math.max(daily, ...days.map((d) => d.total), 1000);
   const step = STEPS.find((s) => peak / s <= 3) ?? STEPS[STEPS.length - 1];
   const top = Math.ceil(peak / step) * step;
   const ticks = Array.from({ length: top / step + 1 }, (_, i) => i * step);
@@ -102,13 +128,19 @@ export function WeekChart({
 
   const pick = (m: Mode) => {
     setMode(m);
+    setOffset(0);
     setSel(null);
   };
+  const move = (step: number) => {
+    setOffset((o) => Math.min(0, o + step));
+    setSel(null);
+  };
+  const unit = mode === 'week' ? '주' : '달';
 
   return (
     <section className={ui.card}>
       <div className={ui.row}>
-        <h2 className={ui.sec}>{mode === 'week' ? '이번 주' : '이번 달'} 사용 금액</h2>
+        <h2 className={ui.sec}>{label} 사용 금액</h2>
         <div className={styles.modes} role="radiogroup" aria-label="기간">
           {MODES.map((m) => (
             <button
@@ -123,12 +155,21 @@ export function WeekChart({
           ))}
         </div>
       </div>
-      <p className={styles.total}>
-        {won(sum)}원
-        <span className={styles.range}>
-          {formatShort(start)} – {formatShort(addDays(start, count - 1))}
-        </span>
-      </p>
+      {/* 금액·기간 양옆 화살표로 지난 기간을 넘겨 본다 */}
+      <div className={styles.period}>
+        <button type="button" className={styles.arrow} onClick={() => move(-1)} disabled={!canPrev} aria-label={`이전 ${unit} 보기`}>
+          <IoChevronBack size={18} aria-hidden />
+        </button>
+        <p className={styles.total} aria-live="polite">
+          {won(sum)}원
+          <span className={styles.range}>
+            {formatShort(start)} – {formatShort(addDays(start, count - 1))}
+          </span>
+        </p>
+        <button type="button" className={styles.arrow} onClick={() => move(1)} disabled={!canNext} aria-label={`다음 ${unit} 보기`}>
+          <IoChevronForward size={18} aria-hidden />
+        </button>
+      </div>
       {daily > 0 && (
         <p className={styles.key}>
           <span className={styles.keyLine} aria-hidden />
@@ -154,7 +195,7 @@ export function WeekChart({
           ))}
         </div>
 
-        {/* 마우스가 벗어나면 오늘로 돌아간다. 터치는 손을 떼면 바로 leave가 와서 제외 */}
+        {/* 마우스가 벗어나면 처음 고른 날(오늘·지난 기간은 마지막 날)로 돌아간다. 터치는 손을 떼면 바로 leave가 와서 제외 */}
         <div className={styles.plot} style={cols} onPointerLeave={(e) => e.pointerType === 'mouse' && setSel(null)}>
           {ticks.map((t) => (
             <span key={t} className={styles.grid} style={{ bottom: pct(t) }} aria-hidden />
@@ -203,7 +244,7 @@ export function WeekChart({
 
       <div className={styles.xAxis} style={cols} aria-hidden>
         {days.map((d, i) => (
-          <span key={d.key} className={`${i === todayIdx ? styles.today : ''} ${d.future ? styles.future : ''}`}>
+          <span key={d.key} className={`${hasToday && i === todayIdx ? styles.today : ''} ${d.future ? styles.future : ''}`}>
             {d.label}
           </span>
         ))}
