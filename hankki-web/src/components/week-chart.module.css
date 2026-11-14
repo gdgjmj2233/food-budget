@@ -45,9 +45,15 @@
   color: var(--muted);
 }
 
+/* 하루 권장 선 색: 막대(파랑)와 구분되게 theme.ts 의 C.warn(주황) */
 .keyLine {
-  width: 14px;
-  border-top: 1px dashed var(--muted);
+  width: 18px;
+  border-top: 2px dashed #c26a00;
+}
+
+.keyText {
+  font-weight: 700;
+  color: #c26a00;
 }
 
 /* 막대 영역 + 왼쪽 눈금 */
@@ -91,8 +97,8 @@
 }
 
 .ref {
-  border-top: 1px dashed var(--muted);
-  z-index: 1;
+  border-top: 2px dashed #c26a00;
+  z-index: 2;
 }
 
 .col {

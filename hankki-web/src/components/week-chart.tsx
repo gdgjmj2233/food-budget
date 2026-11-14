@@ -82,7 +82,7 @@ export function WeekChart({ meals, perDay }: { meals: Meal[]; perDay: number }) 
       {perDay > 0 && (
         <p className={styles.key}>
           <span className={styles.keyLine} aria-hidden />
-          하루 권장 {won(perDay)}원
+          <span className={styles.keyText}>하루 권장 {won(perDay)}원</span>
         </p>
       )}
 
