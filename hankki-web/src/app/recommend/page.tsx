@@ -13,6 +13,7 @@ import {
   IoSquareOutline,
 } from 'react-icons/io5';
 
+import { CatIcon } from '@/components/cat-icon';
 import { ExtraPlaceCard } from '@/components/extra-place-card';
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
@@ -28,7 +29,7 @@ import { useBudget } from '@/store/budget-store';
 import { locationProblem, startLocating, useLocation } from '@/store/location-store';
 import { ensurePlacePositions, usePlacePositions } from '@/store/place-positions';
 import { useRatings } from '@/store/rating-store';
-import { C, CAT_EMOJI } from '@/theme';
+import { C } from '@/theme';
 import styles from './page.module.css';
 
 type SortKey = 'priceAsc' | 'priceDesc' | 'near' | 'walk' | 'rating';
@@ -163,8 +164,8 @@ export default function RecommendPage() {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="식당이나 메뉴 검색 (예: 국밥, 라멘)"
-          aria-label="식당이나 메뉴 검색"
+          placeholder="식당 이름 검색"
+          aria-label="식당 이름 검색"
           className={styles.searchInput}
         />
         {query.length > 0 && (
@@ -185,7 +186,7 @@ export default function RecommendPage() {
             title={k}
             className={`${styles.cat} ${k === cat ? styles.catOn : ''}`}>
             <span className={styles.catEmoji} aria-hidden>
-              {CAT_EMOJI[k]}
+              <CatIcon cat={k} />
             </span>
             <span className={styles.catName} aria-hidden>
               {k}

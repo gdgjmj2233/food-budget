@@ -7,7 +7,8 @@ import { bestMenu, mainMenu, type Menu, type Place } from '@/data/places';
 import { won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { setRating, useRatings } from '@/store/rating-store';
-import { C, CAT_COLORS, CAT_EMOJI } from '@/theme';
+import { C, CAT_COLORS } from '@/theme';
+import { CatIcon } from './cat-icon';
 import { EatHere, EatHereButton, keepCardInView } from './eat-here';
 import styles from './place-item.module.css';
 
@@ -60,7 +61,7 @@ export function PlaceItem({
           aria-label={`${place.cat} ${place.name}, ${shownMenu ? '' : '대표 메뉴 '}${menu.name} ${won(menu.price)}원${otherFits ? ', 예산 안 메뉴 있음' : ''}. 눌러서 메뉴 보기`}
           className={styles.head}>
           <span className={styles.icon} style={{ backgroundColor: cat.bg, color: cat.fg }} title={place.cat} aria-hidden>
-            {CAT_EMOJI[place.cat]}
+            <CatIcon cat={place.cat} />
           </span>
           <span className={styles.body}>
             <span className={styles.name}>{place.name}</span>

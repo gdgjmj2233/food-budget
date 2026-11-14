@@ -9,7 +9,7 @@ import { clusterPoints, mergeOverlapping } from '@/lib/map-cluster';
 import { locationProblem, startLocating, useLocation } from '@/store/location-store';
 import { ensurePlacePositions, usePlacePositions } from '@/store/place-positions';
 import { useRatings } from '@/store/rating-store';
-import { CAT_COLORS, CAT_EMOJI } from '@/theme';
+import { CAT_COLORS, CAT_EMOJI, CAT_IMAGE } from '@/theme';
 import styles from './place-map.module.css';
 
 type Pos = { lat: number; lng: number };
@@ -127,8 +127,10 @@ export function PlaceMap({
     };
 
     // 이름 핀의 모양: 이모지 배지(stars 가 있으면 옆에 숫자, 없으면 비움)와 그 아래 이름. bg 가 없으면 기본 바탕(CSS)
+    // image 가 있으면(떡볶이·짜장면처럼 이모지가 없는 음식) 이모지 대신 그림을 넣는다
     const badgeOf = (o: {
       emoji: string;
+      image?: string;
       bg?: string;
       extra: boolean;
       on: boolean;
@@ -142,7 +144,16 @@ export function PlaceMap({
       pin.className = `${styles.place} ${o.extra ? styles.placeExtra : ''} ${o.on ? styles.placeOn : ''}`;
       const icon = document.createElement('span');
       icon.className = styles.placeIcon;
-      icon.textContent = o.emoji;
+      if (o.image) {
+        const img = document.createElement('img');
+        img.src = o.image;
+        img.alt = '';
+        img.draggable = false;
+        img.className = styles.placeIconImg;
+        icon.append(img);
+      } else {
+        icon.textContent = o.emoji;
+      }
       if (o.bg) icon.style.backgroundColor = o.bg;
       pin.append(icon);
       if (o.stars) {
@@ -170,6 +181,7 @@ export function PlaceMap({
       const stars = ratings[p.id];
       return badgeOf({
         emoji: CAT_EMOJI[p.cat ?? '전체'],
+        image: CAT_IMAGE[p.cat ?? '전체']?.src,
         bg: !p.extra && p.cat ? CAT_COLORS[p.cat].bg : undefined,
         extra: p.extra,
         on: p.id === selectedId,

@@ -1,3 +1,7 @@
+import type { StaticImageData } from 'next/image';
+
+import jjajangmyeon from '@/assets/food/jjajangmyeon.svg';
+import tteokbokki from '@/assets/food/tteokbokki.svg';
 import { kindOf, type BudgetStatus, type Meal, type MealKind } from '@/lib/budget';
 import type { Category } from '@/data/places';
 
@@ -57,7 +61,7 @@ export const CAT_COLORS: Record<Category, { bg: string; fg: string }> = {
   아시안: { bg: '#FFF3C4', fg: '#7A5A00' },
 };
 
-/** 음식 종류를 한눈에 알아보게 하는 이모지 */
+/** 음식 종류를 한눈에 알아보게 하는 이모지. 화면에는 CatIcon 으로 그린다 (그림이 있는 종류는 그림) */
 export const CAT_EMOJI: Record<Category | '전체', string> = {
   전체: '🍽️',
   한식: '🍚',
@@ -66,6 +70,12 @@ export const CAT_EMOJI: Record<Category | '전체', string> = {
   일식: '🍣',
   양식: '🍝',
   아시안: '🍛',
+};
+
+/** 이모지가 없는 대표 음식은 직접 그린 그림을 쓴다: 분식 = 떡볶이, 중식 = 짜장면 (src/assets/food) */
+export const CAT_IMAGE: Partial<Record<Category | '전체', StaticImageData>> = {
+  분식: tteokbokki as StaticImageData,
+  중식: jjajangmyeon as StaticImageData,
 };
 
 /** 기록 하나의 색 (기록 탭 달력·목록). 항목 색을 따르고, 0원 기록은 회색 */

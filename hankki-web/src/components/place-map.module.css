@@ -97,6 +97,13 @@
   line-height: 1;
 }
 
+/* 이모지가 없는 음식(떡볶이·짜장면) 그림. 이모지와 같은 크기 */
+.placeIconImg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
 .placeStar {
   padding-right: 6px;
   font-size: 13px;

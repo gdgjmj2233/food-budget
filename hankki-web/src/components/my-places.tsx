@@ -3,12 +3,12 @@
 import React, { useMemo, useState } from 'react';
 import { IoStar, IoTrashOutline } from 'react-icons/io5';
 
-import { PLACES } from '@/data/places';
+import { PLACES, type Category } from '@/data/places';
 import { formatShort, fromDateKey, KIND_LABEL, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { cachedNearbyNames } from '@/lib/kakao-map';
 import { setRating, useRatings } from '@/store/rating-store';
-import { CAT_EMOJI } from '@/theme';
+import { CatIcon } from './cat-icon';
 import ui from './ui.module.css';
 import styles from './my-places.module.css';
 
@@ -24,7 +24,8 @@ const TABS: { key: Tab; label: string }[] = [
 const PLACE_BY_ID = new Map(PLACES.map((p) => [p.id, p]));
 const PLACE_BY_NAME = new Map(PLACES.map((p) => [p.name.replace(/\s/g, ''), p]));
 
-type Visit = { key: string; name: string; emoji: string; count: number; total: number; last: string };
+/** cat: 음식 종류 아이콘 (목록에 없는 가게는 '전체') */
+type Visit = { key: string; name: string; cat: Category | '전체'; count: number; total: number; last: string };
 
 /**
  * 기록 전체에서 많이 간 곳(가게로 연결된 기록은 가게로, 직접 입력은 적은 이름으로 묶음)과
@@ -46,7 +47,7 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
       const cur = byKey.get(key) ?? {
         key,
         name: place ? place.name : m.name,
-        emoji: place ? CAT_EMOJI[place.cat] : CAT_EMOJI['전체'],
+        cat: place ? place.cat : '전체',
         count: 0,
         total: 0,
         last: m.date,
@@ -65,7 +66,7 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
       .map(([id, stars]) => {
         const place = PLACE_BY_ID.get(id);
         const name = place?.name ?? nearby[id];
-        return name ? { id, name, stars, emoji: place ? CAT_EMOJI[place.cat] : CAT_EMOJI['전체'] } : null;
+        return name ? { id, name, stars, cat: place ? place.cat : ('전체' as const) } : null;
       })
       .filter((r): r is NonNullable<typeof r> => r !== null)
       .sort((a, b) => b.stars - a.stars || a.name.localeCompare(b.name));
@@ -100,7 +101,7 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
               <li key={v.key} className={styles.row}>
                 <span className={styles.rank}>{i + 1}</span>
                 <span className={styles.emoji} aria-hidden>
-                  {v.emoji}
+                  <CatIcon cat={v.cat} />
                 </span>
                 <span className={styles.body}>
                   <span className={styles.name}>{v.name}</span>
@@ -127,7 +128,7 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
             {rated.map((r) => (
               <li key={r.id} className={`${styles.row} ${styles.rowWrap}`}>
                 <span className={styles.emoji} aria-hidden>
-                  {r.emoji}
+                  <CatIcon cat={r.cat} />
                 </span>
                 <span className={styles.body}>
                   <span className={`${styles.name} ${styles.nameWrap}`}>{r.name}</span>

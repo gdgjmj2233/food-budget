@@ -1,0 +1,7 @@
+/* 이모지 글자와 같은 크기로 보이게 글자 크기 기준으로 맞춘다 */
+.img {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: middle;
+}

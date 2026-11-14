@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    떡볶이. 다른 음식 아이콘(3D 이모지)과 같은 그림체: 테두리 선 없이 면과 그라데이션으로만,
+    왼쪽 위에서 빛, 흰 접시의 그늘은 연보라, 윤기 하이라이트. 접시와 떡 더미가 칸을 꽉 채우게.
+  -->
+  <defs>
+    <linearGradient id="tb-plate" x1="0.3" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.6" stop-color="#EDE9FB"/>
+      <stop offset="1" stop-color="#B4A9DE"/>
+    </linearGradient>
+    <linearGradient id="tb-side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C4BAEA"/>
+      <stop offset="1" stop-color="#9184CC"/>
+    </linearGradient>
+    <radialGradient id="tb-sauce" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#FF7A4C"/>
+      <stop offset="0.7" stop-color="#E0361F"/>
+      <stop offset="1" stop-color="#B21F14"/>
+    </radialGradient>
+    <linearGradient id="tb-tteok" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFA47A"/>
+      <stop offset="0.42" stop-color="#F45B34"/>
+      <stop offset="1" stop-color="#B42817"/>
+    </linearGradient>
+    <radialGradient id="tb-end" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#FFD7C2"/>
+      <stop offset="1" stop-color="#EE8662"/>
+    </radialGradient>
+    <linearGradient id="tb-fish" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#FFE6AE"/>
+      <stop offset="1" stop-color="#DE9440"/>
+    </linearGradient>
+    <radialGradient id="tb-onion" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#CBF592"/>
+      <stop offset="1" stop-color="#47952A"/>
+    </radialGradient>
+    <radialGradient id="tb-gloss" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 가래떡 한 조각: 통통한 원통, 오른쪽 자른 단면, 윗면 윤기 -->
+    <g id="tb-piece">
+      <rect x="-8.5" y="-4.8" width="17" height="9.6" rx="3.2" fill="url(#tb-tteok)"/>
+      <ellipse cx="6.6" cy="0" rx="2.1" ry="4.4" fill="url(#tb-end)"/>
+      <ellipse cx="-2" cy="-2.6" rx="4.6" ry="1.2" fill="#FFFFFF" opacity="0.5"/>
+    </g>
+  </defs>
+  <g transform="translate(0 -9)">
+    <!-- 접시 옆면 (깊이가 보이게 두툼하게) -->
+    <path d="M1 41.5V47A31 14.5 0 0 0 63 47V41.5z" fill="url(#tb-side)"/>
+    <!-- 접시 윗면 -->
+    <ellipse cx="32" cy="41.5" rx="31" ry="15" fill="url(#tb-plate)"/>
+    <ellipse cx="32" cy="42" rx="25.6" ry="11.6" fill="#D3CAF1"/>
+    <!-- 양념 -->
+    <ellipse cx="32" cy="42" rx="24.4" ry="10.8" fill="url(#tb-sauce)"/>
+    <ellipse cx="22" cy="46.5" rx="6" ry="2.2" fill="url(#tb-gloss)"/>
+    <!-- 삼각 어묵 -->
+    <path d="M8.8 37.6Q17 23.6 20 23.8Q22.6 24 30.2 35.8Q30.8 38.2 28 38.6L11.6 40.2Q7.6 40.4 8.8 37.6z" fill="url(#tb-fish)"/>
+    <ellipse cx="18" cy="31" rx="2.6" ry="1" fill="#FFFFFF" opacity="0.5" transform="rotate(-55 18 31)"/>
+    <!-- 가래떡 더미 (뒤에서 앞으로) -->
+    <use href="#tb-piece" transform="translate(35 30.5) rotate(-20)"/>
+    <use href="#tb-piece" transform="translate(48 35.5) rotate(24)"/>
+    <use href="#tb-piece" transform="translate(25 38) rotate(12)"/>
+    <use href="#tb-piece" transform="translate(41 42) rotate(-14)"/>
+    <use href="#tb-piece" transform="translate(19.5 46.5) rotate(-6)"/>
+    <use href="#tb-piece" transform="translate(32.5 48) rotate(8)"/>
+    <use href="#tb-piece" transform="translate(46 48.5) rotate(-26)"/>
+    <!-- 파 -->
+    <circle cx="28.5" cy="33" r="2" fill="url(#tb-onion)"/>
+    <circle cx="52.5" cy="42.5" r="1.9" fill="url(#tb-onion)"/>
+    <circle cx="37.5" cy="38.4" r="1.8" fill="url(#tb-onion)"/>
+    <circle cx="26" cy="52.4" r="1.8" fill="url(#tb-onion)"/>
+  </g>
+</svg>
