@@ -182,3 +182,10 @@
   grid-template-columns: 1fr 2fr;
   gap: 8px;
 }
+
+.splitNote {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}

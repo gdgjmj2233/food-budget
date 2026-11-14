@@ -13,6 +13,8 @@ export interface Settings {
   startDate: string;
   /** 직접 설정한 기간의 마지막 날 YYYY-MM-DD (이 날 포함) */
   endDate?: string;
+  /** 하루 예산에서 점심이 차지하는 비율(%). 없으면 점심·저녁을 나누지 않는다 */
+  lunchPct?: number;
 }
 
 export interface Meal {
@@ -26,6 +28,14 @@ export interface Meal {
   /** 기록 시각 (ms) */
   at: number;
 }
+
+export type MealSlot = 'lunch' | 'dinner';
+
+/** 15시 전에 먹은 건 점심, 그 뒤는 저녁으로 본다 (기록한 시각 기준) */
+export const mealSlot = (m: Pick<Meal, 'at'>): MealSlot => (new Date(m.at).getHours() < 15 ? 'lunch' : 'dinner');
+
+/** 지금 시각에 맞는 끼니 */
+export const currentSlot = (now: Date = new Date()): MealSlot => (now.getHours() < 15 ? 'lunch' : 'dinner');
 
 /** 기록의 메뉴. 예전 기록은 메뉴 칸에 '직접 입력'이 들어 있어서 빈 값으로 본다 */
 export const menuOf = (m: Meal) => (m.menu === '직접 입력' ? '' : m.menu);
@@ -56,6 +66,17 @@ export interface BudgetSummary {
   periodMeals: Meal[];
   /** 기간 전체 예산 */
   amount: number;
+  /** 점심·저녁 나눔을 켰고 오늘이 예산 일수에 들면 끼니별 금액, 아니면 null */
+  split: MealSplit | null;
+}
+
+export interface MealSplit {
+  lunchBudget: number;
+  dinnerBudget: number;
+  /** 점심에 더 쓸 수 있는 금액 (넘게 썼으면 음수) */
+  lunchLeft: number;
+  /** 저녁에 쓸 수 있는 금액. 점심에 예산을 넘게 쓴 만큼은 여기서 빠진다 (넘게 썼으면 음수) */
+  dinnerLeft: number;
 }
 
 /** 기록이 하나도 없는 날. at 은 그 날로 기록할 때 쓰는 시각(ms) */
@@ -172,12 +193,21 @@ export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Da
   const perDay = daysLeft > 0 ? Math.max(0, floor100(budgetForDays / daysLeft)) : leftover;
   const todayLeft = todayCounts ? Math.max(0, perDay - spentToday) : perDay;
   const base = floor100(amount / totalDays);
+  let split: MealSplit | null = null;
+  if (todayCounts && settings.lunchPct) {
+    const lunchBudget = floor100((perDay * settings.lunchPct) / 100);
+    const dinnerBudget = perDay - lunchBudget;
+    const todayMeals = periodMeals.filter((m) => m.date === todayKey);
+    const spentLunch = todayMeals.filter((m) => mealSlot(m) === 'lunch').reduce((sum, m) => sum + m.price, 0);
+    const lunchLeft = lunchBudget - spentLunch;
+    split = { lunchBudget, dinnerBudget, lunchLeft, dinnerLeft: dinnerBudget - (spentToday - spentLunch) - Math.max(0, -lunchLeft) };
+  }
   // 초과 > 임박(남은 예산 30% 미만) > 여유
   const status: BudgetStatus = remain < 0 ? 'over' : remain < amount * LOW_RATIO ? 'low' : 'ok';
 
   return {
     start, end, ended, totalDays, daysLeft,
-    spent, spentToday, remain, perDay, todayLeft, base, status, periodMeals, amount,
+    spent, spentToday, remain, perDay, todayLeft, base, status, periodMeals, amount, split,
   };
 }
 

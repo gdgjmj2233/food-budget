@@ -168,6 +168,18 @@ export default function HomePage() {
             </span>
           </span>
         )}
+        {!missing && s.split && (
+          <span className={styles.stats}>
+            <span className={styles.stat}>
+              <span className={styles.statLabel}>점심 남은 금액</span>
+              <span className={styles.statVal}>{won(s.split.lunchLeft)}원</span>
+            </span>
+            <span className={styles.stat}>
+              <span className={styles.statLabel}>저녁 남은 금액</span>
+              <span className={styles.statVal}>{won(s.split.dinnerLeft)}원</span>
+            </span>
+          </span>
+        )}
       </button>
 
       {missing ? (

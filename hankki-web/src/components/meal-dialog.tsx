@@ -6,7 +6,7 @@ import { IoChevronBack, IoChevronForward, IoClose } from 'react-icons/io5';
 import { EatHere } from '@/components/eat-here';
 import { Modal } from '@/components/modal';
 import { mainMenu, PLACES, type Place } from '@/data/places';
-import { DAY_NAMES, formatDate, fromDateKey, startOfDay, toDateKey, won } from '@/lib/budget';
+import { currentSlot, DAY_NAMES, formatDate, fromDateKey, startOfDay, toDateKey, won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import { C } from '@/theme';
 import styles from './meal-dialog.module.css';
@@ -28,9 +28,14 @@ export function MealDialog({
   onClose: () => void;
   onSubmit: (menu: string, price: number, place?: Place) => void;
 }) {
+  const { summary } = useBudget();
+  // 점심·저녁을 나눠 관리하면 지금 끼니에 남은 금액을 기준으로 보여 주고 초과를 알려 준다
+  const split = summary.split;
+  const slotLeft = split ? (currentSlot() === 'lunch' ? split.lunchLeft : split.dinnerLeft) : limit;
+  const sub = split ? `${currentSlot() === 'lunch' ? '점심' : '저녁'} 남은 금액 ${won(Math.max(0, slotLeft))}원` : `오늘 남은 금액 ${won(limit)}원`;
   return (
     <Modal sheet onClose={onClose}>
-      <DirectInput sub={`오늘 남은 금액 ${won(limit)}원`} limit={limit} onClose={onClose} onSubmit={onSubmit} />
+      <DirectInput sub={sub} limit={slotLeft} onClose={onClose} onSubmit={onSubmit} />
     </Modal>
   );
 }
