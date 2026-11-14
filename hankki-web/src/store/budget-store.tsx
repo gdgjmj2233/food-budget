@@ -10,6 +10,7 @@ import {
   DEFAULT_AMOUNT,
   findMissingDay,
   fromDateKey,
+  rollPeriod,
   toDateKey,
   type BudgetSummary,
   type Meal,
@@ -36,7 +37,7 @@ interface State {
   settings: Settings;
   meals: Meal[];
   lastDelta: Delta | null;
-  /** "안 먹었어"를 누른 날짜. 그 날의 기록은 다시 묻지 않는다 */
+  /** 어제 기록 카드에서 "지출 없음"을 누른 날짜. 그 날의 기록은 다시 묻지 않는다 */
   dismissedDate: string | null;
 }
 
@@ -48,6 +49,7 @@ type Action =
   | { type: 'clearPeriod' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
   | { type: 'newPeriod' }
+  | { type: 'rollPeriod'; now: number }
   | { type: 'dismissMissing'; date: string }
   | { type: 'replaceData'; data: SavedData };
 
@@ -66,7 +68,8 @@ function loadState(): State {
     if (!raw) return fresh;
     const saved = JSON.parse(raw) as { settings?: Settings; meals?: Meal[]; dismissedDate?: string };
     return {
-      settings: saved.settings ?? fresh.settings,
+      // 지난번에 연 뒤로 기간이 끝났으면 같은 예산으로 다음 기간을 이어 간다
+      settings: saved.settings ? rollPeriod(saved.settings) : fresh.settings,
       meals: saved.meals ?? [],
       lastDelta: null,
       dismissedDate: saved.dismissedDate ?? null,
@@ -100,10 +103,14 @@ function reducer(state: State, action: Action): State {
       const endDate = settings.period === 'custom' ? toDateKey(addDays(fromDateKey(startDate), Math.max(0, days))) : settings.endDate;
       return { ...state, settings: { ...settings, startDate, endDate }, lastDelta: null };
     }
+    case 'rollPeriod': {
+      const settings = rollPeriod(state.settings, new Date(action.now));
+      return settings === state.settings ? state : { ...state, settings };
+    }
     case 'dismissMissing':
       return { ...state, dismissedDate: action.date };
     case 'replaceData':
-      return { settings: action.data.settings, meals: action.data.meals, dismissedDate: action.data.dismissedDate, lastDelta: null };
+      return { settings: rollPeriod(action.data.settings), meals: action.data.meals, dismissedDate: action.data.dismissedDate, lastDelta: null };
   }
 }
 
@@ -165,6 +172,19 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
     }
   }, [state.settings, state.meals, state.dismissedDate]);
 
+  // 앱을 켜 둔 채 기간이 끝나도(날이 바뀌어도) 다시 볼 때 다음 기간으로 이어 간다
+  useEffect(() => {
+    const roll = () => {
+      if (document.visibilityState === 'visible') dispatch({ type: 'rollPeriod', now: Date.now() });
+    };
+    document.addEventListener('visibilitychange', roll);
+    window.addEventListener('focus', roll);
+    return () => {
+      document.removeEventListener('visibilitychange', roll);
+      window.removeEventListener('focus', roll);
+    };
+  }, []);
+
   const summary = useMemo(() => calcBudget(state.settings, state.meals), [state.settings, state.meals]);
   const missing = useMemo(() => {
     const found = summary.ended ? null : findMissingDay(state.settings, state.meals);
@@ -173,11 +193,14 @@ function BudgetStore({ children }: { children: React.ReactNode }) {
 
   // 기록 하나를 남기고(at 이 없으면 지금), 오늘 남은 금액 변화를 돌려준다
   const addMeal = ({ at, ...fields }: Pick<Meal, 'placeId' | 'name' | 'menu' | 'price'> & { at?: number }): Delta | null => {
-    if (summary.ended) return null;
     const now = new Date();
+    // 켜 둔 사이 기간이 끝났으면 먼저 다음 기간으로 넘기고 기록한다
+    const settings = rollPeriod(state.settings, now);
+    if (settings !== state.settings) dispatch({ type: 'rollPeriod', now: now.getTime() });
+    if (calcBudget(settings, state.meals, now).ended) return null;
     const when = at === undefined ? now : new Date(at);
     const meal: Meal = { id: newId(), ...fields, date: toDateKey(when), at: when.getTime() };
-    const after = calcBudget(state.settings, [...state.meals, meal], now);
+    const after = calcBudget(settings, [...state.meals, meal], now);
     const delta: Delta = { name: meal.name, price: meal.price, after: after.todayLeft };
     dispatch({ type: 'addMeal', meal, delta });
     return delta;

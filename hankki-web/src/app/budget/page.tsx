@@ -175,7 +175,10 @@ export default function BudgetPage() {
         </span>
       </div>
 
-      <Sub>설정을 바꾸면 이미 먹은 기록은 그대로 두고 남은 예산을 다시 계산합니다.</Sub>
+      <Sub>
+        설정을 바꾸면 이미 먹은 기록은 그대로 두고 남은 예산을 다시 계산합니다. 따로 바꾸지 않으면 기간이 끝나도 같은 예산으로 다음 기간이
+        자동으로 이어져요.
+      </Sub>
 
       <div className={styles.center}>
         <GhostButton label="오늘부터 새 기간 시작" onPress={onNewPeriod} />

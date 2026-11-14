@@ -102,6 +102,33 @@ export function periodEnd(settings: Pick<Settings, 'period' | 'startDate' | 'end
   return new Date(y, m, Math.min(start.getDate(), lastDay));
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 기간이 끝났으면 같은 기간 종류·같은 예산으로 다음 기간을 이어 붙여서, 오늘이 들어 있는 기간의 설정을 돌려준다.
+ * 사용자가 따로 바꾸지 않으면 예산이 그대로 이어지게 하려는 것 (예: 주간 7만원 → 다음 주도 7만원).
+ * 다음 기간은 앞 기간이 끝난 다음 날부터 시작하고, 직접 설정한 기간은 같은 길이로 이어 간다.
+ * 아직 끝나지 않았으면 받은 settings 를 그대로 돌려준다.
+ */
+export function rollPeriod(settings: Settings, now: Date = new Date()): Settings {
+  const today = startOfDay(now);
+  const customDays =
+    settings.period === 'custom'
+      ? Math.max(1, Math.round((periodEnd(settings).getTime() - fromDateKey(settings.startDate).getTime()) / DAY_MS))
+      : 0;
+  let s = settings;
+  // 아주 오래 안 열었어도 멈추지 않게 횟수를 막아 둔다 (주간 기준 약 20년)
+  for (let i = 0; i < 1000 && today >= periodEnd(s); i++) {
+    const next = periodEnd(s);
+    s = {
+      ...s,
+      startDate: toDateKey(next),
+      ...(s.period === 'custom' ? { endDate: toDateKey(addDays(next, customDays - 1)) } : {}),
+    };
+  }
+  return s;
+}
+
 /** from 이상 to 미만 날짜 수 (주말 제외 옵션) */
 export function countDays(from: Date, to: Date, skipWeekend: boolean): number {
   let n = 0;
