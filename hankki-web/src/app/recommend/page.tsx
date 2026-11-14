@@ -104,7 +104,7 @@ export default function RecommendPage() {
   const nameOf = (r: Row) => r.place?.name ?? r.extra!.name;
   const byName = (a: Row, b: Row) => nameOf(a).localeCompare(nameOf(b), 'ko');
   // 가격은 카드에 보이는 대표 메뉴 값 기준(오늘 예산 안에서 가장 비싼 메뉴)이고, 같으면 가까운 곳이 먼저다
-  // 카드에 보이는 가격 = 가게 대표 메뉴 가격
+  // 가격 정렬 기준 = 가게 대표 메뉴 가격 (펼친 메뉴 목록 맨 위에 보이는 가격)
   const shownPrice = (p: Place) => mainMenu(p).price;
   const stars = (r: Row) => ratings[r.id] ?? 0;
   rows.sort((a, b) => {

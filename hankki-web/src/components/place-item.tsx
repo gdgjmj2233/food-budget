@@ -12,7 +12,7 @@ import { EatHere, EatHereButton, keepCardInView } from './eat-here';
 import styles from './place-item.module.css';
 
 /**
- * 식당 카드. 대표 메뉴와 가격을 보여주고, 카드를 누르면 메뉴 전체와 별점이 펼쳐진다.
+ * 식당 카드. 대표 메뉴 이름을 보여주고(가격은 펼친 메뉴 목록에서 본다), 카드를 누르면 메뉴 전체와 별점이 펼쳐진다.
  * canEat 을 주면 펼친 카드에 "여기서 밥먹기"가 생겨서, 메뉴를 눌러 추가하거나 직접 입력해서 바로 기록할 수 있다.
  * 기본은 가게의 대표 메뉴를 보여주고, menu 를 주면 그 메뉴를 보여준다. defaultOpen 을 주면 펼친 채로 시작한다.
  */
@@ -82,9 +82,6 @@ export function PlaceItem({
             </span>
           </span>
         </button>
-        <span className={styles.price} style={{ color: fits ? C.ink : C.over }}>
-          {won(menu.price)}원
-        </span>
       </div>
 
       {open && (

@@ -83,12 +83,6 @@
   color: var(--muted);
 }
 
-.price {
-  flex: none;
-  font-size: 16px;
-  font-weight: 700;
-}
-
 .menus {
   border-top: 1px solid var(--divider);
   padding: 6px 14px;
