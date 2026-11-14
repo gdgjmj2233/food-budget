@@ -11,6 +11,8 @@ export interface Settings {
   skipWeekend: boolean;
   /** 하루 예산을 편성하는 요일 (0=일 … 6=토). 없으면 skipWeekend 로 정한다 (켜짐: 월~금, 꺼짐: 매일) */
   budgetDays?: number[];
+  /** 주간 예산을 몇 주 단위로 잡을지 (1~3). 없으면 1주 */
+  weeks?: number;
   /** 기간 시작일 YYYY-MM-DD */
   startDate: string;
   /** 직접 설정한 기간의 마지막 날 YYYY-MM-DD (이 날 포함) */
@@ -200,10 +202,16 @@ export function offDayName(s: DaySettings, d: Date): string {
   return weekend && !days.includes(0) && !days.includes(6) ? '주말' : `${DAY_NAMES[d.getDay()]}요일`;
 }
 
-/** 기간 종료일(미포함). 주간은 7일, 월간은 다음 달 같은 날, 직접 설정은 고른 마지막 날의 다음 날. */
-export function periodEnd(settings: Pick<Settings, 'period' | 'startDate' | 'endDate'>): Date {
+/** 주간 예산에서 고를 수 있는 주 수 */
+export const WEEK_OPTIONS = [1, 2, 3] as const;
+
+/** 주간 예산의 주 수. 저장된 값이 없거나 이상하면 1주 */
+export const weeksOf = (s: Pick<Settings, 'weeks'>): number => (s.weeks === 2 || s.weeks === 3 ? s.weeks : 1);
+
+/** 기간 종료일(미포함). 주간은 7일 × 주 수, 월간은 다음 달 같은 날, 직접 설정은 고른 마지막 날의 다음 날. */
+export function periodEnd(settings: Pick<Settings, 'period' | 'startDate' | 'endDate' | 'weeks'>): Date {
   const start = fromDateKey(settings.startDate);
-  if (settings.period === 'week') return addDays(start, 7);
+  if (settings.period === 'week') return addDays(start, 7 * weeksOf(settings));
   if (settings.period === 'custom') {
     const last = settings.endDate && settings.endDate >= settings.startDate ? fromDateKey(settings.endDate) : start;
     return addDays(last, 1);
@@ -254,8 +262,10 @@ export function countDays(from: Date, to: Date, s: DaySettings): number {
 const floor100 = (n: number) => Math.floor(n / 100) * 100;
 
 /** 화면에 쓰는 기간 이름 */
-export const periodName = (period: Period) => ({ week: '주간', month: '월간', custom: '직접 설정' })[period];
-export const periodThis = (period: Period) => ({ week: '이번 주', month: '이번 달', custom: '이번 기간' })[period];
+export const periodName = (period: Period, weeks = 1) =>
+  period === 'week' && weeks > 1 ? `${weeks}주` : { week: '주간', month: '월간', custom: '직접 설정' }[period];
+export const periodThis = (period: Period, weeks = 1) =>
+  period === 'week' && weeks > 1 ? '이번 기간' : { week: '이번 주', month: '이번 달', custom: '이번 기간' }[period];
 
 // ---- 핵심 계산 ----
 export function calcBudget(settings: Settings, meals: Meal[], now: Date = new Date()): BudgetSummary {

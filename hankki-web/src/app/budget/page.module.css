@@ -30,6 +30,12 @@
   font-weight: 700;
 }
 
+/* 주간 예산을 고르면 아래에 나오는 1주·2주·3주 */
+.segSub .segBtn {
+  height: 38px;
+  font-size: 14px;
+}
+
 /* 직접 설정 기간의 시작일 ~ 마지막 날 */
 .dates {
   display: flex;

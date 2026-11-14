@@ -15,6 +15,8 @@ import {
   fromDateKey,
   periodName,
   toDateKey,
+  WEEK_OPTIONS,
+  weeksOf,
   won,
   type Period,
   type Settings,
@@ -66,7 +68,7 @@ export default function BudgetPage() {
   // 요일은 고른 요일 목록으로 비교한다 (예전 주말 설정과 같은 요일을 고르면 바뀐 게 없는 것으로)
   const sameDays = draftDays.join() === budgetDaysOf(settings).join();
   const dirty = (Object.keys(edits) as (keyof Settings)[]).some((k) =>
-    k === 'budgetDays' || k === 'skipWeekend' ? !sameDays : edits[k] !== settings[k],
+    k === 'budgetDays' || k === 'skipWeekend' ? !sameDays : k === 'weeks' ? weeksOf(draft) !== weeksOf(settings) : edits[k] !== settings[k],
   );
   const s = calcBudget(draft, meals);
   const edit = (patch: Partial<Settings>) => setEdits((prev) => ({ ...prev, ...patch }));
@@ -82,12 +84,19 @@ export default function BudgetPage() {
     if (period === draft.period) return;
     // 저장된 기간으로 돌아오면 저장된 금액·날짜로 되돌린다
     if (period === settings.period) {
-      edit({ period, amount: settings.amount, startDate: settings.startDate, endDate: settings.endDate });
+      edit({ period, amount: settings.amount, startDate: settings.startDate, endDate: settings.endDate, weeks: settings.weeks });
       return;
     }
     // 다른 기간을 고르면 금액은 그 기간의 기본값으로 바꾼다. 직접 설정은 시작일부터 2주로 잡고, 날짜는 아래에서 고친다
     const range = period === 'custom' ? { endDate: toDateKey(addDays(fromDateKey(draft.startDate), CUSTOM_DAYS - 1)) } : {};
-    edit({ period, amount: DEFAULT_AMOUNT[period], ...range });
+    edit({ period, amount: DEFAULT_AMOUNT[period] * (period === 'week' ? weeksOf(draft) : 1), ...range });
+  };
+
+  /** 주간 예산의 주 수를 바꾼다. 한 주 예산은 그대로 두고 금액을 주 수만큼 늘리거나 줄인다 (예: 1주 6만원 → 2주 12만원) */
+  const setWeeks = (weeks: number) => {
+    const prev = weeksOf(draft);
+    if (weeks === prev) return;
+    edit({ weeks, amount: Math.max(1000, Math.round((draft.amount / prev) * weeks / 100) * 100) });
   };
 
   const setStart = (startDate: string) => {
@@ -112,7 +121,8 @@ export default function BudgetPage() {
   };
 
   const endDay = addDays(s.end, -1);
-  const amountLabel = { week: '일주일', month: '한 달', custom: '기간 전체' }[draft.period];
+  const draftWeeks = weeksOf(draft);
+  const amountLabel = { week: draftWeeks > 1 ? `${draftWeeks}주` : '일주일', month: '한 달', custom: '기간 전체' }[draft.period];
 
   return (
     <Screen>
@@ -135,6 +145,21 @@ export default function BudgetPage() {
             </button>
           ))}
         </div>
+        {draft.period === 'week' && (
+          <div className={`${styles.seg} ${styles.segSub}`} role="radiogroup" aria-label="몇 주 단위로 잡을지">
+            {WEEK_OPTIONS.map((w) => (
+              <button
+                type="button"
+                key={w}
+                onClick={() => setWeeks(w)}
+                role="radio"
+                aria-checked={draftWeeks === w}
+                className={`${styles.segBtn} ${draftWeeks === w ? styles.segOn : ''}`}>
+                {w}주
+              </button>
+            ))}
+          </div>
+        )}
         {draft.period === 'custom' && (
           <div className={styles.dates}>
             <label className={styles.dateField}>

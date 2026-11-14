@@ -16,7 +16,7 @@ import { useToast } from '@/components/toast';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
-import { formatDate, offDayName, periodThis, won, type Meal } from '@/lib/budget';
+import { formatDate, offDayName, periodThis, weeksOf, won, type Meal } from '@/lib/budget';
 import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
@@ -143,7 +143,7 @@ export default function HomePage() {
 
       <button type="button" className={styles.hero} onClick={() => setDetail(true)} aria-label="예산 자세히 보기">
         <span className={styles.heroTop}>
-          <span className={styles.heroLabel}>{periodThis(settings.period)} 남은 예산</span>
+          <span className={styles.heroLabel}>{periodThis(settings.period, weeksOf(settings))} 남은 예산</span>
           {!missing && (
             <span className={styles.pill} style={{ backgroundColor: status.bg, color: status.fg }}>
               {status.label}
