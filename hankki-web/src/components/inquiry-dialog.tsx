@@ -113,7 +113,8 @@ export function InquiryDialog({ onClose }: { onClose: () => void }) {
               className={styles.textarea}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="예: 학식 메뉴가 어제 걸로 나와요 / 식당 가격이 달라요"
+              // 보내기 조건(MIN_BODY = 5글자)과 맞춘 안내
+              placeholder="다섯 글자 이상 입력"
               maxLength={MAX_BODY}
               rows={5}
             />
