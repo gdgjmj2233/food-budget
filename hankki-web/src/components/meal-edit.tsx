@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Modal } from '@/components/modal';
 import { GhostButton } from '@/components/ui';
 import { KIND_LABEL, kindOf, MEAL_KINDS, menuOf, won, type Meal, type MealKind } from '@/lib/budget';
-import { C } from '@/theme';
+import { C, KIND_COLORS } from '@/theme';
 import styles from './meal-dialog.module.css';
 import ui from './ui.module.css';
 
@@ -47,6 +47,7 @@ export function MealEdit({
                 role="radio"
                 aria-checked={kind === k}
                 className={`${styles.chip} ${kind === k ? styles.chipOn : ''}`}
+                style={kind === k ? { borderColor: KIND_COLORS[k].fg, backgroundColor: KIND_COLORS[k].bg, color: KIND_COLORS[k].fg } : undefined}
                 onClick={() => setKind(k)}>
                 {KIND_LABEL[k]}
               </button>

@@ -8,7 +8,7 @@ import { Modal } from '@/components/modal';
 import { mainMenu, PLACES, type Place } from '@/data/places';
 import { currentSlot, DAY_NAMES, formatDate, fromDateKey, KIND_LABEL, kindOfTime, MEAL_KINDS, startOfDay, toDateKey, won, type MealKind } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
-import { C } from '@/theme';
+import { C, KIND_COLORS } from '@/theme';
 import styles from './meal-dialog.module.css';
 import ui from './ui.module.css';
 
@@ -193,6 +193,7 @@ function KindPicker({ value, onChange }: { value: MealKind; onChange: (kind: Mea
           role="radio"
           aria-checked={value === k}
           className={`${styles.chip} ${value === k ? styles.chipOn : ''}`}
+          style={value === k ? { borderColor: KIND_COLORS[k].fg, backgroundColor: KIND_COLORS[k].bg, color: KIND_COLORS[k].fg } : undefined}
           onClick={() => onChange(k)}>
           {KIND_LABEL[k]}
         </button>

@@ -153,10 +153,13 @@
   font-weight: 500;
 }
 
+/* 끼니 표시. 색은 끼니마다 다르게 넣는다 */
 .kind {
-  font-size: 12px;
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--primary);
 }
 
 .menu {

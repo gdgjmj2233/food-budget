@@ -1,4 +1,4 @@
-import type { BudgetStatus, Meal } from '@/lib/budget';
+import type { BudgetStatus, Meal, MealKind } from '@/lib/budget';
 import { PLACES, type Category } from '@/data/places';
 
 export const C = {
@@ -25,6 +25,14 @@ export const STATUS: Record<BudgetStatus, { label: string; bg: string; fg: strin
   ok: { label: '여유', bg: C.accent, fg: C.primary },
   low: { label: '임박', bg: C.orange, fg: '#FFFFFF' },
   over: { label: '초과', bg: C.over, fg: '#FFFFFF' },
+};
+
+/** 끼니 색: 아침 주황, 점심 초록, 저녁 남색, 기타 회색. fg 는 흰 바탕에서 읽히는 진한 색 */
+export const KIND_COLORS: Record<MealKind, { bg: string; fg: string }> = {
+  breakfast: { bg: '#FFF1D6', fg: '#A35F00' },
+  lunch: { bg: '#E3F5EA', fg: '#1E7A46' },
+  dinner: { bg: '#E4EFFC', fg: '#0B3D91' },
+  etc: { bg: '#EEF1F5', fg: '#5B6577' },
 };
 
 export const CAT_COLORS: Record<Category, { bg: string; fg: string }> = {

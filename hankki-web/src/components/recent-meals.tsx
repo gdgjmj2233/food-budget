@@ -17,6 +17,7 @@ import {
   type Meal,
   type MissingDay,
 } from '@/lib/budget';
+import { KIND_COLORS } from '@/theme';
 import styles from './recent-meals.module.css';
 import ui from './ui.module.css';
 
@@ -77,7 +78,8 @@ export function RecentMeals({
                   {menuOf(m) && ` · ${menuOf(m)}`}
                 </span>
                 <span className={styles.when}>
-                  {dayName(m.date)} {KIND_LABEL[kindOf(m)]}
+                  {dayName(m.date)}{' '}
+                  <b style={{ color: KIND_COLORS[kindOf(m)].fg }}>{KIND_LABEL[kindOf(m)]}</b>
                 </span>
               </span>
               <span className={styles.price}>

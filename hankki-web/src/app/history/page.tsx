@@ -12,7 +12,7 @@ import { WeekChart } from '@/components/week-chart';
 import { formatDate, fromDateKey, KIND_LABEL, kindOf, menuOf, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
 import { confirm } from '@/lib/confirm';
 import { useBudget } from '@/store/budget-store';
-import { C, mealColor } from '@/theme';
+import { C, KIND_COLORS, mealColor } from '@/theme';
 import styles from './page.module.css';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -172,7 +172,9 @@ export default function HistoryPage() {
                 <span className={styles.bar} style={{ backgroundColor: c.fg }} />
                 <div className={styles.rowBody}>
                   <span className={styles.name}>
-                    <span className={styles.kind}>{KIND_LABEL[kindOf(m)]}</span> {m.name}
+                    <span className={styles.kind} style={{ backgroundColor: KIND_COLORS[kindOf(m)].bg, color: KIND_COLORS[kindOf(m)].fg }}>
+                      {KIND_LABEL[kindOf(m)]}
+                    </span> {m.name}
                   </span>
                   {menuOf(m) && <span className={styles.menu}>{menuOf(m)}</span>}
                 </div>
