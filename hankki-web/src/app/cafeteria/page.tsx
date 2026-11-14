@@ -31,8 +31,8 @@ function AddBadge({ count }: { count: number }) {
 const ITEM_SEP = ' · ';
 
 /**
- * 학식 코너 하나. 오늘 메뉴일 때만 눌러서 담을 수 있다. 다른 날 메뉴를 오늘 먹은 것으로 기록하는 실수를 막으려는 것.
- * 가격이 하나면 코너 전체를 누르고, 여러 개면 가격 버튼을 골라 누른다.
+ * 학식 코너 하나. 눌러서 담는다 (어느 요일 메뉴든 담을 수 있고, 기록은 오늘 날짜로 남는다).
+ * 가격이 하나면 코너 전체를 누르고, 여러 개면 가격 버튼을 골라 누른다. 가격이 없는 코너는 담을 수 없다.
  */
 function Corner({
   corner,
@@ -170,7 +170,15 @@ export default function CafeteriaPage() {
         })}
       </div>
 
-      {isToday && <p className={styles.addTitle}>메뉴를 누르면 추가돼요</p>}
+      <div className={styles.addHead}>
+        <p className={styles.addTitle}>메뉴를 누르면 추가돼요</p>
+        {/* 주말·공휴일처럼 오늘 메뉴가 없어도 고른 날 메뉴로 담을 수 있다. 기록은 언제나 오늘 날짜로 남는다 */}
+        {!isToday && (
+          <p className={styles.addNote}>
+            {DAY_NAMES[fromDateKey(day.date).getDay()]}요일 메뉴예요. 담아서 기록하면 오늘 먹은 것으로 남아요.
+          </p>
+        )}
+      </div>
 
       {MEALS.map((meal) => {
         const corners = day.corners.filter((c) => c.meal === meal.key);
@@ -186,14 +194,14 @@ export default function CafeteriaPage() {
               </h2>
               <span className={styles.hours}>{CAFETERIA.hours[meal.key]}</span>
             </div>
-            <ul className={`${styles.corners} ${isToday ? styles.cornersTap : ''}`}>
+            <ul className={`${styles.corners} ${styles.cornersTap}`}>
               {corners.map((c) => (
                 <Corner
                   key={c.name}
                   corner={c}
                   limit={s.todayLeft}
-                  countOf={isToday ? (price) => tray.countOf({ name: c.name, price }) : undefined}
-                  onAdd={isToday ? (price) => tray.change({ name: c.name, price }, 1) : undefined}
+                  countOf={(price) => tray.countOf({ name: c.name, price })}
+                  onAdd={(price) => tray.change({ name: c.name, price }, 1)}
                 />
               ))}
             </ul>

@@ -11,7 +11,7 @@ import styles from './cafeteria-tray.module.css';
 import ui from './ui.module.css';
 
 /**
- * 학식 탭의 "추가한 메뉴" 칸. 오늘 메뉴를 눌러 담으면 화면 아래에 붙어서 나타나고, 한 번에 기록한다.
+ * 학식 탭의 "추가한 메뉴" 칸. 메뉴를 눌러 담으면 화면 아래에 붙어서 나타나고, 한 번에 (오늘 날짜로) 기록한다.
  * 식당 카드의 "여기서 밥먹기"와 같은 모양이고, 학식은 메뉴·가격이 정해져 있어서 직접 입력은 없다.
  */
 export function CafeteriaTray({ name, tray, limit }: { name: string; tray: Tray; limit: number }) {

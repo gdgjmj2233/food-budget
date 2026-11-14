@@ -165,11 +165,21 @@
 }
 
 /* 오늘 메뉴 위에 붙는 제목. 식당 카드의 "여기서 밥먹기" 칸 제목과 같은 모양 */
+.addHead {
+  margin-bottom: -6px;
+}
+
 .addTitle {
   font-size: 14px;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: -6px;
+}
+
+/* 오늘이 아닌 날 메뉴를 보고 있을 때 안내 */
+.addNote {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 /* 오늘 메뉴: 코너를 눌러서 담는다. 줄 대신 테두리 있는 칸으로 나눈다 */
