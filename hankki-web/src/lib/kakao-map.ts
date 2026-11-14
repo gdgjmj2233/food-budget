@@ -257,14 +257,17 @@ export function findNearbyRestaurants(known: Place[]): Promise<ExtraPlace[]> {
 }
 
 /**
- * 식당들의 좌표를 찾는다. 이름으로 먼저 찾고(같은 건물 식당도 구분됨), 없으면 주소로 찾는다.
+ * 식당들의 좌표를 찾는다. 직접 정한 위치(pos)가 있으면 그걸 쓰고,
+ * 아니면 이름으로 먼저 찾고(같은 건물 식당도 구분됨), 없으면 주소로 찾는다.
  * 하나 찾을 때마다 onFound 를 불러서 지도에 바로 핀을 찍을 수 있게 한다.
  */
 export async function locatePlaces(places: Place[], onFound: (id: string, pos: LatLng) => void): Promise<void> {
   const cache = readCache();
   const todo: Place[] = [];
   for (const p of places) {
-    if (cache[p.id]) onFound(p.id, cache[p.id]);
+    // 직접 정한 위치가 있으면 검색하지 않고, 예전에 잘못 찾아 저장해 둔 위치보다도 먼저 쓴다
+    if (p.pos) onFound(p.id, p.pos);
+    else if (cache[p.id]) onFound(p.id, cache[p.id]);
     else todo.push(p);
   }
 

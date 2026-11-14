@@ -21,6 +21,8 @@ export interface Place {
   address: string;
   /** 영업시간 (확인된 곳만) */
   hours?: string;
+  /** 지도 위치. 카카오 검색으로 엉뚱한 곳이 나오는 식당만 직접 적는다 (없으면 이름·주소로 찾음) */
+  pos?: { lat: number; lng: number };
   /** 대표 메뉴 이름 (menus 안에 있는 이름) */
   main: string;
   menus: Menu[];
@@ -242,9 +244,16 @@ const MAIN: Record<string, string> = {
   지금돈까스: '등심돈까스',
 };
 
+// 지도 위치를 직접 정한 곳 (식당 id → 좌표). 카카오에 가게가 없고 주소도 학교 주소(인하로 100)와 같아서 캠퍼스 안에 찍히던 곳
+const POS: Record<string, { lat: number; lng: number }> = {
+  // 버거리: 써브웨이 인천인하대점과 같은 건물(비룡프라자). 좌표는 카카오맵의 써브웨이 위치
+  ZPds496dhA3s: { lat: 37.449552, lng: 126.656488 },
+};
+
 export const PLACES: Place[] = LIST.map((p) => ({
   ...p,
   ...(HOURS[p.id] ? { hours: HOURS[p.id] } : {}),
+  ...(POS[p.id] ? { pos: POS[p.id] } : {}),
   ...(MAIN[p.name] && p.menus.some((m) => m.name === MAIN[p.name]) ? { main: MAIN[p.name] } : {}),
 }));
 
