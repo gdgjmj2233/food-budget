@@ -77,8 +77,12 @@ export function InquiryDialog({ onClose }: { onClose: () => void }) {
             <div className={styles.hello}>
               <Image src={mascot.img} alt="" unoptimized className={styles.mascot} />
               <div className={styles.bubble}>
-                <h2 className={styles.title}>피드백 보내기</h2>
-                <p className={styles.sub}>불편한 점이나 바라는 점을 말해 주면 꼼꼼히 읽고 고칠게요!</p>
+                <h2 className={styles.title}>문의하기</h2>
+                <p className={styles.sub}>
+                  불편한 점이나 바라는 점을 말해 주면
+                  <br />
+                  꼼꼼히 읽고 고칠게요!
+                </p>
               </div>
             </div>
             <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">

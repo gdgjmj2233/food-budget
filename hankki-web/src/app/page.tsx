@@ -3,8 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
-import { IoChatbubbleEllipsesOutline, IoInformationCircleOutline } from 'react-icons/io5';
-import { LuSoup } from 'react-icons/lu';
+import { IoChatbubbleEllipsesOutline, IoInformationCircleOutline, IoSettingsSharp } from 'react-icons/io5';
 
 import { BudgetDetail } from '@/components/budget-detail';
 import { InquiryDialog } from '@/components/inquiry-dialog';
@@ -14,6 +13,7 @@ import { MissingDayCard } from '@/components/missing-day';
 import { ProfileDialog } from '@/components/profile-dialog';
 import { RecentMeals } from '@/components/recent-meals';
 import { useToast } from '@/components/toast';
+import { RiceBowlIcon } from '@/components/rice-bowl-icon';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
@@ -68,18 +68,28 @@ export default function HomePage() {
   return (
     <Screen>
       <header className={styles.top}>
-        <div>
+        <div className={styles.topLeft}>
           <Sub>{formatDate(new Date())}</Sub>
-          <Title>인하대 근처</Title>
+          {/* 내 정보(닉네임)가 있으면 "닉네임님 !", 없으면(로그인 전) "환영합니다 !".
+              한 줄로 보이고, 닉네임이 길면 닉네임만 …으로 줄여서 "님 !"은 늘 보이게 한다 */}
+          <Title>
+            {profile ? (
+              <span className={styles.greet}>
+                <span className={styles.nick}>{profile.nickname}</span>님 !
+              </span>
+            ) : (
+              '환영합니다 !'
+            )}
+          </Title>
         </div>
         <div className={styles.topRight}>
           {inquiryReady() && (
             <button type="button" className={styles.feedback} onClick={() => setFeedback(true)}>
-              <IoChatbubbleEllipsesOutline size={14} aria-hidden />
-              피드백
+              <IoChatbubbleEllipsesOutline size={18} aria-hidden />
+              문의
             </button>
           )}
-        {/* 로그인 전에는 Log in 버튼을, 로그인 후에는 내 캐릭터를 보여 준다. 누르면 로그인·내 정보 창이 열린다 */}
+        {/* 로그인 전에는 Log in 버튼을, 로그인 후에는 내 캐릭터 + 톱니바퀴(계정 정보라는 표시)를 보여 준다. 누르면 로그인·내 정보 창이 열린다 */}
         {account === null ? (
           <button type="button" className={styles.login} onClick={() => setProfileOpen(true)}>
             Log in
@@ -89,8 +99,13 @@ export default function HomePage() {
             type="button"
             className={styles.avatar}
             onClick={() => setProfileOpen(true)}
-            aria-label={profile ? `${profile.nickname}님 내 정보` : '내 정보'}>
-            <Image src={(myCharacter ?? CHARACTERS[1]).img} alt="" unoptimized className={styles.avatarImg} />
+            aria-label={profile ? `${profile.nickname}님 계정 정보` : '계정 정보'}>
+            <span className={styles.avatarCircle} aria-hidden>
+              <Image src={(myCharacter ?? CHARACTERS[1]).img} alt="" unoptimized className={styles.avatarImg} />
+            </span>
+            <span className={styles.avatarGear} aria-hidden>
+              <IoSettingsSharp size={11} />
+            </span>
           </button>
         )}
         </div>
@@ -184,11 +199,11 @@ export default function HomePage() {
 
       {missing ? (
         <button type="button" className={styles.eatOutline} onClick={() => setEating(true)}>
-          <LuSoup size={22} aria-hidden />
+          <RiceBowlIcon size={22} aria-hidden />
           오늘 밥먹기
         </button>
       ) : (
-        <AccentButton label="밥먹기" icon={LuSoup} onPress={() => setEating(true)} />
+        <AccentButton label="밥먹기" icon={RiceBowlIcon} onPress={() => setEating(true)} />
       )}
 
       <RecentMeals
