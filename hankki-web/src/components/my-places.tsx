@@ -6,7 +6,7 @@ import { IoStar } from 'react-icons/io5';
 import { PLACES } from '@/data/places';
 import { formatShort, fromDateKey, won, type Meal } from '@/lib/budget';
 import { cachedNearbyNames } from '@/lib/kakao-map';
-import { useRatings } from '@/store/rating-store';
+import { setRating, useRatings } from '@/store/rating-store';
 import { CAT_EMOJI } from '@/theme';
 import ui from './ui.module.css';
 import styles from './my-places.module.css';
@@ -111,16 +111,25 @@ export function MyPlaces({ meals }: { meals: Meal[] }) {
       ) : rated.length ? (
         <ul className={styles.list}>
           {rated.map((r) => (
-            <li key={r.id} className={styles.row}>
+            <li key={r.id} className={`${styles.row} ${styles.rowWrap}`}>
               <span className={styles.emoji} aria-hidden>
                 {r.emoji}
               </span>
               <span className={styles.body}>
-                <span className={styles.name}>{r.name}</span>
+                <span className={`${styles.name} ${styles.nameWrap}`}>{r.name}</span>
               </span>
-              <span className={styles.stars} aria-label={`별점 ${r.stars}점`}>
-                {Array.from({ length: 5 }, (_, i) => (
-                  <IoStar key={i} size={14} className={i < r.stars ? styles.starOn : styles.starOff} aria-hidden />
+              {/* 눌러서 별점을 고친다. 같은 별을 다시 누르면 지워져서 목록에서 빠진다 (다른 별점 칸과 같은 동작) */}
+              <span className={styles.stars} role="group" aria-label={`${r.name} 내 별점 ${r.stars}점`}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    onClick={() => setRating(r.id, n === r.stars ? 0 : n)}
+                    aria-label={n === r.stars ? `별점 ${n}점 지우기` : `별점 ${n}점으로 바꾸기`}
+                    aria-pressed={n <= r.stars}
+                    className={styles.starBtn}>
+                    <IoStar size={17} className={n <= r.stars ? styles.starOn : styles.starOff} aria-hidden />
+                  </button>
                 ))}
               </span>
             </li>

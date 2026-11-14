@@ -82,8 +82,36 @@
 }
 
 .stars {
+  flex: none;
   display: flex;
-  gap: 1px;
+}
+
+/* 별 하나 = 누를 수 있는 버튼 */
+.starBtn {
+  display: flex;
+  padding: 5px 1px;
+  touch-action: manipulation;
+}
+
+/* 내 별점 목록: 화면이 좁으면 별이 이름 아래 줄로 내려가고, 긴 이름은 잘리지 않고 줄바꿈 */
+.rowWrap {
+  flex-wrap: wrap;
+  row-gap: 0;
+  padding: 4px 0;
+}
+
+.rowWrap .body {
+  flex: 1 1 120px;
+}
+
+.rowWrap .stars {
+  margin-left: auto;
+}
+
+.nameWrap {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .starOn {
