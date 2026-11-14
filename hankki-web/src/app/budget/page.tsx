@@ -226,9 +226,6 @@ export default function BudgetPage() {
         </p>
       )}
       <div className={styles.applyRow}>
-        <button type="button" className={`${ui.primary} ${ui.secondary}`} onClick={() => setEdits({})} disabled={!dirty}>
-          되돌리기
-        </button>
         <button type="button" className={ui.primary} style={{ backgroundColor: C.primary }} onClick={apply} disabled={!dirty}>
           적용
         </button>

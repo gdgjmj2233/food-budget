@@ -176,11 +176,9 @@
   color: var(--primary);
 }
 
-/* 되돌리기 · 적용 */
+/* 적용 버튼 (한 줄을 다 쓴다) */
 .applyRow {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 8px;
 }
 
 .splitNote {
