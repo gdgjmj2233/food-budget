@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import React, { Suspense, useState } from 'react';
 import {
   IoCheckbox,
   IoChevronDown,
@@ -48,9 +49,20 @@ const PAGE_SIZE = 40;
 type Row = { id: string; place?: Place; extra?: ExtraPlace; dist?: number };
 const AREAS: ('전체' | Area)[] = ['전체', '후문', '정문·인하대역'];
 
+// 주소의 ?cat= 을 읽으려면 Suspense 로 감싸야 정적 내보내기(GitHub Pages) 빌드가 된다
 export default function RecommendPage() {
+  return (
+    <Suspense fallback={null}>
+      <Recommend />
+    </Suspense>
+  );
+}
+
+function Recommend() {
   const { summary: s } = useBudget();
-  const [cat, setCat] = useState<(typeof CATEGORIES)[number]>('전체');
+  // 홈 "오늘의 한마디"의 "○○ 식당 보러 가기"로 오면 주소의 ?cat= 종류를 처음부터 골라 둔다
+  const params = useSearchParams();
+  const [cat, setCat] = useState<(typeof CATEGORIES)[number]>(() => CATEGORIES.find((k) => k === params.get('cat')) ?? '전체');
   const [area, setArea] = useState<(typeof AREAS)[number]>('전체');
   const [sort, setSort] = useState<SortKey>('priceAsc');
   // 처음에는 모든 식당을 보여 주고, "예산 안만"을 켜면 오늘 예산 안에서 먹을 수 있는 곳만 남긴다

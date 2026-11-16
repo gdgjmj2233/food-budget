@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
-import { IoInformationCircleOutline, IoSettingsSharp } from 'react-icons/io5';
+import { IoChevronForward, IoInformationCircleOutline, IoSettingsSharp } from 'react-icons/io5';
 
 import { BudgetDetail } from '@/components/budget-detail';
 import { MealDialog, PastMealDialog } from '@/components/meal-dialog';
@@ -45,7 +45,8 @@ export default function HomePage() {
   const mascotImg = s.status === 'ok' ? mascot.img : mascot.sadImg;
   const status = STATUS[s.status];
   const spentPct = s.amount > 0 ? Math.min(100, Math.max(0, (s.spent / s.amount) * 100)) : 0;
-  const tip = suggestToday(meals);
+  // 어제와 다른 종류(학식 포함)를 권하고, 그 종류의 식당(학식이면 학식 탭)으로 가는 길을 붙인다
+  const tip = s.restDay ? null : suggestToday(meals, s.todayLeft);
   // 오늘 쓸 수 있는 금액이 처음 정한 하루 금액보다 많으면 그동안 아껴 쓴 것, 적으면 많이 쓴 것
   const budgetTalk =
     s.perDay > s.base
@@ -130,7 +131,7 @@ export default function HomePage() {
                 <>
                   어제 {tip.menu} 먹었지?
                   <br />
-                  오늘은 {tip.theme} 어때?
+                  오늘은 {tip.kind} 어때?
                 </>
               ) : s.todayLeft > 0 ? (
                 <>
@@ -146,6 +147,14 @@ export default function HomePage() {
                 </>
               )}
             </span>
+            {tip && (
+              <Link
+                href={tip.kind === '학식' ? '/cafeteria' : { pathname: '/recommend', query: { cat: tip.kind } }}
+                className={styles.bubbleLink}>
+                {tip.kind === '학식' ? '학식 메뉴 보러 가기' : `${tip.kind} 식당 보러 가기`}
+                <IoChevronForward size={14} aria-hidden />
+              </Link>
+            )}
           </div>
         </div>
       )}

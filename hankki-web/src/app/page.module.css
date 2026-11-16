@@ -132,6 +132,21 @@
   word-break: keep-all;
 }
 
+/* 한마디에서 권한 종류의 식당(또는 학식)으로 가는 작은 버튼 */
+.bubbleLink {
+  align-self: flex-start;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px 6px 12px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 /* 예산 카드. 누르면 자세히 보기가 열린다 */
 .hero {
   width: 100%;

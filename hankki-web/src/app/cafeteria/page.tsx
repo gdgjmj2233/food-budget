@@ -7,12 +7,11 @@ import { CafeteriaTray } from '@/components/cafeteria-tray';
 import { useTray } from '@/components/eat-here';
 import { Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
-import { CAFETERIA, CAFETERIA_URL, MEALS, type CafeteriaCorner } from '@/data/cafeteria';
+import { CAFETERIA, CAFETERIA_NAME, CAFETERIA_URL, MEALS, type CafeteriaCorner } from '@/data/cafeteria';
 import { DAY_NAMES, formatDate, formatShort, fromDateKey, toDateKey, won } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import styles from './page.module.css';
 
-const CAFETERIA_NAME = '학생식당';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** 날짜(YYYY-MM-DD) 두 개 사이의 일수. 뒤가 더 늦으면 양수 */

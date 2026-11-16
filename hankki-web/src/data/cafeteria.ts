@@ -22,6 +22,9 @@ export const CAFETERIA: { week: string; hours: Record<string, string>; days: Caf
 
 export const CAFETERIA_URL = 'https://www.inha.ac.kr/kr/1072/subview.do';
 
+/** 학식 탭에서 기록할 때 남기는 가게 이름. 오늘의 한마디가 학식 기록을 알아볼 때도 쓴다 */
+export const CAFETERIA_NAME = '학생식당';
+
 /** 화면에 보여 주는 순서와 이모지 */
 export const MEALS = [
   { key: '조식', title: '조식', emoji: '🌅' },
