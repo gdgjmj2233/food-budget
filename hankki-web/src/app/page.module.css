@@ -132,17 +132,6 @@
   word-break: keep-all;
 }
 
-/* 한마디 아래 늘 붙는 문의 안내 (한마디보다 작고 흐리게) */
-.bubbleNote {
-  margin-top: 2px;
-  font-size: 12px;
-  line-height: 17px;
-  color: var(--muted);
-  word-break: keep-all;
-  /* 두 줄이 되면 줄 길이를 고르게 나눠 "큰 / 힘이"처럼 어색하게 끊기지 않게 */
-  text-wrap: balance;
-}
-
 /* 예산 카드. 누르면 자세히 보기가 열린다 */
 .hero {
   width: 100%;
@@ -260,24 +249,9 @@
   font-size: 20px;
 }
 
-/* 맨 위 오른쪽: 작은 피드백 버튼 + 로그인/내 캐릭터 */
+/* 맨 위 오른쪽: 로그인/내 캐릭터 */
 .topRight {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-/* 문의 버튼: 옆 Log in 버튼과 같은 높이 */
-.feedback {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 20px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: 14px;
-  font-weight: 700;
 }

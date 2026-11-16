@@ -3,10 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
-import { IoChatbubbleEllipsesOutline, IoInformationCircleOutline, IoSettingsSharp } from 'react-icons/io5';
+import { IoInformationCircleOutline, IoSettingsSharp } from 'react-icons/io5';
 
 import { BudgetDetail } from '@/components/budget-detail';
-import { InquiryDialog } from '@/components/inquiry-dialog';
 import { MealDialog, PastMealDialog } from '@/components/meal-dialog';
 import { MealEdit } from '@/components/meal-edit';
 import { MissingDayCard } from '@/components/missing-day';
@@ -18,7 +17,6 @@ import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import { CHARACTERS, characterOf } from '@/data/characters';
 import { useEat } from '@/hooks/use-eat';
 import { addDays, formatDate, offDayName, periodThis, startOfDay, toDateKey, won, type Meal } from '@/lib/budget';
-import { inquiryReady } from '@/lib/inquiry';
 import { confirm } from '@/lib/confirm';
 import { suggestToday } from '@/lib/suggest';
 import { useAccount } from '@/store/account-store';
@@ -36,7 +34,6 @@ export default function HomePage() {
   const [eating, setEating] = useState(false);
   const [detail, setDetail] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [feedback, setFeedback] = useState(false);
   // 지난 날 기록 창에서 처음 골라 둘 날짜. 열려 있지 않으면 null (어제 기록 카드나 밥먹기 창의 "지난 날 기록"으로 연다)
   const [pastDate, setPastDate] = useState<string | null>(null);
   // 최근 기록에서 연필을 눌러 고치는 중인 기록
@@ -83,12 +80,6 @@ export default function HomePage() {
           </Title>
         </div>
         <div className={styles.topRight}>
-          {inquiryReady() && (
-            <button type="button" className={styles.feedback} onClick={() => setFeedback(true)}>
-              <IoChatbubbleEllipsesOutline size={18} aria-hidden />
-              문의
-            </button>
-          )}
         {/* 로그인 전에는 Log in 버튼을, 로그인 후에는 내 캐릭터 + 톱니바퀴(계정 정보라는 표시)를 보여 준다. 누르면 로그인·내 정보 창이 열린다 */}
         {account === null ? (
           <button type="button" className={styles.login} onClick={() => setProfileOpen(true)}>
@@ -110,8 +101,6 @@ export default function HomePage() {
         )}
         </div>
       </header>
-
-      {feedback && <InquiryDialog onClose={() => setFeedback(false)} />}
 
       {s.ended && (
         <Link href="/budget" className={styles.ended}>
@@ -157,8 +146,6 @@ export default function HomePage() {
                 </>
               )}
             </span>
-            {/* 한마디가 무엇이든 늘 아래에 작게 붙이는 문의 안내 */}
-            <span className={styles.bubbleNote}>문의를 통한 여러분의 의견은 저희에게 큰 힘이 됩니다.</span>
           </div>
         </div>
       )}
