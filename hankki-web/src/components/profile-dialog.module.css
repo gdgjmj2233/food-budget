@@ -128,3 +128,17 @@
   color: var(--muted);
   text-decoration: underline;
 }
+
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--line, #dfe5f0);
+  background: #fff;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 600;
+}
