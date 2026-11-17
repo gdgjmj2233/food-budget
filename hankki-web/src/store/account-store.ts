@@ -39,8 +39,8 @@ function client() {
   return supabase;
 }
 
-/** 로그인한 뒤 돌아올 주소. GitHub Pages 처럼 하위 경로(/food-budget)에 있어도 맞게 만든다 */
-const home = () => window.location.origin + (process.env.PAGES_BASE_PATH ?? '') + '/';
+/** 로그인한 뒤 돌아올 주소: 지금 보던 화면. GitHub Pages 처럼 하위 경로(/food-budget)에 있어도 그대로 맞고, 주소 뒤의 #·? 는 뗀다 */
+const home = () => window.location.origin + window.location.pathname;
 
 export async function signUp(email: string, password: string) {
   const { error } = await client().auth.signUp({ email, password, options: { emailRedirectTo: home() } });
