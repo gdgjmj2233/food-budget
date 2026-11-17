@@ -11,7 +11,7 @@ import { CHARACTERS } from '@/data/characters';
 import { readMark, saveCloud, writeMark } from '@/lib/cloud';
 import { confirm } from '@/lib/confirm';
 import { supabaseReady } from '@/lib/supabase';
-import { accountError, logIn, logInWithGoogle, logOut, resetPassword, signUp, useAccount } from '@/store/account-store';
+import { accountError, logInWithGoogle, logOut, useAccount } from '@/store/account-store';
 import { useBudget } from '@/store/budget-store';
 import { saveProfile, useProfile, type Profile } from '@/store/profile-store';
 import { replaceRatings } from '@/store/rating-store';
@@ -19,14 +19,7 @@ import styles from './profile-dialog.module.css';
 import ui from './ui.module.css';
 
 const EMPTY: Profile = { nickname: '', major: '', studentId: '', email: '', character: CHARACTERS[0].id };
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const MIN_PASSWORD = 6;
-
-/**
- * 로그인 전에는 "로그인"·"회원가입", 로그인 후에는 "내 정보" 창.
- * 가입 없이 이 기기에만 저장할 수도 있다. 그 사람은 내 정보가 있어도 회원가입 창을 보고, 가입하면 쓰던 기록이 계정으로 옮겨진다.
- */
 /** Google 로고(네 가지 색 G) */
 function GoogleMark() {
   return (
@@ -39,6 +32,10 @@ function GoogleMark() {
   );
 }
 
+/**
+ * 로그인 전에는 "Google로 로그인", 로그인 후에는 "내 정보" 창. 로그인은 Google 계정으로만 한다.
+ * 로그인하지 않고 이 기기에만 내 정보를 저장할 수도 있다("local").
+ */
 export function ProfileDialog({ onClose }: { onClose: () => void }) {
   const profile = useProfile();
   const account = useAccount();
@@ -46,20 +43,16 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
   const cloudData = useCloudData();
   const toast = useToast();
   const [form, setForm] = useState<Profile>({ ...(profile ?? EMPTY), email: account?.email ?? profile?.email ?? '' });
-  const [mode, setMode] = useState<'login' | 'signup'>(profile ? 'signup' : 'login');
-  const [password, setPassword] = useState('');
+  // 이 기기에만 저장해 둔 내 정보가 있거나 로그인을 쓸 수 없으면 바로 내 정보 입력 화면을 보여 준다
+  const [mode, setMode] = useState<'login' | 'local'>(profile || !supabaseReady ? 'local' : 'login');
   const [problem, setProblem] = useState('');
   const [busy, setBusy] = useState(false);
   const view = account ? 'info' : mode;
   const set = (patch: Partial<Profile>) => setForm({ ...form, ...patch });
 
   const nickname = form.nickname.trim();
-  const email = form.email.trim();
-  const emailBad = email !== '' && !EMAIL.test(email);
-  const hasProfile = nickname !== '' && !emailBad;
-  const hasLogin = email !== '' && !emailBad && password.length >= (view === 'signup' ? MIN_PASSWORD : 1);
-  const canSave = !busy && (view === 'info' ? hasProfile : view === 'signup' ? hasProfile && hasLogin : hasLogin);
-  const cleaned = { ...form, nickname, major: form.major.trim(), email };
+  const canSave = !busy && nickname !== '';
+  const cleaned = { ...form, nickname, major: form.major.trim() };
 
   /** 계정 요청을 보내고, 실패하면 이유를 창에 보여 준다 */
   const run = async (work: () => Promise<void>) => {
@@ -75,42 +68,10 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSave) return;
-    if (view === 'info') {
-      saveProfile(cleaned);
-      toast('내 정보를 저장했어요');
-      onClose();
-      return;
-    }
-    run(async () => {
-      if (view === 'signup') {
-        await signUp(email, password);
-        saveProfile(cleaned);
-        toast(`${nickname}님, 반가워요!`);
-      } else {
-        await logIn(email, password);
-        toast('로그인했어요');
-      }
-      onClose();
-    });
-  };
-
-  /** 가입하지 않고 이 기기에만 내 정보를 저장한다 */
-  const saveLocal = () => {
+    if (!canSave || view === 'login') return;
     saveProfile(cleaned);
-    toast(`${nickname}님, 반가워요!`);
+    toast(view === 'info' ? '내 정보를 저장했어요' : `${nickname}님, 반가워요!`);
     onClose();
-  };
-
-  const onForgot = () => {
-    if (!email || emailBad) {
-      setProblem('이메일을 먼저 입력해 주세요');
-      return;
-    }
-    run(async () => {
-      await resetPassword(email);
-      toast('비밀번호를 바꾸는 메일을 보냈어요');
-    });
   };
 
   const logout = () => {
@@ -138,24 +99,11 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
     });
   };
 
-  const emailField = (
-    <label className={styles.field}>
-      <span className={styles.label}>
-        이메일 {view !== 'info' && <span className={styles.required}>(필수)</span>}
-      </span>
-      <input
-        className={styles.input}
-        value={form.email}
-        onChange={(e) => set({ email: e.target.value })}
-        placeholder="예: hankki@inha.edu"
-        type="email"
-        autoComplete="email"
-        maxLength={60}
-        disabled={view === 'info'}
-        aria-invalid={emailBad}
-      />
-      {emailBad && <span className={styles.error}>이메일 형식을 확인해 주세요</span>}
-    </label>
+  const googleButton = supabaseReady && (
+    <button type="button" className={styles.google} onClick={() => run(logInWithGoogle)} disabled={busy}>
+      <GoogleMark />
+      Google로 계속하기
+    </button>
   );
 
   return (
@@ -163,9 +111,13 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
       <form className={styles.body} onSubmit={submit}>
         <div className={styles.head}>
           <div>
-            <h2 className={styles.title}>{view === 'info' ? '내 정보' : view === 'signup' ? '회원가입' : '로그인'}</h2>
+            <h2 className={styles.title}>{view === 'info' ? '내 정보' : view === 'local' ? '내 정보 (이 기기에만)' : '로그인'}</h2>
             <p className={styles.sub}>
-              {view === 'info' ? '기록과 내 정보가 이 계정에 자동으로 저장돼요' : '로그인하면 다른 기기에서도 기록을 이어서 볼 수 있어요'}
+              {view === 'info'
+                ? '기록과 내 정보가 이 계정에 자동으로 저장돼요'
+                : view === 'local'
+                  ? '로그인하지 않으면 기록이 이 기기에만 남고, 다른 기기에서는 볼 수 없어요'
+                  : 'Google 계정으로 로그인하면 다른 기기에서도 기록을 이어서 볼 수 있어요'}
             </p>
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
@@ -173,8 +125,20 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+        {view === 'login' && (
+          <>
+            {googleButton}
+            {problem && <p className={styles.error}>{problem}</p>}
+            <button type="button" className={styles.link} onClick={() => setMode('local')}>
+              로그인 없이 이 기기에만 저장
+            </button>
+          </>
+        )}
+
         {view !== 'login' && (
           <>
+            {view === 'local' && googleButton}
+
             <div className={styles.section}>
               <span className={styles.label} id="character-label">
                 캐릭터
@@ -234,60 +198,28 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
                 inputMode="numeric"
               />
             </label>
+
+            {view === 'info' && (
+              <label className={styles.field}>
+                <span className={styles.label}>로그인한 Google 계정</span>
+                <input className={styles.input} value={form.email} disabled readOnly />
+              </label>
+            )}
+
+            {problem && <p className={styles.error}>{problem}</p>}
+
+            <button type="submit" className={ui.primary} style={{ backgroundColor: 'var(--ink)' }} disabled={!canSave}>
+              {view === 'info' ? '저장' : '이 기기에 저장'}
+            </button>
+
+            {view === 'local' && supabaseReady && (
+              <button type="button" className={styles.link} onClick={() => setMode('login')}>
+                로그인 화면으로 돌아가기
+              </button>
+            )}
           </>
         )}
 
-        {emailField}
-
-        {view !== 'info' && (
-          <label className={styles.field}>
-            <span className={styles.label}>
-              비밀번호 <span className={styles.required}>(필수{view === 'signup' && `, ${MIN_PASSWORD}자 이상`})</span>
-            </span>
-            <input
-              className={styles.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete={view === 'signup' ? 'new-password' : 'current-password'}
-              maxLength={60}
-            />
-          </label>
-        )}
-
-        {problem && <p className={styles.error}>{problem}</p>}
-
-        <button type="submit" className={ui.primary} style={{ backgroundColor: 'var(--ink)' }} disabled={!canSave}>
-          {view === 'info' ? '저장' : view === 'signup' ? '회원가입' : '로그인'}
-        </button>
-
-        {view !== 'info' && supabaseReady && (
-          <button type="button" className={styles.google} onClick={() => run(logInWithGoogle)} disabled={busy}>
-            <GoogleMark />
-            Google로 계속하기
-          </button>
-        )}
-
-        {view === 'login' && (
-          <>
-            <button type="button" className={styles.link} onClick={onForgot} disabled={busy}>
-              비밀번호를 잊었어요
-            </button>
-            <button type="button" className={styles.link} onClick={() => setMode('signup')}>
-              처음이에요, 회원가입
-            </button>
-          </>
-        )}
-        {view === 'signup' && (
-          <>
-            <button type="button" className={styles.link} onClick={() => setMode('login')}>
-              이미 계정이 있어요
-            </button>
-            <button type="button" className={styles.link} onClick={saveLocal} disabled={!hasProfile}>
-              가입 없이 이 기기에만 저장
-            </button>
-          </>
-        )}
         {(account || profile) && (
           <button type="button" className={styles.logout} onClick={logout} disabled={busy}>
             로그아웃
