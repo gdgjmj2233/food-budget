@@ -17,8 +17,8 @@ export interface Character {
 
 /** 개인정보에서 고를 수 있는 캐릭터 */
 export const CHARACTERS: Character[] = [
-  { id: 'dragon', name: '용', img: dragon, sadImg: dragonSad },
-  { id: 'duck', name: '오리', img: duck, sadImg: duckSad },
+  { id: 'dragon', name: '안뇽이', img: dragon, sadImg: dragonSad },
+  { id: 'duck', name: '인덕이', img: duck, sadImg: duckSad },
 ];
 
 export const characterOf = (id: CharacterId): Character => CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0];
