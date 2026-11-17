@@ -18,6 +18,9 @@ const text = (html) =>
 /** 표의 칸이 아니라 코너 이름으로 나눈다. 금요일 석식처럼 다른 시간대 표에 들어가 있는 경우가 있다 */
 const mealOf = (name) => (/조식/.test(name) ? '조식' : /석식/.test(name) ? '석식' : /라면/.test(name) ? '라면' : '중식');
 
+/** 학교 홈페이지의 코너 이름을 앱에서 보여 줄 이름으로 바꾼다. 끼니는 mealOf 가 원래 이름으로 먼저 나눈다 */
+const displayName = (name) => name.replace(/^천원의\s*조식$/, '천원의 아침');
+
 /** "11.02." 에는 연도가 없어서 지금과 가장 가까운 해로 본다 */
 function toDate(month, day, now = new Date()) {
   const year = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].sort(
@@ -55,7 +58,7 @@ function parseMenu(html) {
       const name = text(corner);
       const items = menu.split(/<br\s*\/?>/i).map(text).filter(Boolean);
       const prices = text(price).split('/').map((p) => Number(p.replace(/\D/g, ''))).filter((p) => p > 0);
-      days.at(-1).corners.push(...toCorners(mealOf(name), name, items, prices));
+      days.at(-1).corners.push(...toCorners(mealOf(name), displayName(name), items, prices));
     }
   }
   // 공휴일처럼 메뉴가 없는 날은 뺀다

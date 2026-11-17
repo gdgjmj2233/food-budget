@@ -53,9 +53,12 @@ export function KindPicker({ value, onChange }: { value: MealKind; onChange: (ki
 /** 지금 시각에 맞는 항목 (10시 반 전 아침, 15시 전 점심, 21시 전 저녁, 그 밖은 기타 > 야식) */
 export const defaultKind = (): MealKind => kindNow();
 
-/** 담은 메뉴 한 줄. 같은 이름·가격을 다시 담으면 개수만 늘어난다 */
-export type TrayItem = { name: string; price: number; count: number };
-type Priced = { name: string; price: number };
+/**
+ * 담은 메뉴 한 줄. 같은 이름·가격을 다시 담으면 개수만 늘어난다.
+ * group 은 학식 탭에서 메뉴가 나온 끼니(조식·중식·석식)이다. 다른 끼니 메뉴를 담으면 빼는 데 쓴다
+ */
+export type TrayItem = { name: string; price: number; count: number; group?: string };
+type Priced = { name: string; price: number; group?: string };
 
 const keyOf = (m: Priced) => `${m.name}|${m.price}`;
 
@@ -72,7 +75,7 @@ export function useTray() {
   const change = (m: Priced, n: number) =>
     setItems((prev) => {
       const k = keyOf(m);
-      if (!prev.some((i) => keyOf(i) === k)) return n > 0 ? [...prev, { name: m.name, price: m.price, count: n }] : prev;
+      if (!prev.some((i) => keyOf(i) === k)) return n > 0 ? [...prev, { name: m.name, price: m.price, count: n, group: m.group }] : prev;
       return prev.map((i) => (keyOf(i) === k ? { ...i, count: i.count + n } : i)).filter((i) => i.count > 0);
     });
   return {
@@ -81,6 +84,8 @@ export function useTray() {
     countOf: (m: Priced) => items.find((i) => keyOf(i) === keyOf(m))?.count ?? 0,
     total: items.reduce((sum, i) => sum + i.price * i.count, 0),
     clear: () => setItems([]),
+    /** 조건에 맞는 메뉴를 모두 뺀다 */
+    drop: (match: (i: TrayItem) => boolean) => setItems((prev) => prev.filter((i) => !match(i))),
   };
 }
 
