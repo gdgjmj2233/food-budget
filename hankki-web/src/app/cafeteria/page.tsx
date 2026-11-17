@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { IoAdd, IoOpenOutline } from 'react-icons/io5';
 
 import { CafeteriaTray } from '@/components/cafeteria-tray';
-import { useTray } from '@/components/eat-here';
+import { defaultKind, useTray } from '@/components/eat-here';
 import { Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
 import { CAFETERIA, CAFETERIA_NAME, CAFETERIA_URL, MEALS, type CafeteriaCorner } from '@/data/cafeteria';
-import { DAY_NAMES, formatDate, formatShort, fromDateKey, toDateKey, won } from '@/lib/budget';
+import { DAY_NAMES, formatDate, formatShort, fromDateKey, toDateKey, won, type MealKind } from '@/lib/budget';
 import { useBudget } from '@/store/budget-store';
 import styles from './page.module.css';
 
@@ -101,6 +101,8 @@ function Corner({
 export default function CafeteriaPage() {
   const { summary: s } = useBudget();
   const tray = useTray();
+  // 기록 항목. 조식·중식·석식 메뉴를 담으면 아침·점심·저녁으로 정해진다
+  const [kind, setKind] = useState<MealKind>(defaultKind);
   const todayKey = toDateKey(new Date());
   const hasToday = CAFETERIA.days.some((d) => d.date === todayKey);
   // 오늘 메뉴가 없으면 오늘과 가장 가까운 날(예: 주말에는 금요일)을 먼저 보여 준다
@@ -192,7 +194,17 @@ export default function CafeteriaPage() {
                   key={c.name}
                   corner={c}
                   countOf={(price) => tray.countOf({ name: c.name, price })}
-                  onAdd={(price) => tray.change({ name: c.name, price }, 1)}
+                  onAdd={(price) => {
+                    if (meal.kind) {
+                      // 조식·중식·석식은 함께 기록하지 않는다. 다른 끼니에서 담은 메뉴는 빼고, 셀프라면은 그대로 둔다
+                      tray.drop((i) => i.group !== undefined && i.group !== meal.key);
+                      setKind(meal.kind);
+                    } else if (!tray.items.length) {
+                      // 셀프라면처럼 끼니가 정해지지 않은 메뉴는 처음 담을 때만 지금 시각에 맞춘다
+                      setKind(defaultKind());
+                    }
+                    tray.change({ name: c.name, price, group: meal.kind ? meal.key : undefined }, 1);
+                  }}
                 />
               ))}
             </ul>
@@ -202,7 +214,7 @@ export default function CafeteriaPage() {
 
       <Sub style={{ textAlign: 'center' }}>메뉴·가격: 인하대학교 홈페이지 · {CAFETERIA.week} 기준 · 식당 사정으로 바뀔 수 있어요</Sub>
 
-      <CafeteriaTray name={CAFETERIA_NAME} tray={tray} limit={s.restDay ? undefined : s.todayLeft} />
+      <CafeteriaTray name={CAFETERIA_NAME} tray={tray} limit={s.restDay ? undefined : s.todayLeft} kind={kind} onKind={setKind} />
     </Screen>
   );
 }
