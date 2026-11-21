@@ -132,10 +132,38 @@
   min-height: 32px;
 }
 
+/* "예산 안만" + (목록 보기면 정렬 상자) + 제보·지도/목록 버튼.
+   한 줄에 다 안 들어가면 제보·지도/목록 버튼 묶음이 다음 줄 오른쪽으로 내려간다 */
+.toolRow {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
 .tools {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* 지도/목록 버튼 왼쪽의 작은 "식당 미등록 제보" 버튼 (좁은 화면에서도 한 줄에 들어가게 작게) */
+.reportBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 16px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reportBtn:active {
+  opacity: 0.7;
 }
 
 .viewBtn {
@@ -162,6 +190,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  margin-left: auto;
 }
 
 .sortSelect {
