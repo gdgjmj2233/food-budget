@@ -93,10 +93,10 @@ function Recommend() {
   const list = onlyFits ? inBudget : base;
   const Check = onlyFits ? IoCheckbox : IoSquareOutline;
   // 앱 데이터에 없는 주변 음식점은 메뉴가 없어서 카테고리·검색어만 맞으면 보여 준다 (위치 구분이 없으니 위치를 고르면 숨긴다).
-  // 예산을 알 수 없어서 "예산 안만"과 상관없이 보여 준다
-  const extraList = extras.filter(
-    (e) => (cat === '전체' || e.cat === cat) && area === '전체' && (!q || e.name.includes(q)),
-  );
+  // 가격을 몰라 예산 안인지 알 수 없으니 "예산 안만"을 켜면 목록·지도 모두에서 숨긴다
+  const extraList = onlyFits
+    ? []
+    : extras.filter((e) => (cat === '전체' || e.cat === cat) && area === '전체' && (!q || e.name.includes(q)));
   const selected = list.find((p) => p.id === selectedId);
   const selectedExtra = extraList.find((e) => e.id === selectedId);
 
