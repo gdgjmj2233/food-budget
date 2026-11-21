@@ -10,7 +10,6 @@ import {
   formatShort,
   KIND_LABEL,
   kindOf,
-  MAIN_KINDS,
   startOfDay,
   toDateKey,
   won,
@@ -26,21 +25,20 @@ const STEPS = [1000, 2000, 5000, 10000, 20000, 50000, 100000];
 /**
  * 막대를 쌓는 칸 = 기록 항목. 아래부터 아침·점심·저녁 → 야식·간식·음료·이외·기타 순서.
  * 항목을 고르지 않은 예전 기록은 기록 탭과 같이 기록 시각으로 정한다 (kindOf).
- * 아침·점심·저녁은 같은 색이고 사이에 얇은 줄(1px)만 두고, 기타 항목은 각각 다른 색에 2px 틈을 둔다.
+ * 색이 다른 칸 사이에는 2px 틈을, 같은 색(기타로 묶인 간식·음료·이외)끼리는 얇은 줄(1px)만 둔다.
  */
 const SEG_ORDER: MealKind[] = ['breakfast', 'lunch', 'dinner', 'latenight', 'snack', 'drink', 'other', 'etc'];
-const isMealSeg = (k: MealKind) => MAIN_KINDS.includes(k);
 
 /**
- * 범례. 색은 앱 전체의 항목 색(KIND_COLORS.base)을 그대로 쓰고, 끼니는 한 색으로 묶는다.
- * 간식·음료·이외 색은 흰 바탕 대비가 3:1 아래라 범례와 아래 "그날 내역" 글자로 함께 알려 준다
+ * 범례. 색은 앱 전체의 항목 색(KIND_COLORS.base)을 그대로 쓰고, 간식·음료·이외는 "기타" 한 색으로 묶는다.
+ * 아침·점심·기타 색은 흰 바탕 대비가 3:1 아래라 범례와 아래 "그날 내역" 글자로 함께 알려 준다
  */
 const GROUPS: { key: string; label: string; color: string }[] = [
-  { key: 'meal', label: '식사 (아침·점심·저녁)', color: KIND_COLORS.lunch.base },
+  { key: 'breakfast', label: '아침', color: KIND_COLORS.breakfast.base },
+  { key: 'lunch', label: '점심', color: KIND_COLORS.lunch.base },
+  { key: 'dinner', label: '저녁', color: KIND_COLORS.dinner.base },
   { key: 'latenight', label: '야식', color: KIND_COLORS.latenight.base },
-  { key: 'snack', label: '간식', color: KIND_COLORS.snack.base },
-  { key: 'drink', label: '음료', color: KIND_COLORS.drink.base },
-  { key: 'other', label: '이외', color: KIND_COLORS.other.base },
+  { key: 'other', label: '기타 (간식·음료·이외)', color: KIND_COLORS.other.base },
 ];
 const colorOf = (k: MealKind) => KIND_COLORS[k].base;
 
@@ -215,9 +213,9 @@ export function WeekChart({
                 className={`${styles.bar} ${mode === 'month' ? styles.barThin : ''}`}
                 style={{ height: d.total > 0 ? `max(${pct(d.total)}, 4px)` : 0 }}>
                 {d.segs.map((s, j) => {
-                  // 바로 아래 칸과의 틈: 식사끼리는 얇은 줄 1px, 그 밖에는 2px
+                  // 바로 아래 칸과의 틈: 같은 색끼리는 얇은 줄 1px, 그 밖에는 2px
                   const below = d.segs[j - 1];
-                  const gap = !below ? 0 : isMealSeg(s.seg) && isMealSeg(below.seg) ? 1 : 2;
+                  const gap = !below ? 0 : colorOf(s.seg) === colorOf(below.seg) ? 1 : 2;
                   return (
                     <span
                       key={s.seg}

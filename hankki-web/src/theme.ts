@@ -33,22 +33,21 @@ export const STATUS: Record<BudgetStatus, { label: string; bg: string; fg: strin
 
 /**
  * 항목 색. 기록 탭 그래프 범례와 같은 색을 어디서나 쓴다 (그래프·달력·기록 목록·항목 고르기).
- * 아침·점심·저녁은 "식사"로 한 색, 야식·간식·음료·이외는 각각 다른 색.
+ * 아침·점심·저녁·야식은 각각 다른 색, 간식·음료·이외는 "기타"로 한 색.
  * base: 막대·테두리·범례 칸 색 / bg: 연한 바탕 / fg: bg·흰 바탕 모두에서 읽히는 글자색 (대비 5 이상)
  */
 export type KindColor = { base: string; bg: string; fg: string };
-const MEAL_COLOR: KindColor = { base: '#2A78D6', bg: '#E3EEFB', fg: '#1A5BB0' };
 const OTHER_COLOR: KindColor = { base: '#E87BA4', bg: '#FCE6EF', fg: '#AD3566' };
 
 export const KIND_COLORS: Record<MealKind, KindColor> = {
-  breakfast: MEAL_COLOR,
-  lunch: MEAL_COLOR,
-  dinner: MEAL_COLOR,
+  breakfast: { base: '#EDA100', bg: '#FFF1D1', fg: '#865B00' },
+  lunch: { base: '#1BAF7A', bg: '#DDF4EA', fg: '#0D7049' },
+  dinner: { base: '#2A78D6', bg: '#E3EEFB', fg: '#1A5BB0' },
   latenight: { base: '#EB6834', bg: '#FDE9E0', fg: '#AE4116' },
-  snack: { base: '#1BAF7A', bg: '#DDF4EA', fg: '#0D7049' },
-  drink: { base: '#EDA100', bg: '#FFF1D1', fg: '#865B00' },
+  // 간식·음료·이외(와 하위 항목이 생기기 전의 "기타" 기록)는 "기타"로 묶어 한 색
+  snack: OTHER_COLOR,
+  drink: OTHER_COLOR,
   other: OTHER_COLOR,
-  // 하위 항목이 생기기 전의 "기타" 기록은 이외와 같은 색
   etc: OTHER_COLOR,
 };
 
