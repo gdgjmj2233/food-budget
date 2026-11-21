@@ -10,6 +10,7 @@ import {
   IoListOutline,
   IoLocationOutline,
   IoMapOutline,
+  IoMegaphoneOutline,
   IoSearch,
   IoSquareOutline,
 } from 'react-icons/io5';
@@ -18,6 +19,7 @@ import { CatIcon } from '@/components/cat-icon';
 import { ExtraPlaceCard } from '@/components/extra-place-card';
 import { PlaceItem } from '@/components/place-item';
 import { PlaceMap } from '@/components/place-map';
+import { ReportDialog } from '@/components/report-dialog';
 import { Roulette } from '@/components/roulette';
 import { AccentButton, Screen, Sub, Title } from '@/components/ui';
 import ui from '@/components/ui.module.css';
@@ -25,6 +27,7 @@ import { bestMenu, CATEGORIES, DATA_SOURCE, mainMenu, PLACES, type Area, type Pl
 import { useExtraPlaces } from '@/hooks/use-extra-places';
 import { won } from '@/lib/budget';
 import { distanceM, formatDistance } from '@/lib/geo';
+import { inquiryReady } from '@/lib/inquiry';
 import { INHA, type ExtraPlace } from '@/lib/kakao-map';
 import { useBudget } from '@/store/budget-store';
 import { locationProblem, startLocating, useLocation } from '@/store/location-store';
@@ -72,6 +75,7 @@ function Recommend() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const [roulette, setRoulette] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [more, setMore] = useState({ key: '', n: PAGE_SIZE });
   const extras = useExtraPlaces();
   const ratings = useRatings();
@@ -212,7 +216,7 @@ function Recommend() {
         ))}
       </div>
 
-      <div className={ui.row}>
+      <div className={`${ui.row} ${styles.toolRow}`}>
         <button
           type="button"
           role="checkbox"
@@ -224,19 +228,27 @@ function Recommend() {
             예산 안만 ({inBudget.length}/{base.length})
           </Sub>
         </button>
+        {!showMap && (
+          <label className={styles.sortPick}>
+            <span className={styles.srOnly}>정렬</span>
+            <select value={sort} onChange={(e) => pickSort(e.target.value as SortKey)} className={styles.sortSelect}>
+              {SORTS.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <IoChevronDown size={14} aria-hidden />
+          </label>
+        )}
+        {/* 제보 버튼과 지도/목록 버튼은 줄이 바뀌어도 늘 붙어 있다 */}
         <div className={styles.tools}>
-          {!showMap && (
-            <label className={styles.sortPick}>
-              <span className={styles.srOnly}>정렬</span>
-              <select value={sort} onChange={(e) => pickSort(e.target.value as SortKey)} className={styles.sortSelect}>
-                {SORTS.map((o) => (
-                  <option key={o.key} value={o.key}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <IoChevronDown size={14} aria-hidden />
-            </label>
+          {/* 앱에 없는 식당을 알려 주는 작은 버튼 (지도/목록 버튼 바로 왼쪽) */}
+          {inquiryReady() && (
+            <button type="button" className={styles.reportBtn} onClick={() => setReporting(true)}>
+              <IoMegaphoneOutline size={13} aria-hidden />
+              식당 미등록 제보
+            </button>
           )}
           <button type="button" onClick={() => setShowMap(!showMap)} aria-pressed={showMap} className={styles.viewBtn}>
             {showMap ? <IoListOutline size={16} aria-hidden /> : <IoMapOutline size={16} aria-hidden />}
@@ -319,6 +331,7 @@ function Recommend() {
       <Sub style={{ textAlign: 'center' }}>가격 정보: {DATA_SOURCE} · 실제 가격은 다를 수 있어요</Sub>
 
       {roulette && <Roulette limit={s.todayLeft} onClose={() => setRoulette(false)} />}
+      {reporting && <ReportDialog mode="place" onClose={() => setReporting(false)} />}
     </Screen>
   );
 }

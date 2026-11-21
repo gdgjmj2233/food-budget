@@ -10,6 +10,7 @@ import { setRating, useRatings } from '@/store/rating-store';
 import { C, CAT_COLORS } from '@/theme';
 import { CatIcon } from './cat-icon';
 import { EatHere, EatHereButton, keepCardInView } from './eat-here';
+import { MenuReportButton } from './report-dialog';
 import styles from './place-item.module.css';
 
 /**
@@ -64,7 +65,8 @@ export function PlaceItem({
             <CatIcon cat={place.cat} />
           </span>
           <span className={styles.body}>
-            <span className={styles.name}>{place.name}</span>
+            {/* 펼치면 오른쪽 위 제보 버튼에 자리를 내주므로, 긴 이름은 잘리지 않고 두 줄로 넘어간다 */}
+            <span className={`${styles.name} ${open ? styles.nameOpen : ''}`}>{place.name}</span>
             <span className={styles.menuName}>
               {menu.name}
               {/* 대표 메뉴는 비싸도 예산 안에서 먹을 수 있는 다른 메뉴가 있으면 알려 준다 (얼마 초과인지는 보여 주지 않는다) */}
@@ -84,6 +86,8 @@ export function PlaceItem({
             </span>
           </span>
         </button>
+        {/* 카드를 펼치면 오른쪽 위에 나오는 작은 버튼. 메뉴·가격이 실제와 다를 때 알려 준다 */}
+        {open && <MenuReportButton placeName={place.name} className={styles.report} />}
       </div>
 
       {open && (

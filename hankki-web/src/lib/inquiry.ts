@@ -3,7 +3,7 @@
 
 /**
  * Apps Script 웹 앱 주소 (https://script.google.com/macros/s/.../exec).
- * 비어 있으면 아직 연결 전이라서 앱에 "문의하기" 버튼이 나오지 않는다.
+ * 비어 있으면 아직 연결 전이라서 앱에 문의·제보 버튼이 나오지 않는다.
  * 주소는 여기에 직접 적어도 되고, 내 컴퓨터에서 시험할 때는 .env.local 에 NEXT_PUBLIC_INQUIRY_URL 로 적어도 된다(git 에 올라가지 않는다).
  * 브라우저에 그대로 보이는 주소라서 숨기지 않아도 된다. 이 주소로는 글을 보낼 수만 있고 읽을 수는 없다.
  */
@@ -14,9 +14,15 @@ export const INQUIRY_URL =
 export const INQUIRY_KINDS = ['버그 신고', '건의', '식당 정보 수정', '기타'] as const;
 export type InquiryKind = (typeof INQUIRY_KINDS)[number];
 
+/** 식당 카드·주변 식당 화면의 작은 제보 버튼으로 보내는 종류. 문의와 같은 스프레드시트에 쌓인다 */
+export const REPORT_KINDS = ['메뉴 정보 수정', '식당 미등록 제보'] as const;
+export type ReportKind = (typeof REPORT_KINDS)[number];
+
 export const MIN_BODY = 5;
 export const MAX_BODY = 500;
 export const MAX_CONTACT = 60;
+/** 제보에서 따로 보내는 칸(주제·식당 이름·주소) 최대 글자 수 */
+const MAX_FIELD = 100;
 
 /** 이만큼 간격을 두고 보낼 수 있다 */
 const MIN_GAP_MS = 30_000;
@@ -29,11 +35,16 @@ const TIMEOUT_MS = 10_000;
 export const inquiryReady = () => INQUIRY_URL !== '';
 
 export interface InquiryInput {
-  kind: InquiryKind;
+  kind: InquiryKind | ReportKind;
   body: string;
   contact: string;
   /** 사람이 보지 않는 칸. 채워져 있으면 자동 프로그램이 보낸 것으로 보고 보내지 않는다 */
   website: string;
+  /**
+   * 제보만 쓰는 값. 스프레드시트가 종류별 시트에 칸을 나눠 쌓을 수 있게 body 와 따로 보낸다.
+   * (body 에도 [종류 · 주제 · 식당] 머리말로 같이 들어 있어서, 예전 받는 코드로도 내용이 빠지지 않는다)
+   */
+  fields?: { topic?: string; place?: string; address?: string; text?: string };
 }
 
 export type InquiryResult =
@@ -85,6 +96,10 @@ export async function sendInquiry(input: InquiryInput): Promise<InquiryResult> {
     sentAt: new Date().toISOString(),
     website: '',
   });
+  for (const [key, value] of Object.entries(input.fields ?? {})) {
+    const v = value?.trim();
+    if (v) params.set(key, v.slice(0, key === 'text' ? MAX_BODY : MAX_FIELD));
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {

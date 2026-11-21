@@ -82,8 +82,19 @@
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--card);
+  /* textarea 는 기본으로 글꼴을 물려받지 않아서 직접 맞춘다 */
+  font-family: inherit;
   font-size: 16px;
   color: var(--ink);
+}
+
+/* 칸 안의 안내 문구는 칸 이름(.label, 예: "위치 (필수)")과 같은 글씨로 */
+.input::placeholder,
+.textarea::placeholder {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  opacity: 1;
 }
 
 .input {
@@ -159,6 +170,16 @@
   padding: 10px 12px;
   border-radius: 16px 16px 16px 4px;
   background: var(--primary-soft);
+  /* "위/치를"처럼 낱말 가운데서 줄이 바뀌지 않게 */
+  word-break: keep-all;
+}
+
+/* 제보 창: 어느 식당에 대한 제보인지 */
+.place {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
 }
 
 .mascotBig {

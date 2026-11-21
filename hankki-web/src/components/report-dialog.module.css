@@ -1,0 +1,18 @@
+/* 식당 카드 오른쪽 위의 작은 "메뉴 정보 수정 제보" 버튼 (카드 안 자리는 각 카드가 className 으로 잡는다) */
+.button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.button:active {
+  opacity: 0.7;
+}

@@ -8,9 +8,20 @@
   background: var(--card);
 }
 
+/* 이름 + 오른쪽 위 "메뉴 정보 수정 제보" 버튼 */
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .name {
+  min-width: 0;
+  padding-top: 2px;
   font-size: 15px;
   font-weight: 700;
+  word-break: keep-all;
 }
 
 .meta {
