@@ -266,7 +266,28 @@
 
 /* 맨 위 오른쪽: 로그인/내 캐릭터 */
 .topRight {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 피드백 버튼(설문지 링크): 옆 Log in 버튼과 같은 높이의 연한 알약 */
+.feedback {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.feedback:active {
+  opacity: 0.7;
 }
