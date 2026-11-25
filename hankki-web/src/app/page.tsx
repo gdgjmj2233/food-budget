@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useRef, useState } from 'react';
-import { IoChevronForward, IoInformationCircleOutline, IoSettingsSharp } from 'react-icons/io5';
+import { IoChatbubbleEllipsesOutline, IoChevronForward, IoInformationCircleOutline, IoSettingsSharp } from 'react-icons/io5';
 
 import { BudgetDetail } from '@/components/budget-detail';
 import { MealDialog, PastMealDialog } from '@/components/meal-dialog';
@@ -24,6 +24,10 @@ import { useBudget } from '@/store/budget-store';
 import { useProfile } from '@/store/profile-store';
 import { STATUS } from '@/theme';
 import styles from './page.module.css';
+
+/** 홈 맨 위 "피드백" 버튼이 여는 Google 설문지 */
+const FEEDBACK_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSfAJ06MBq-cFuYLxhn84u6OHtYpif9GQ_FNwitOGkMi4oIKDQ/viewform?usp=dialog';
 
 export default function HomePage() {
   const { summary: s, settings, meals, missing, removeMeal, updateMeal } = useBudget();
@@ -81,6 +85,11 @@ export default function HomePage() {
           </Title>
         </div>
         <div className={styles.topRight}>
+        {/* 피드백: Google 설문지를 새 탭으로 연다 */}
+        <a className={styles.feedback} href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
+          <IoChatbubbleEllipsesOutline size={17} aria-hidden />
+          피드백
+        </a>
         {/* 로그인 전에는 Log in 버튼을, 로그인 후에는 내 캐릭터 + 톱니바퀴(계정 정보라는 표시)를 보여 준다. 누르면 로그인·내 정보 창이 열린다 */}
         {account === null ? (
           <button type="button" className={styles.login} onClick={() => setProfileOpen(true)}>
